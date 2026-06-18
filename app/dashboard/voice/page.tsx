@@ -1,0 +1,216 @@
+"use client";
+
+import { Card, CardContent } from "@/components/ui/card";
+import { Phone, Clock, TrendingUp, Timer, Crown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { LMLoader } from "@/components/lm-loader";
+import { useEffect, useState } from "react";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import {
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
+    AreaChart,
+    Area,
+} from "recharts";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { format, subDays } from "date-fns";
+import { formatDuration } from "@/lib/utils";
+import { useData } from "@/context/DataContext";
+
+export default function VoiceDashboardPage() {
+    const [providerFilter, setProviderFilter] = useState("vapi");
+    const [dateRange, setDateRange] = useState<any>({ from: subDays(new Date(), 7), to: new Date() });
+
+    const { voiceMetrics, loadingVoiceMetrics, voiceBalance, refreshVoiceMetrics } = useData();
+
+    const loading = loadingVoiceMetrics;
+
+    // Re-fetch server metrics whenever date range or provider filter changes
+    useEffect(() => {
+        refreshVoiceMetrics({
+            from: dateRange?.from,
+            to: dateRange?.to,
+            includeElevenLabs: providerFilter === 'elevenlabs',
+        });
+    }, [dateRange, providerFilter, refreshVoiceMetrics]);
+
+    const m = voiceMetrics;
+
+    // Format daily volume for the bar chart — convert YYYY-MM-DD to "MMM dd"
+    const dailyVolume = (m?.dailyVolume ?? []).map(d => ({
+        name: format(new Date(d.date + 'T00:00:00'), 'MMM dd'),
+        calls: d.calls,
+    }));
+
+    // Hourly distribution — show every 3rd hour
+    const hourlyDistribution = (m?.hourlyDistribution ?? [])
+        .filter(h => h.hour % 3 === 0)
+        .map(h => ({
+            name: `${String(h.hour).padStart(2, '0')}:00`,
+            calls: h.calls,
+        }));
+
+    const normalCalls = providerFilter === 'vapi' ? (m?.normalCalls ?? 0) : 0;
+    const ownerCalls  = providerFilter === 'vapi' ? (m?.ownerCalls  ?? 0) : 0;
+
+    return (
+        <div className="flex flex-col gap-4 p-6 bg-slate-50/30 min-h-screen relative">
+            {loading && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/20 backdrop-blur-[1px] pointer-events-none">
+                    <div className="bg-white/80 p-6 rounded-2xl shadow-xl border border-slate-100 flex flex-col items-center gap-3">
+                        <LMLoader />
+                        <span className="text-xs font-bold text-slate-500 uppercase tracking-widest animate-pulse">Updating Analytics...</span>
+                    </div>
+                </div>
+            )}
+
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-slate-900">Voice Agent Dashboard</h1>
+                    <p className="text-slate-500">Monitor your AI voice agent performance across all accounts.</p>
+                </div>
+                <div className="flex items-center gap-3">
+                    <Select value={providerFilter} onValueChange={setProviderFilter}>
+                        <SelectTrigger className="w-[160px] h-10 border-slate-200">
+                            <SelectValue placeholder="Provider" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="vapi">Vapi</SelectItem>
+                            <SelectItem value="elevenlabs">ElevenLabs</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Button
+                        variant="outline"
+                        className="flex items-center gap-2 border-slate-200 text-slate-600 hover:bg-slate-50 h-10"
+                        onClick={() => refreshVoiceMetrics({
+                            from: dateRange?.from,
+                            to: dateRange?.to,
+                            includeElevenLabs: providerFilter === 'elevenlabs',
+                            force: true,
+                        })}
+                        disabled={loading}
+                    >
+                        <TrendingUp className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                        Refresh
+                    </Button>
+                    <DateRangePicker onUpdate={(values) => setDateRange(values.range)} />
+                </div>
+            </div>
+
+            {/* Vapi Account Split Banner */}
+            {providerFilter === 'vapi' && !loading && (
+                <div className="grid grid-cols-2 gap-3">
+                    <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-xl px-4 py-2">
+                        <div className="p-1.5 bg-blue-100 rounded-lg">
+                            <Phone className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-semibold text-blue-500 uppercase tracking-wider">Normal Calls</p>
+                            <p className="text-xl font-bold text-blue-700">{normalCalls.toLocaleString()}</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 bg-amber-50 border border-amber-100 rounded-xl px-4 py-2">
+                        <div className="p-1.5 bg-amber-100 rounded-lg">
+                            <Crown className="h-4 w-4 text-amber-600" />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-semibold text-amber-500 uppercase tracking-wider">Owner Leads</p>
+                            <p className="text-xl font-bold text-amber-700">{ownerCalls.toLocaleString()}</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Metrics Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <MetricCard
+                    title="Total Calls"
+                    value={`${(m?.totalCalls ?? 0).toLocaleString()} calls`}
+                    icon={<Phone className="h-5 w-5 text-slate-600" />}
+                />
+                <MetricCard
+                    title="Total Duration"
+                    value={formatDuration(m?.totalDuration ?? 0)}
+                    icon={<Clock className="h-5 w-5 text-slate-600" />}
+                />
+                <MetricCard
+                    title="Average Duration"
+                    value={`${Math.round(m?.avgDuration ?? 0)}s`}
+                    icon={<Timer className="h-5 w-5 text-slate-600" />}
+                />
+            </div>
+
+            {/* Charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <Card className="border-slate-200 shadow-sm bg-white overflow-hidden">
+                    <CardContent className="p-4">
+                        <h3 className="text-sm font-semibold text-slate-900 mb-4">Daily Call Volume</h3>
+                        <div className="w-full" style={{ height: 250, minHeight: 250 }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={dailyVolume.length > 0 ? dailyVolume : [{ name: 'No Data', calls: 0 }]}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} allowDecimals={false} />
+                                    <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0' }} />
+                                    <Bar dataKey="calls" fill="#10b981" radius={[4, 4, 0, 0]} barSize={40} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-slate-200 shadow-sm bg-white overflow-hidden">
+                    <CardContent className="p-4">
+                        <h3 className="text-sm font-semibold text-slate-900 mb-4">Hourly Call Distribution</h3>
+                        <div className="w-full" style={{ height: 250, minHeight: 250 }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={hourlyDistribution.length > 0 ? hourlyDistribution : [{ name: '00:00', calls: 0 }]}>
+                                    <defs>
+                                        <linearGradient id="colorCalls" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
+                                            <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} allowDecimals={false} />
+                                    <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0' }} />
+                                    <Area type="monotone" dataKey="calls" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorCalls)" />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+    );
+}
+
+function MetricCard({ title, value, badge, icon }: any) {
+    return (
+        <Card className="bg-white border-slate-200 text-slate-900 shadow-sm relative group hover:shadow-md transition-all duration-300">
+            <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                    <div>
+                        <p className="text-[10px] font-medium text-slate-500 mb-0.5">{title}</p>
+                        <h3 className="text-xl font-bold text-slate-900">{value}</h3>
+                        {badge && (
+                            <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-600 border border-emerald-100">
+                                {badge}
+                            </div>
+                        )}
+                    </div>
+                    <div className="p-2 bg-slate-50 rounded-lg border border-slate-100 group-hover:bg-slate-100 transition-colors">
+                        {icon}
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
