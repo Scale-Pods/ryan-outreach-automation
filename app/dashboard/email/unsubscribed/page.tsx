@@ -1,6 +1,6 @@
 "use client";
 
-import { LMLoader } from "@/components/lm-loader";
+import { LMLoader } from "@/components/ryan-loader";
 
 import { useEffect, useState } from "react";
 import { subDays } from "date-fns";

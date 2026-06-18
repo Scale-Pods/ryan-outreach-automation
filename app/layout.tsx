@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-    title: "Lotus Manor | AI Automation",
+    title: "Ryan's Automation | AI Automation",
     description: "AI-Powered Marketing & Operations managed by ScalePods",
     icons: {
         icon: '/logo.png',

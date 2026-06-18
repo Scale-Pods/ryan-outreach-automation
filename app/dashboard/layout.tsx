@@ -312,8 +312,8 @@ function DashboardContent({
                     <div className="p-6 pb-4 flex justify-center">
                         <Link href="/" className="relative w-48 h-16 block">
                             <Image
-                                src="https://lotusmanor.ae/logoheader.webp"
-                                alt="Lotus Manor Logo"
+                                src="https://ryansautomation.com/logoheader.webp"
+                                alt="Ryan's Automation Logo"
                                 fill
                                 className="object-contain"
                                 priority

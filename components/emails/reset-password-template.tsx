@@ -19,8 +19,8 @@ export const ResetPasswordEmail: React.FC<Readonly<ResetPasswordEmailProps>> = (
     }}>
         <div style={{ marginBottom: '30px' }}>
             <img
-                src="https://lotusmanor.ae/logoheader.webp"
-                alt="Lotus Manor"
+                src="https://ryansautomation.com/logoheader.webp"
+                alt="Ryan's Automation"
                 style={{ width: '180px', height: 'auto' }}
             />
         </div>
@@ -38,7 +38,7 @@ export const ResetPasswordEmail: React.FC<Readonly<ResetPasswordEmailProps>> = (
 
         <p style={{ color: '#a1a1aa', fontSize: '16px', lineHeight: '1.5', marginBottom: '30px' }}>
             Hello {fullName},<br />
-            We received a request to reset the password for your Lotus Manor account.
+            We received a request to reset the password for your Ryan's Automation account.
         </p>
 
         <a href={resetLink} style={{
@@ -66,7 +66,7 @@ export const ResetPasswordEmail: React.FC<Readonly<ResetPasswordEmailProps>> = (
             fontSize: '12px',
             color: '#52525b'
         }}>
-            © 2026 Lotus Manor. Powered by ScalePods.
+            © 2026 Ryan's Automation. Powered by ScalePods.
         </div>
     </div>
 );

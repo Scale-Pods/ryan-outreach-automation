@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { format, subDays } from "date-fns";
 import { useData } from "@/context/DataContext";
 
-import { LMLoader } from "@/components/lm-loader";
+import { LMLoader } from "@/components/ryan-loader";
 
 export default function EmailDashboardPage() {
     const router = useRouter();

@@ -36,11 +36,11 @@ export default function VoiceSetupPage() {
                             </div>
                             <div className="grid gap-2">
                                 <Label>Role Description</Label>
-                                <Input defaultValue="Senior Real Estate Consultant at Lotus Manor" />
+                                <Input defaultValue="Senior Real Estate Consultant at Ryan's Automation" />
                             </div>
                             <div className="grid gap-2">
                                 <Label>Opening Greeting</Label>
-                                <Input defaultValue="Hello, this is Fatima from Lotus Manor. I noticed you were interested in our beachfront properties." />
+                                <Input defaultValue="Hello, this is Fatima from Ryan's Automation. I noticed you were interested in our beachfront properties." />
                             </div>
                         </CardContent>
                     </Card>

@@ -34,7 +34,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { LMLoader } from "@/components/lm-loader";
+import { LMLoader } from "@/components/ryan-loader";
 
 export default function WhatsappDashboardPage() {
     const router = useRouter();

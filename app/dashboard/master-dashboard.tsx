@@ -42,7 +42,7 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { subDays, startOfDay, endOfDay, format } from "date-fns";
-import { LMLoader } from "@/components/lm-loader";
+import { LMLoader } from "@/components/ryan-loader";
 import { useData } from "@/context/DataContext";
 
 export default function MasterDashboard() {

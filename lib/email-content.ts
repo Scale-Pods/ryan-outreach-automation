@@ -80,7 +80,7 @@ export const getEmailDetailsFromTemplates = (stage: string, leadName: string = "
             processedContent = processedContent.replace(rePost, '$1\n$2');
         });
 
-        processedContent = processedContent.replace(/([a-zA-Z])(Lotus Manor Real Estate)/g, '$1\n$2');
+        processedContent = processedContent.replace(/([a-zA-Z])(Ryan's Automation Real Estate)/g, '$1\n$2');
         processedContent = processedContent.replace(/([a-zA-Z])(Sent from my iPhone)/g, '$1\n$2');
 
         const processedSubject = (template.subject || "No Subject")

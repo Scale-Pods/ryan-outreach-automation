@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/dialog";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { WhatsAppChatDetail } from "@/components/dashboard/whatsapp-chat-detail";
-import { LMLoader } from "@/components/lm-loader";
+import { LMLoader } from "@/components/ryan-loader";
 
 // Raw shape returned by /api/whatsapp-leads
 interface WALead {

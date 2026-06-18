@@ -58,7 +58,7 @@ export async function GET(request: Request) {
         const data = await response.json();
 
         // Filter for specific emails
-        const targetEmails = ["info@lotusmanor.me", "sales@lotusmanor.me"];
+        const targetEmails = ["info@ryansautomation.me", "sales@ryansautomation.me"];
 
         let filteredData = data;
         if (Array.isArray(data)) {

@@ -28,7 +28,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = 'login' }: AuthModalP
                         <div className="relative w-40 h-10">
                             <Image
                                 src="/logo.png"
-                                alt="Lotus Manor Logo"
+                                alt="Ryan's Automation Logo"
                                 fill
                                 className="object-contain"
                                 priority

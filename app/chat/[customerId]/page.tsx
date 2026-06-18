@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from "react";
 import { WhatsAppChatDetail } from "@/components/dashboard/whatsapp-chat-detail";
 import { OwnerChatDetail } from "@/components/dashboard/owner-chat-detail";
-import { LMLoader } from "@/components/lm-loader";
+import { LMLoader } from "@/components/ryan-loader";
 import { MessageSquare, Lock } from "lucide-react";
 
 export default function PublicChatPage({ params }: { params: Promise<{ customerId: string }> }) {

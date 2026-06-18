@@ -4,7 +4,7 @@ import { use, useEffect, useState } from "react";
 import { WhatsAppChatDetail } from "@/components/dashboard/whatsapp-chat-detail";
 import { OwnerChatDetail } from "@/components/dashboard/owner-chat-detail";
 import { useData } from "@/context/DataContext";
-import { LMLoader } from "@/components/lm-loader";
+import { LMLoader } from "@/components/ryan-loader";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, MessageSquare } from "lucide-react";
 import Link from "next/link";

@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/tooltip";
 import { subDays, startOfDay, endOfDay, format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { LMLoader } from "@/components/lm-loader";
+import { LMLoader } from "@/components/ryan-loader";
 
 
 export default function WhatsappAnalyticsPage() {

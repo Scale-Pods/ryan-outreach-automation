@@ -50,7 +50,7 @@ export default function ResetPasswordPage() {
                     {/* Logo */}
                     <div className="flex justify-center">
                         <div className="relative w-40 h-10">
-                            <Image src="/logo.png" alt="Lotus Manor" fill className="object-contain" priority />
+                            <Image src="/logo.png" alt="Ryan's Automation" fill className="object-contain" priority />
                         </div>
                     </div>
 

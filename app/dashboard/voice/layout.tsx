@@ -58,8 +58,8 @@ export default function VoiceLayout({
                 <div className="p-6 pb-4 flex justify-center">
                     <div className="relative w-48 h-16">
                         <Image
-                            src="https://lotusmanor.ae/logoheader.webp"
-                            alt="Lotus Manor Logo"
+                            src="https://ryansautomation.com/logoheader.webp"
+                            alt="Ryan's Automation Logo"
                             fill
                             className="object-contain"
                             priority

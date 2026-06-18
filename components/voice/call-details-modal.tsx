@@ -1,6 +1,6 @@
 "use client";
 
-import { LMLoader } from "@/components/lm-loader";
+import { LMLoader } from "@/components/ryan-loader";
 import {
     Dialog,
     DialogContent,
@@ -170,12 +170,12 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
     const assistantId = displayCall.assistantId || displayCall.assistant_id || "N/A";
 
     const assistantMapping: Record<string, string> = {
-        '70f05e16-18f3-4f6e-964a-f47b299c6c1d': 'Lotus Manor (UAE - 150)',
-        'd91ba874-2522-4d62-adf6-681f2a0bf4fe': 'Lotus Manor (UAE - 150)',
-        '4a7e7a31-0bbc-4fde-831e-2489119ee226': 'Lotus Manor (US - 439)',
-        'e66fe46b-9fe2-4628-a32b-08ced680bc04': 'Lotus Manor (UAE - 291)',
-        '4baf3613-ba3d-4860-9ea1-62156686b6f1': 'Lotus Manor (UK - 309)',
-        '66dff692-d2a5-47d4-bbe0-245509dc7404': 'Lotus Manor (US - 151)',
+        '70f05e16-18f3-4f6e-964a-f47b299c6c1d': "Ryan's Automation (UAE - 150)",
+        'd91ba874-2522-4d62-adf6-681f2a0bf4fe': "Ryan's Automation (UAE - 150)",
+        '4a7e7a31-0bbc-4fde-831e-2489119ee226': "Ryan's Automation (US - 439)",
+        'e66fe46b-9fe2-4628-a32b-08ced680bc04': "Ryan's Automation (UAE - 291)",
+        '4baf3613-ba3d-4860-9ea1-62156686b6f1': "Ryan's Automation (UK - 309)",
+        '66dff692-d2a5-47d4-bbe0-245509dc7404': "Ryan's Automation (US - 151)",
         'b35e3032-7865-4913-ba22-a913b5d4117b': 'US AI Bot',
         '918c25eb-9882-452e-86df-b4851d464852': 'UK AI Bot',
         '9ac979c3-a0b3-4af6-bb0d-07ddf9c0d1cd': 'UK AI Bot 2',

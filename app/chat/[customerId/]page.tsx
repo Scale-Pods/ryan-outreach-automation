@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from "react";
 import { WhatsAppChatDetail } from "@/components/dashboard/whatsapp-chat-detail";
 import { OwnerChatDetail } from "@/components/dashboard/owner-chat-detail";
-import { LMLoader } from "@/components/lm-loader";
+import { LMLoader } from "@/components/ryan-loader";
 import { MessageSquare, Lock } from "lucide-react";
 
 export default function PublicChatPage({ params }: { params: Promise<{ customerId: string }> }) {
@@ -76,7 +76,7 @@ export default function PublicChatPage({ params }: { params: Promise<{ customerI
                 </div>
                 
                 <div className="mt-6 text-center text-slate-400 text-[10px] uppercase tracking-widest font-bold">
-                    Powered by ASquared • Lotus Manor Systems
+                    Powered by ASquared • Ryan's Automation Systems
                 </div>
             </div>
         </div>

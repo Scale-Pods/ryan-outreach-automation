@@ -23,7 +23,7 @@ export default function LandingPage() {
                         <div className="relative w-40 h-12 text-white">
                             <Image
                                 src="/logo.png"
-                                alt="Lotus Manor Logo"
+                                alt="Ryan's Automation Logo"
                                 fill
                                 className="object-contain"
                                 priority

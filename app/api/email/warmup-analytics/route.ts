@@ -20,8 +20,8 @@ export async function POST() {
         }
 
         const targetEmails = [
-            "info@lotusmanor.me",
-            "sales@lotusmanor.me"
+            "info@ryansautomation.me",
+            "sales@ryansautomation.me"
         ];
 
         const response = await fetch('https://api.instantly.ai/api/v2/accounts/warmup-analytics', {
