@@ -374,7 +374,6 @@ export default function VoiceLogsPage() {
                         <SelectContent>
                             <SelectItem value="vapi">All Vapi Calls</SelectItem>
                             <SelectItem value="vapi-normal">Normal Calls</SelectItem>
-                            <SelectItem value="open-house">Open House Event</SelectItem>
                         </SelectContent>
                     </Select>
 
