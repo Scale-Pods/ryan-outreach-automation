@@ -387,18 +387,6 @@ export default function VoiceLogsPage() {
                         </SelectContent>
                     </Select>
 
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger className="w-[140px] h-9"><SelectValue placeholder="Status" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Status</SelectItem>
-                            <SelectItem value="ended">Ended</SelectItem>
-                            <SelectItem value="error">Error</SelectItem>
-                            <SelectItem value="voicemail">Voicemail</SelectItem>
-                            <SelectItem value="busy">Busy</SelectItem>
-                            <SelectItem value="no-answer">No Answer</SelectItem>
-                        </SelectContent>
-                    </Select>
-
                     <Select value={tempFilter} onValueChange={setTempFilter}>
                         <SelectTrigger className="w-[160px] h-9"><SelectValue placeholder="Temperature" /></SelectTrigger>
                         <SelectContent>
