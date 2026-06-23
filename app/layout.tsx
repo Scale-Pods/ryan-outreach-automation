@@ -5,9 +5,9 @@ export const metadata: Metadata = {
     title: "Ryan's Automation | AI Automation",
     description: "AI-Powered Marketing & Operations managed by ScalePods",
     icons: {
-        icon: '/logo.png',
-        shortcut: '/logo.png',
-        apple: '/logo.png',
+        icon: '/nh-final-white.webp',
+        shortcut: '/nh-final-white.webp',
+        apple: '/nh-final-white.webp',
     },
 };
 

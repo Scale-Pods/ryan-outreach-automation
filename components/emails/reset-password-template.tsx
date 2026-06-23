@@ -8,22 +8,25 @@ interface ResetPasswordEmailProps {
 export const ResetPasswordEmail: React.FC<Readonly<ResetPasswordEmailProps>> = ({
     fullName,
     resetLink,
-}) => (
-    <div style={{
-        backgroundColor: '#0a0a0a',
-        color: '#ffffff',
-        fontFamily: 'sans-serif',
-        padding: '40px 20px',
-        textAlign: 'center',
-        borderRadius: '12px'
-    }}>
-        <div style={{ marginBottom: '30px' }}>
-            <img
-                src="https://www.napleshomes.com/inc/skins/custom/img/nh-final-white.png"
-                alt="Naples Homes"
-                style={{ width: '180px', height: 'auto' }}
-            />
-        </div>
+}) => {
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, '');
+    const logoUrl = `${appUrl}/nh-final-white.webp`;
+    return (
+        <div style={{
+            backgroundColor: '#0a0a0a',
+            color: '#ffffff',
+            fontFamily: 'sans-serif',
+            padding: '40px 20px',
+            textAlign: 'center',
+            borderRadius: '12px'
+        }}>
+            <div style={{ marginBottom: '30px' }}>
+                <img
+                    src={logoUrl}
+                    alt="Naples Homes"
+                    style={{ width: '180px', height: 'auto' }}
+                />
+            </div>
 
         <h1 style={{
             fontSize: '24px',
@@ -69,4 +72,5 @@ export const ResetPasswordEmail: React.FC<Readonly<ResetPasswordEmailProps>> = (
             © 2026 Ryan's Automation. Powered by ScalePods.
         </div>
     </div>
-);
+    );
+};

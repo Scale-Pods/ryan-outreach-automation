@@ -79,7 +79,7 @@ export default function EmailLayout({
                 <div className="p-6 pb-4 flex justify-center">
                     <div className="relative w-48 h-16">
                         <Image
-                            src="https://www.napleshomes.com/inc/skins/custom/img/nh-final-white.png"
+                            src="/nh-final-white.webp"
                             alt="Naples Homes Logo"
                             fill
                             className="object-contain"

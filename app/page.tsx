@@ -22,7 +22,7 @@ export default function LandingPage() {
                     <div className="flex items-center gap-3">
                         <div className="relative w-40 h-12 text-[var(--label-primary)]">
                             <Image
-                                src="https://www.napleshomes.com/inc/skins/custom/img/nh-final-white.png"
+                                src="/nh-final-white.webp"
                                 alt="Naples Homes Logo"
                                 fill
                                 className="object-contain"

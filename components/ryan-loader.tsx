@@ -29,7 +29,7 @@ export const RyanLoader = ({ fullScreen = false }: RyanLoaderProps) => {
                         {/* Ryan's Automation Logo */}
                         <div className="relative z-10 w-24 h-24 flex items-center justify-center animate-pulse">
                             <Image
-                                src="https://www.napleshomes.com/inc/skins/custom/img/nh-final-white.png"
+                                src="/nh-final-white.webp"
                                 alt="Naples Homes Logo"
                                 width={100}
                                 height={100}
