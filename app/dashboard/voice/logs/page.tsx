@@ -57,7 +57,26 @@ const DynamicRowCells = ({ call, telephonyCost }: { call: any, telephonyCost?: n
                 </div>
             </TableCell>
             <TableCell className="text-[var(--label-secondary)] font-medium">{call.displayDuration || formatDuration(call.durationSeconds)}</TableCell>
-            <TableCell className="text-[var(--label-secondary)] text-xs">{call.country || 'Unknown'}</TableCell>
+            <TableCell className="text-[var(--label-secondary)] text-xs">
+                {call.leadTemp ? (
+                    <Badge 
+                        variant="outline" 
+                        className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 ${
+                            call.leadTemp.toUpperCase() === 'HOT'
+                                ? 'bg-red-500/10 text-red-500 border-red-500/20'
+                                : call.leadTemp.toUpperCase() === 'WARM'
+                                ? 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                                : call.leadTemp.toUpperCase() === 'COLD'
+                                ? 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                                : 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20'
+                        }`}
+                    >
+                        {call.leadTemp}
+                    </Badge>
+                ) : (
+                    <span className="text-[var(--label-tertiary)] font-medium">Unknown</span>
+                )}
+            </TableCell>
             <TableCell className="font-bold text-emerald-600">
                 <Popover>
                     <PopoverTrigger asChild>
@@ -208,7 +227,7 @@ export default function VoiceLogsPage() {
                 }
             }
 
-            const headers = ["Name", "Phone", "Type", "Duration (sec)", "Duration (min)", "Country", "Telephony Cost", "Total Cost", "Status", "Date"];
+            const headers = ["Name", "Phone", "Type", "Duration (sec)", "Duration (min)", "Temperature", "Telephony Cost", "Total Cost", "Status", "Date"];
 
             const csvData = calls.map(call => {
                 const tCost = allCosts[call.id];
@@ -227,7 +246,7 @@ export default function VoiceLogsPage() {
                     call.type,
                     call.durationSeconds || 0,
                     ((call.durationSeconds || 0) / 60).toFixed(2),
-                    call.country || "Unknown",
+                    call.leadTemp || "Unknown",
                     telephonyCostStr,
                     totalCostStr,
                     call.status,
@@ -411,7 +430,7 @@ export default function VoiceLogsPage() {
                             <TableHead className="font-bold text-[var(--label-primary)]">Phone</TableHead>
                             <TableHead className="font-bold text-[var(--label-primary)]">Type</TableHead>
                             <TableHead className="font-bold text-[var(--label-primary)]">Duration</TableHead>
-                            <TableHead className="font-bold text-[var(--label-primary)]">Country</TableHead>
+                            <TableHead className="font-bold text-[var(--label-primary)]">Temperature</TableHead>
                             <TableHead className="font-bold text-[var(--label-primary)]">Cost</TableHead>
                         </TableRow>
                     </TableHeader>

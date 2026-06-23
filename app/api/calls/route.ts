@@ -43,7 +43,44 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         });
 
         if (!rpcError && rpcData) {
-            return NextResponse.json(rpcData, {
+            let calls = rpcData.calls || [];
+            if (calls.length > 0) {
+                const vapiCallIds = calls.map((c: any) => c.id).filter((id: string) => id && id.includes('-'));
+                const integerIds = calls.map((c: any) => Number(c.id)).filter((id: number) => !isNaN(id));
+
+                const queryBuilder = supabaseAdmin
+                    .from('fello_activity')
+                    .select('vapi_call_id, id, lead_temp');
+
+                const orConditions = [];
+                if (vapiCallIds.length > 0) {
+                    orConditions.push(`vapi_call_id.in.(${vapiCallIds.map((id: string) => `"${id}"`).join(',')})`);
+                }
+                if (integerIds.length > 0) {
+                    orConditions.push(`id.in.(${integerIds.join(',')})`);
+                }
+
+                if (orConditions.length > 0) {
+                    const { data: temps } = await queryBuilder.or(orConditions.join(','));
+                    const tempMap = new Map();
+                    if (temps) {
+                        for (const t of temps) {
+                            if (t.vapi_call_id) tempMap.set(t.vapi_call_id, t.lead_temp);
+                            if (t.id) tempMap.set(String(t.id), t.lead_temp);
+                        }
+                    }
+                    calls = calls.map((c: any) => ({
+                        ...c,
+                        leadTemp: tempMap.get(c.id) || 'Unknown'
+                    }));
+                } else {
+                    calls = calls.map((c: any) => ({
+                        ...c,
+                        leadTemp: 'Unknown'
+                    }));
+                }
+            }
+            return NextResponse.json({ calls, total: rpcData.total || calls.length }, {
                 headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' },
             });
         }
@@ -159,12 +196,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
                 }
             }
 
-            // Country
-            const country = phoneStr.startsWith('+971') ? 'UAE'
-                : phoneStr.startsWith('+44') ? 'UK'
-                : phoneStr.startsWith('+1') ? 'US'
-                : 'Unknown';
-
             // Display fields
             const displayDate = row.created_at
                 ? new Date(row.created_at).toLocaleDateString('en-US', {
@@ -202,7 +233,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
                 vapiAccount: row.vapi_account || null,
                 assistantId: row.assistant_id || null,
                 phoneNumber: null,
-                country,
+                leadTemp: row.lead_temp || 'Unknown',
                 breakdown: { agent: row.cost_usd || 0, telephony: 0 },
                 leadId: row.lead_id,
                 workflowName: row.workflow_name,

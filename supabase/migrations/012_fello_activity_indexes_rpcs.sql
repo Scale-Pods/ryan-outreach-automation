@@ -181,13 +181,7 @@ BEGIN
                     fa.appointment_datetime                       AS "appointmentDatetime",
                     fa.note                                       AS "note",
                     fa.content                                    AS "content",
-                    -- Country derivation
-                    CASE
-                        WHEN fa.lead_phone LIKE '+971%' THEN 'UAE'
-                        WHEN fa.lead_phone LIKE '+44%'  THEN 'UK'
-                        WHEN fa.lead_phone LIKE '+1%'   THEN 'US'
-                        ELSE 'Unknown'
-                    END                                           AS "country",
+                    COALESCE(fa.lead_temp, 'Unknown')             AS "leadTemp",
                     -- Cost breakdown
                     json_build_object(
                         'agent',     COALESCE(fa.cost_usd, 0),
