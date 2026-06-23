@@ -78,7 +78,7 @@ interface DataContextType {
     twilioBalance: any;
     error: string | null;
     refreshLeads: (params?: { from?: Date; to?: Date; force?: boolean }) => Promise<void>;
-    refreshCalls: (params?: { from?: Date; to?: Date; provider?: string; force?: boolean; account?: string; status?: string; type?: string; phone?: string; region?: string; sort?: string; page?: number; limit?: number }) => Promise<void>;
+    refreshCalls: (params?: { from?: Date; to?: Date; provider?: string; force?: boolean; account?: string; status?: string; type?: string; phone?: string; leadTemp?: string; sort?: string; page?: number; limit?: number }) => Promise<void>;
     refreshBalances: () => Promise<void>;
     refreshVoiceMetrics: (params?: { from?: Date; to?: Date; force?: boolean }) => Promise<void>;
     refreshMasterMetrics: (params?: { from?: Date; to?: Date; force?: boolean }) => Promise<void>;
@@ -139,7 +139,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const fetchCalls = useCallback(async (params?: {
         from?: Date; to?: Date; provider?: string; force?: boolean;
         account?: string; status?: string; type?: string;
-        phone?: string; region?: string; sort?: string;
+        phone?: string; leadTemp?: string; sort?: string;
         page?: number; limit?: number;
     }) => {
         try {
@@ -159,7 +159,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             if (params?.status && params.status !== 'all') query.set('status', params.status);
             if (params?.type && params.type !== 'all') query.set('type', params.type);
             if (params?.phone) query.set('phone', params.phone);
-            if (params?.region && params.region !== 'all') query.set('region', params.region);
+            if (params?.leadTemp && params.leadTemp !== 'all') query.set('leadTemp', params.leadTemp);
             if (params?.sort) query.set('sort', params.sort);
             if (params?.page) query.set('page', String(params.page));
             if (params?.limit) query.set('limit', String(params.limit));

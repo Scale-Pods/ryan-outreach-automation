@@ -136,7 +136,7 @@ export default function VoiceLogsPage() {
     const [accountFilter, setAccountFilter] = useState("vapi");
     const [phoneFilter, setPhoneFilter] = useState("");
     const [sortBy, setSortBy] = useState("newest");
-    const [regionFilter, setRegionFilter] = useState("all");
+    const [tempFilter, setTempFilter] = useState("all");
     const [costModalOpen, setCostModalOpen] = useState(false);
     const [telephonyCosts, setTelephonyCosts] = useState<Record<string, number>>({});
     const [exporting, setExporting] = useState(false);
@@ -168,12 +168,12 @@ export default function VoiceLogsPage() {
             status: statusFilter,
             type: typeFilter,
             phone: debouncedPhoneFilter || undefined,
-            region: regionFilter,
+            leadTemp: tempFilter,
             sort: sortBy,
             page: currentPage,
             limit: itemsPerPage,
         });
-    }, [dateRange, accountFilter, statusFilter, typeFilter, debouncedPhoneFilter, regionFilter, sortBy, currentPage, refreshCalls]);
+    }, [dateRange, accountFilter, statusFilter, typeFilter, debouncedPhoneFilter, tempFilter, sortBy, currentPage, refreshCalls]);
 
     // Update calls directly from globalCalls (already server-processed)
     useEffect(() => {
@@ -190,7 +190,7 @@ export default function VoiceLogsPage() {
             status: statusFilter,
             type: typeFilter,
             phone: debouncedPhoneFilter || undefined,
-            region: regionFilter,
+            leadTemp: tempFilter,
             sort: sortBy,
             page: currentPage,
             limit: itemsPerPage,
@@ -399,13 +399,13 @@ export default function VoiceLogsPage() {
                         </SelectContent>
                     </Select>
 
-                    <Select value={regionFilter} onValueChange={setRegionFilter}>
-                        <SelectTrigger className="w-[140px] h-9"><SelectValue placeholder="Region" /></SelectTrigger>
+                    <Select value={tempFilter} onValueChange={setTempFilter}>
+                        <SelectTrigger className="w-[160px] h-9"><SelectValue placeholder="Temperature" /></SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All Regions</SelectItem>
-                            <SelectItem value="uae">UAE</SelectItem>
-                            <SelectItem value="us">US</SelectItem>
-                            <SelectItem value="uk">UK</SelectItem>
+                            <SelectItem value="all">All Temps</SelectItem>
+                            <SelectItem value="hot">Hot</SelectItem>
+                            <SelectItem value="warm">Warm</SelectItem>
+                            <SelectItem value="cold">Cold</SelectItem>
                         </SelectContent>
                     </Select>
 

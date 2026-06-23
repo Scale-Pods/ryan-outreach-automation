@@ -20,7 +20,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         const status = searchParams.get('status');
         const type = searchParams.get('type');
         const phone = searchParams.get('phone');
-        const region = searchParams.get('region');
+        const leadTemp = searchParams.get('leadTemp');
         const sort = searchParams.get('sort');
         const page = parseInt(searchParams.get('page') || '1');
         const limit = parseInt(searchParams.get('limit') || '10');
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             p_status: status || 'all',
             p_type: type || 'all',
             p_phone: phone || null,
-            p_region: region || 'all',
+            p_lead_temp: leadTemp || 'all',
             p_sort: sort || 'newest',
             p_page: page,
             p_limit: limit,
@@ -122,11 +122,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             query = query.or(`lead_name.ilike.%${phone}%,lead_phone.ilike.%${cleanPhone}%`);
         }
 
-        if (region && region !== 'all') {
-            const ids = region === 'uae' ? UAE_IDS : region === 'us' ? US_IDS : region === 'uk' ? UK_IDS : [];
-            if (ids.length > 0) {
-                query = query.in('assistant_id', ids);
-            }
+        if (leadTemp && leadTemp !== 'all') {
+            query = query.ilike('lead_temp', leadTemp);
         }
 
         // Sort
@@ -138,12 +135,18 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         }
 
         // Count total before pagination
-        const { count: totalCount } = await supabaseAdmin
+        let countQuery = supabaseAdmin
             .from('fello_activity')
             .select('*', { count: 'exact', head: true })
             .eq('channel', 'voice')
             .gte('created_at', fromDate)
             .lte('created_at', toDate);
+
+        if (leadTemp && leadTemp !== 'all') {
+            countQuery = countQuery.ilike('lead_temp', leadTemp);
+        }
+
+        const { count: totalCount } = await countQuery;
 
         // Paginate
         const offset = (page - 1) * limit;

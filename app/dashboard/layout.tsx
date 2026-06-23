@@ -160,7 +160,6 @@ function DashboardContent({
                 { title: "Email Marketing", href: "/dashboard/email", icon: Mail },
                 { title: "WhatsApp CRM", href: "/dashboard/whatsapp", icon: MessageCircle },
                 { title: "Voice Agent", href: "/dashboard/voice", icon: Mic },
-                { title: "Leads", href: "/dashboard/leads", icon: Users },
                 { title: "Credentials", href: "/dashboard/credentials", icon: Key },
             ]
         },

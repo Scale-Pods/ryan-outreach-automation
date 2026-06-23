@@ -81,6 +81,8 @@ CREATE INDEX IF NOT EXISTS idx_ml_name
 --    Returns: JSON { calls: [...], total: N }
 -- =============================================================================
 
+DROP FUNCTION IF EXISTS get_voice_calls(timestamptz, timestamptz, text, text, text, text, text, text, int, int);
+
 CREATE OR REPLACE FUNCTION get_voice_calls(
     p_from       timestamptz,
     p_to         timestamptz,
@@ -88,7 +90,7 @@ CREATE OR REPLACE FUNCTION get_voice_calls(
     p_status     text DEFAULT 'all',
     p_type       text DEFAULT 'all',
     p_phone      text DEFAULT NULL,
-    p_region     text DEFAULT 'all',
+    p_lead_temp  text DEFAULT 'all',
     p_sort       text DEFAULT 'newest',
     p_page       int  DEFAULT 1,
     p_limit      int  DEFAULT 10
@@ -131,12 +133,10 @@ BEGIN
           OR fa.lead_name ILIKE '%' || p_phone || '%'
           OR REPLACE(fa.lead_phone, '+', '') ILIKE '%' || REPLACE(p_phone, '+', '') || '%'
       )
-      -- Region filter
+      -- Temperature filter
       AND (
-          p_region = 'all'
-          OR (p_region = 'uae' AND fa.assistant_id IN ('70f05e16-18f3-4f6e-964a-f47b299c6c1d', '9ac979c3-a0b3-4af6-bb0d-07ddf9c0d1cd'))
-          OR (p_region = 'us' AND fa.assistant_id = 'b35e3032-7865-4913-ba22-a913b5d4117b')
-          OR (p_region = 'uk' AND fa.assistant_id = '918c25eb-9882-452e-86df-b4851d464852')
+          p_lead_temp = 'all'
+          OR LOWER(fa.lead_temp) = LOWER(p_lead_temp)
       );
 
     -- ── Return paginated results with name resolution ────────────────────────
@@ -239,10 +239,8 @@ BEGIN
                       OR REPLACE(fa.lead_phone, '+', '') ILIKE '%' || REPLACE(p_phone, '+', '') || '%'
                   )
                   AND (
-                      p_region = 'all'
-                      OR (p_region = 'uae' AND fa.assistant_id IN ('70f05e16-18f3-4f6e-964a-f47b299c6c1d', '9ac979c3-a0b3-4af6-bb0d-07ddf9c0d1cd'))
-                      OR (p_region = 'us' AND fa.assistant_id = 'b35e3032-7865-4913-ba22-a913b5d4117b')
-                      OR (p_region = 'uk' AND fa.assistant_id = '918c25eb-9882-452e-86df-b4851d464852')
+                      p_lead_temp = 'all'
+                      OR LOWER(fa.lead_temp) = LOWER(p_lead_temp)
                   )
                 ORDER BY
                     CASE WHEN p_sort = 'newest'  THEN fa.created_at END DESC NULLS LAST,

@@ -87,8 +87,8 @@ export default function CredentialsPage() {
                     iconBg="bg-[rgba(52,199,89,0.08)]"
                 >
                     <div className="grid gap-6 md:grid-cols-2">
-                        <ReadOnlyField label="WhatsApp Account 1 " value="+971 52 563 3027" />
-                        <ReadOnlyField label="WhatsApp Account 2" value="+971 52 563 2921" />
+                        <ReadOnlyField label="WhatsApp Account 1 " value="" />
+                        <ReadOnlyField label="WhatsApp Account 2" value="" />
                     </div>
                 </CredentialSection>
 
@@ -103,13 +103,13 @@ export default function CredentialsPage() {
                     <div className="grid gap-8 md:grid-cols-2">
                         {/* UK Section */}
                         <div className="space-y-4 bg-[var(--bg-app)]/50 p-4 rounded-xl border border-[var(--separator)]">
-                            <ReadOnlyField label="Twilio (UK)" value="+44 (7462) 179309" />
+                            <ReadOnlyField label="Twilio (UK)" value="+1 (970) 236 7780" />
                             <ReadOnlyField label="Agent ID" value="918c25eb-9882-452e-86df-b4851d464852" />
                         </div>
 
                         {/* US Section */}
                         <div className="space-y-4 bg-[var(--bg-app)]/50 p-4 rounded-xl border border-[var(--separator)]">
-                            <ReadOnlyField label="Twilio (US)" value="+1 (478) 215 9151" />
+                            <ReadOnlyField label="Twilio (US)" value="+1 (239) 306 7557" />
                             <ReadOnlyField label="Agent ID" value="b35e3032-7865-4913-ba22-a913b5d4117b" />
                         </div>
 
