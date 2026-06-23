@@ -153,36 +153,36 @@ export default function ReceivedEmailsPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Received Emails</h1>
-                    <p className="text-slate-500">
+                    <h1 className="text-2xl font-bold text-[var(--label-primary)]">Received Emails</h1>
+                    <p className="text-[var(--label-secondary)]">
                         View all received email replies from your campaigns
                     </p>
                 </div>
             </div>
 
             {/* Summary Card */}
-            <Card className="bg-white border-slate-200 shadow-sm">
+            <Card className="bg-[var(--glass-fill)] border-[var(--separator)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)]">
                 <CardContent className="p-6 flex items-center justify-between">
                     <div>
-                        <h3 className="text-2xl font-bold text-slate-900">
+                        <h3 className="text-2xl font-bold text-[var(--label-primary)]">
                             {loading ? "..." : filteredReplies.length} replies received
                         </h3>
-                        <p className="text-sm font-medium text-slate-500 mt-1">Total Replies</p>
+                        <p className="text-sm font-medium text-[var(--label-secondary)] mt-1">Total Replies</p>
                     </div>
-                    <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                    <div className="p-3 bg-[rgba(52,199,89,0.08)] text-emerald-600 rounded-xl">
                         <Mail className="h-6 w-6" />
                     </div>
                 </CardContent>
             </Card>
 
             {/* Search & Filters */}
-            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
+            <div className="bg-[var(--glass-fill)] p-4 rounded-xl border border-[var(--separator)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] space-y-4">
                 <div className="flex flex-col md:flex-row gap-4">
                     <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--label-tertiary)]" />
                         <Input
                             placeholder="Search by sender or content..."
-                            className="pl-10 bg-slate-50 border-slate-200"
+                            className="pl-10 bg-[var(--bg-app)] border-[var(--separator)]"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
@@ -219,7 +219,7 @@ export default function ReceivedEmailsPage() {
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="text-slate-500 h-9 text-xs ml-auto bg-slate-100 hover:bg-slate-200"
+                        className="text-[var(--label-secondary)] h-9 text-xs ml-auto bg-[var(--fill-quaternary)] hover:bg-[var(--fill-tertiary)]"
                         onClick={() => {
                             setSearchQuery("");
                             setDateRange(undefined);
@@ -239,7 +239,7 @@ export default function ReceivedEmailsPage() {
                         <EmailReplyCard key={reply.id} reply={reply} />
                     ))}
                 {!loading && filteredReplies.length === 0 && (
-                    <div className="flex flex-col items-center justify-center h-64 text-slate-400 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                    <div className="flex flex-col items-center justify-center h-64 text-[var(--label-tertiary)] border border-dashed border-[var(--separator)] rounded-xl bg-[var(--bg-app)]/50">
                         <Mail className="h-8 w-8 mb-2 opacity-50" />
                         <p>No replies found.</p>
                     </div>
@@ -256,18 +256,18 @@ function EmailReplyCard({ reply }: { reply: any }) {
         <Collapsible
             open={isOpen}
             onOpenChange={setIsOpen}
-            className="bg-white border border-slate-200 rounded-xl shadow-sm transition-all hover:shadow-md"
+            className="bg-[var(--glass-fill)] border border-[var(--separator)] rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] transition-all hover:shadow-[var(--glass-shadow)]"
         >
             <CollapsibleTrigger asChild>
                 <div className="p-6 flex items-center gap-4 cursor-pointer group">
-                    <div className="h-12 w-12 shrink-0 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center border border-emerald-100">
+                    <div className="h-12 w-12 shrink-0 bg-[rgba(52,199,89,0.08)] text-emerald-600 rounded-full flex items-center justify-center border border-emerald-100">
                         <Reply className="h-5 w-5" />
                     </div>
 
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
                             <div className="flex items-center gap-2 flex-wrap">
-                                <h4 className="text-lg font-bold text-slate-900 truncate">
+                                <h4 className="text-lg font-bold text-[var(--label-primary)] truncate">
                                     {reply.senderName}
                                 </h4>
                                 {reply.loop && (
@@ -298,17 +298,17 @@ function EmailReplyCard({ reply }: { reply: any }) {
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Mail className="h-3 w-3 text-slate-400" />
-                            <p className="text-xs text-slate-500 font-medium truncate">{reply.sender}</p>
+                            <Mail className="h-3 w-3 text-[var(--label-tertiary)]" />
+                            <p className="text-xs text-[var(--label-secondary)] font-medium truncate">{reply.sender}</p>
                         </div>
                         {!isOpen && (
-                            <p className="text-sm text-slate-400 truncate max-w-md mt-1">
+                            <p className="text-sm text-[var(--label-tertiary)] truncate max-w-md mt-1">
                                 {reply.content.substring(0, 80)}...
                             </p>
                         )}
                     </div>
 
-                    <div className="shrink-0 p-2 rounded-full text-slate-400 group-hover:bg-slate-50 group-hover:text-slate-600 transition-colors">
+                    <div className="shrink-0 p-2 rounded-full text-[var(--label-tertiary)] group-hover:bg-[var(--bg-app)] group-hover:text-[var(--label-secondary)] transition-colors">
                         {isOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                     </div>
                 </div>
@@ -316,8 +316,8 @@ function EmailReplyCard({ reply }: { reply: any }) {
 
             <CollapsibleContent>
                 <div className="px-6 pb-6 pt-0">
-                    <div className="pl-[64px] space-y-4 border-t border-slate-100 pt-4">
-                        <div className="p-4 bg-slate-50 rounded-lg border border-slate-100 text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+                    <div className="pl-[64px] space-y-4 border-t border-[var(--separator)] pt-4">
+                        <div className="p-4 bg-[var(--bg-app)] rounded-lg border border-[var(--separator)] text-sm text-[var(--label-primary)] whitespace-pre-wrap leading-relaxed">
                             {reply.content}
                         </div>
                     </div>

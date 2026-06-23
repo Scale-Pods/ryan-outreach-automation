@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Mail, MessageCircle, Mic, Settings, LogOut, ChevronDown, Wallet, BarChart2, Users, Send, Key, ExternalLink, Smartphone } from "lucide-react";
+import { LayoutDashboard, Mail, MessageCircle, Mic, LogOut, ChevronDown, Wallet, BarChart2, Users, Send, Key, ExternalLink, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import {
@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DataProvider, useData } from "@/context/DataContext";
-import { MaqsamBalanceDetail } from "@/components/dashboard/maqsam-balance-detail";
 import { calculateDuration } from "@/lib/utils";
 import { useMemo } from "react";
 import { logout } from "@/app/actions/auth";
@@ -42,14 +41,12 @@ const sidebarItems = [
     },
 ];
 
-function WalletModal({ isOpen, onClose, type, details, calls }: { isOpen: boolean, onClose: () => void, type: 'vapi' | 'elevenlabs' | 'maqsam' | 'twilio', details?: any, calls?: any[] }) {
-    const { voiceBalance, maqsamBalance } = useData();
+function WalletModal({ isOpen, onClose, type, details, calls }: { isOpen: boolean, onClose: () => void, type: 'vapi' | 'twilio', details?: any, calls?: any[] }) {
+    const { voiceBalance } = useData();
 
     const title = (() => {
         switch (type) {
             case 'vapi': return 'Vapi Wallet';
-            case 'elevenlabs': return 'ElevenLabs Credits';
-            case 'maqsam': return 'Maqsam Telephony';
             case 'twilio': return 'Twilio Account';
             default: return 'Balance Detail';
         }
@@ -58,8 +55,6 @@ function WalletModal({ isOpen, onClose, type, details, calls }: { isOpen: boolea
     const icon = (() => {
         switch (type) {
             case 'vapi': return <Mic className="h-5 w-5 text-blue-600" />;
-            case 'elevenlabs': return <Settings className="h-5 w-5 text-amber-600" />;
-            case 'maqsam': return <Wallet className="h-5 w-5 text-cyan-600" />;
             case 'twilio': return <Smartphone className="h-5 w-5 text-rose-600" />;
             default: return <Wallet className="h-5 w-5" />;
         }
@@ -71,30 +66,11 @@ function WalletModal({ isOpen, onClose, type, details, calls }: { isOpen: boolea
         return calls.filter((c: any) => c.source === 'vapi').reduce((acc: number, call: any) => acc + (call.breakdown?.agent || 0), 0);
     }, [calls]);
 
-    const maqsamUsedCost = useMemo(() => {
-        if (!calls || !Array.isArray(calls)) return 0;
-        return calls.filter((c: any) => {
-            const isMaqsam = c.source === 'maqsam';
-            const provisionedNum = String(c.phoneNumber || "");
-            const isSpecificMaqsamNum = provisionedNum.replace(/\D/g, '') === '97148714150';
-
-            // Detection based on customer number prefix (legacy)
-            const phoneStr = String(c.phone || c.customer_number || "");
-            const isUAE = phoneStr.startsWith('+971') || phoneStr.startsWith('971');
-
-            return isMaqsam || isUAE || isSpecificMaqsamNum;
-        }).reduce((acc: number, call: any) => {
-            // For Maqsam/Telephony, specifically sum the telephony-only portion
-            return acc + (call.breakdown?.telephony || call.costValue || 0);
-        }, 0);
-    }, [calls]);
-
     const vapiDetails = voiceBalance?.vapi;
-    const elDetails = voiceBalance?.elevenlabs || (voiceBalance?.character_limit ? voiceBalance : null);
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className={type === 'maqsam' ? "sm:max-w-[550px]" : "sm:max-w-[420px]"}>
+            <DialogContent className="sm:max-w-[420px]">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         {icon}
@@ -104,8 +80,8 @@ function WalletModal({ isOpen, onClose, type, details, calls }: { isOpen: boolea
                 <div className="py-2 space-y-6">
                     {type === 'vapi' && (
                         <div className="bg-blue-50/50 rounded-xl p-6 border border-blue-100 flex flex-col gap-4">
-                            <div className="flex flex-col text-center bg-white p-8 rounded-lg border border-blue-100 shadow-sm">
-                                <span className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">Vapi Credits Used</span>
+                            <div className="flex flex-col text-center bg-[var(--glass-fill)] backdrop-blur-[48px] shadow-[var(--glass-shadow)] p-8 rounded-lg border border-[var(--separator)]">
+                                <span className="text-sm font-bold text-[var(--label-secondary)] uppercase tracking-[0.2em] mb-2">Vapi Credits Used</span>
                                 <span className="text-5xl font-black text-blue-600">
                                     ${vapiAgentUsed.toFixed(2)}
                                 </span>
@@ -117,54 +93,26 @@ function WalletModal({ isOpen, onClose, type, details, calls }: { isOpen: boolea
                         </div>
                     )}
 
-                    {type === 'elevenlabs' && (
-                        <div className="bg-amber-50/50 rounded-xl p-5 border border-amber-100 flex flex-col gap-4">
-                            <div className="flex flex-col text-center bg-white p-6 rounded-lg border border-amber-100 shadow-sm">
-                                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Characters Left</span>
-                                <span className="text-4xl font-black text-amber-600">
-                                    {elDetails ? ((elDetails.character_limit - elDetails.character_count) || 0).toLocaleString() : "---"}
-                                </span>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="flex flex-col text-center bg-white p-3 rounded-lg border border-amber-100 shadow-sm">
-                                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Total Character</span>
-                                    <span className="text-lg font-bold text-slate-700">
-                                        {(elDetails?.character_limit || 0).toLocaleString()}
-                                    </span>
-                                </div>
-                                <div className="flex flex-col text-center bg-white p-3 rounded-lg border border-amber-100 shadow-sm">
-                                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Used Character</span>
-                                    <span className="text-lg font-bold text-slate-500">
-                                        {(elDetails?.character_count || 0).toLocaleString()}
-                                    </span>
-                                </div>
-                            </div>
-                            <Button className="bg-amber-600 hover:bg-amber-700 text-white gap-2" onClick={() => window.open('https://elevenlabs.io/app/subscription', '_blank')}>
-                                <ExternalLink className="h-4 w-4" />Add Funds to Elevenlabs
-                            </Button>
-                        </div>
-                    )}
-
                     {type === 'twilio' && (
                         <div className="bg-rose-50/50 rounded-xl p-5 border border-rose-100 flex flex-col gap-4">
                             <div className="grid grid-cols-1 gap-4">
-                                <div className="flex flex-col text-center bg-white p-6 rounded-lg border border-rose-100 shadow-sm">
-                                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Remaining Balance</span>
+                                <div className="flex flex-col text-center bg-[var(--glass-fill)] backdrop-blur-[48px] shadow-[var(--glass-shadow)] p-6 rounded-lg border border-[var(--separator)]">
+                                    <span className="text-xs font-semibold text-[var(--label-secondary)] uppercase tracking-wider mb-1">Remaining Balance</span>
                                     <span className="text-4xl font-black text-rose-600">
                                         {typeof details?.balance === 'number' ? `$${details.balance.toFixed(2)}` : "---"}
                                     </span>
-                                    <span className="text-[10px] text-slate-400 mt-2 font-mono uppercase">{details?.account_sid || "Account SID Loading..."}</span>
+                                    <span className="text-[10px] text-[var(--label-tertiary)] mt-2 font-mono uppercase">{details?.account_sid || "Account SID Loading..."}</span>
                                 </div>
                                 <div className="grid grid-cols-2 gap-3">
-                                    <div className="flex flex-col text-center bg-white p-3 rounded-lg border border-rose-100 shadow-sm">
-                                        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Total Pay-As-You-Go</span>
-                                        <span className="text-lg font-bold text-slate-700">
+                                    <div className="flex flex-col text-center bg-[var(--glass-fill)] backdrop-blur-[48px] shadow-[var(--glass-shadow)] p-3 rounded-lg border border-[var(--separator)]">
+                                        <span className="text-[10px] font-semibold text-[var(--label-secondary)] uppercase tracking-wider mb-1">Total Pay-As-You-Go</span>
+                                        <span className="text-lg font-bold text-[var(--label-primary)]">
                                             {typeof details?.total_recharge === 'number' ? `$${details.total_recharge.toFixed(2)}` : "---"}
                                         </span>
                                     </div>
-                                    <div className="flex flex-col text-center bg-white p-3 rounded-lg border border-rose-100 shadow-sm">
-                                        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Used to Date</span>
-                                        <span className="text-lg font-bold text-slate-500">
+                                    <div className="flex flex-col text-center bg-[var(--glass-fill)] backdrop-blur-[48px] shadow-[var(--glass-shadow)] p-3 rounded-lg border border-[var(--separator)]">
+                                        <span className="text-[10px] font-semibold text-[var(--label-secondary)] uppercase tracking-wider mb-1">Used to Date</span>
+                                        <span className="text-lg font-bold text-[var(--label-secondary)]">
                                             {typeof details?.used === 'number' ? `$${details.used.toFixed(2)}` : "---"}
                                         </span>
                                     </div>
@@ -173,12 +121,6 @@ function WalletModal({ isOpen, onClose, type, details, calls }: { isOpen: boolea
                             <Button className="bg-rose-600 hover:bg-rose-700 text-white gap-2" onClick={() => window.open('https://console.twilio.com', '_blank')}>
                                 <ExternalLink className="h-4 w-4" /> Add Funds to Twilio 
                             </Button>
-                        </div>
-                    )}
-
-                    {type === 'maqsam' && (
-                        <div className="space-y-4">
-                            <MaqsamBalanceDetail initialBalance={maqsamBalance} />
                         </div>
                     )}
                 </div>
@@ -260,7 +202,6 @@ function DashboardContent({
     const {
         calls,
         voiceBalance,
-        maqsamBalance,
         twilioBalance,
         loadingBalances,
         loadingCalls
@@ -275,25 +216,7 @@ function DashboardContent({
         return calls.filter((c: any) => c.source === 'vapi').reduce((acc: number, call: any) => acc + (call.breakdown?.agent || 0), 0);
     }, [calls, voiceBalance]);
 
-    const maqsamUsedCost = useMemo(() => {
-        if (!calls || !Array.isArray(calls)) return 0;
-        return calls.filter((c: any) => {
-            const isMaqsam = c.source === 'maqsam';
-            const provisionedNum = String(c.phoneNumber || "");
-            const isSpecificMaqsamNum = provisionedNum.replace(/\D/g, '') === '97148714150';
-
-            // Detection based on customer number prefix (legacy)
-            const phoneStr = String(c.phone || c.customer_number || "");
-            const isUAE = phoneStr.startsWith('+971') || phoneStr.startsWith('971');
-
-            return isMaqsam || isUAE || isSpecificMaqsamNum;
-        }).reduce((acc: number, call: any) => {
-            // For Maqsam/Telephony, specifically sum the telephony-only portion
-            return acc + (call.breakdown?.telephony || call.costValue || 0);
-        }, 0);
-    }, [calls]);
-
-    const [walletModal, setWalletModal] = useState<{ isOpen: boolean, type: 'vapi' | 'elevenlabs' | 'maqsam' | 'twilio' }>({
+    const [walletModal, setWalletModal] = useState<{ isOpen: boolean, type: 'vapi' | 'twilio' }>({
         isOpen: false,
         type: 'vapi'
     });
@@ -305,15 +228,15 @@ function DashboardContent({
         }
 
         return (
-            <div className="flex h-screen overflow-hidden bg-zinc-50 text-slate-900">
+            <div className="flex h-screen overflow-hidden bg-[var(--bg-app)] text-[var(--label-primary)]">
                 {/* Sidebar */}
-                <aside className="hidden w-64 flex-col bg-white border-r border-zinc-200 md:flex font-sans">
+                <aside className="hidden w-64 flex-col bg-[var(--glass-fill)] backdrop-blur-[48px] shadow-[var(--glass-shadow)] border-r border-[var(--separator)] md:flex font-sans">
                     {/* Logo Section */}
                     <div className="p-6 pb-4 flex justify-center">
                         <Link href="/" className="relative w-48 h-16 block">
                             <Image
-                                src="https://ryansautomation.com/logoheader.webp"
-                                alt="Ryan's Automation Logo"
+                                src="https://www.napleshomes.com/inc/skins/custom/img/nh-final-white.png"
+                                alt="Naples Homes Logo"
                                 fill
                                 className="object-contain"
                                 priority
@@ -327,7 +250,7 @@ function DashboardContent({
                                 <Button
                                     suppressHydrationWarning
                                     variant="outline"
-                                    className="w-full justify-between bg-white border-slate-200 text-slate-700 hover:bg-slate-50 h-10 shadow-sm"
+                                    className="w-full justify-between bg-[var(--glass-fill)] backdrop-blur-[48px] border-[var(--separator)] text-[var(--label-primary)] hover:bg-[var(--glass-fill-hover)] h-10 shadow-[var(--glass-shadow)]"
                                 >
                                     <span className="flex items-center gap-2">
                                         <activeConfig.icon className="h-4 w-4 text-blue-600" />
@@ -354,7 +277,7 @@ function DashboardContent({
                     </div>
 
                     <div className="px-4 py-2">
-                        <div className="h-[1px] w-full bg-zinc-100"></div>
+                        <div className="h-[1px] w-full bg-[var(--separator)]"></div>
                     </div>
 
                     <nav className="flex-1 overflow-auto px-4 space-y-2">
@@ -365,11 +288,11 @@ function DashboardContent({
                                     key={index}
                                     href={item.href}
                                     className={`group flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-medium transition-all ${isActive
-                                        ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md shadow-blue-500/20"
-                                        : "text-slate-500 hover:text-slate-900 hover:bg-zinc-100"
+                                        ? "bg-[var(--blue)] text-white shadow-[var(--glass-shadow)]"
+                                        : "text-[var(--label-secondary)] hover:text-[var(--label-primary)] hover:bg-[var(--glass-fill-hover)]"
                                         }`}
                                 >
-                                    <item.icon className={`h-5 w-5 ${isActive ? "text-white" : "text-slate-400 group-hover:text-slate-600 transition-colors"}`} />
+                                    <item.icon className={`h-5 w-5 ${isActive ? "text-white" : "text-[var(--label-tertiary)] group-hover:text-[var(--label-secondary)] transition-colors"}`} />
                                     {item.title}
                                 </Link>
                             );
@@ -378,7 +301,7 @@ function DashboardContent({
                     <div className="mt-auto p-4 mb-4 space-y-3">
                         <Button
                             variant="ghost"
-                            className="w-full justify-start gap-2 text-slate-500 hover:text-slate-900 hover:bg-zinc-100"
+                            className="w-full justify-start gap-2 text-[var(--label-secondary)] hover:text-[var(--label-primary)] hover:bg-[var(--glass-fill-hover)]"
                             onClick={async () => {
                                 await logout();
                                 router.push('/');
@@ -393,10 +316,13 @@ function DashboardContent({
 
                 {/* Main Content */}
                 <div className="flex flex-1 flex-col overflow-hidden">
-                    <header className="flex h-14 items-center gap-4 border-b border-zinc-200 bg-white px-6 lg:h-[60px]">
+                    <header className="flex h-14 items-center gap-4 border-b border-[var(--separator)] bg-[var(--bg-layer1)]/80 backdrop-blur-[40px] px-6 lg:h-[60px]">
                         <div className="flex flex-1 items-center justify-between">
-                            <h1 className="text-lg font-semibold text-slate-900">
+                            <h1 className="text-lg font-semibold text-[var(--label-primary)] flex items-center">
                                 {pathname === "/dashboard" ? "" : (activeConfig.items.find((item: any) => item.href === pathname)?.title || activeConfig.label)}
+                                {currentContext === "master" && (
+                                    <span style={{ fontSize: 10, background: "rgba(0, 122, 255, 0.08)", color: "var(--blue)", border: "1px solid rgba(0, 122, 255, 0.15)", padding: "2px 8px", borderRadius: 12, fontWeight: 600, marginLeft: 8 }}>Powered by ScalePods</span>
+                                )}
                             </h1>
 
                             {currentContext === "master" && (
@@ -404,7 +330,7 @@ function DashboardContent({
                                     {/* Vapi Balance Button */}
                                     <Button
                                         variant="outline"
-                                        className="h-10 px-3 border-blue-200 bg-blue-50/30 hover:bg-blue-50 text-blue-700 gap-2 flex items-center shadow-sm"
+                                        className="h-10 px-3 border-blue-200 bg-[var(--glass-fill)] backdrop-blur-[48px] hover:bg-[var(--glass-fill-hover)] text-blue-700 gap-2 flex items-center shadow-[var(--glass-shadow)]"
                                         onClick={() => setWalletModal({ isOpen: true, type: 'vapi' })}
                                     >
                                         <Mic className="h-3.5 w-3.5" />
@@ -416,25 +342,10 @@ function DashboardContent({
                                         </div>
                                     </Button>
 
-                                    {/* 11Labs Button */}
-                                    <Button
-                                        variant="outline"
-                                        className="h-10 px-3 border-amber-200 bg-amber-50/30 hover:bg-amber-50 text-amber-700 gap-2 flex items-center shadow-sm"
-                                        onClick={() => setWalletModal({ isOpen: true, type: 'elevenlabs' })}
-                                    >
-                                        <Settings className="h-3.5 w-3.5" />
-                                        <div className="flex flex-col items-start leading-[1.1]">
-                                            <span className="text-[9px] font-bold uppercase opacity-70">11Labs</span>
-                                            <span className="text-xs font-bold">
-                                                {loadingBalances ? "..." : (voiceBalance ? ((voiceBalance.elevenlabs?.character_limit || voiceBalance.character_limit || 0) - (voiceBalance.elevenlabs?.character_count || voiceBalance.character_count || 0)).toLocaleString() : "N/A")}
-                                            </span>
-                                        </div>
-                                    </Button>
-
                                     {/* Twilio Button */}
                                     <Button
                                         variant="outline"
-                                        className="h-10 px-3 border-rose-200 bg-rose-50/30 hover:bg-rose-50 text-rose-700 gap-2 flex items-center shadow-sm"
+                                        className="h-10 px-3 border-rose-200 bg-[var(--glass-fill)] backdrop-blur-[48px] hover:bg-[var(--glass-fill-hover)] text-rose-700 gap-2 flex items-center shadow-[var(--glass-shadow)]"
                                         onClick={() => setWalletModal({ isOpen: true, type: 'twilio' })}
                                     >
                                         <Smartphone className="h-3.5 w-3.5" />
@@ -446,21 +357,6 @@ function DashboardContent({
                                         </div>
                                     </Button>
 
-
-                                    {/* Maqsam Button */}
-                                    <Button
-                                        variant="outline"
-                                        className="h-10 px-3 border-cyan-200 bg-cyan-50/30 hover:bg-cyan-50 text-cyan-700 gap-2 flex items-center shadow-sm"
-                                        onClick={() => setWalletModal({ isOpen: true, type: 'maqsam' })}
-                                    >
-                                        <Wallet className="h-3.5 w-3.5" />
-                                        <div className="flex flex-col items-start leading-[1.1]">
-                                            <span className="text-[9px] font-bold uppercase opacity-70">Maqsam Used</span>
-                                            <span className="text-xs font-bold">
-                                                {loadingCalls ? "..." : `$${maqsamUsedCost.toFixed(2)}`}
-                                            </span>
-                                        </div>
-                                    </Button>
                                 </div>
                             )}
                         </div>
@@ -472,9 +368,7 @@ function DashboardContent({
                         details={(() => {
                             switch (walletModal.type) {
                                 case 'vapi': return voiceBalance?.vapi;
-                                case 'elevenlabs': return voiceBalance?.elevenlabs || (voiceBalance?.character_limit ? voiceBalance : null);
                                 case 'twilio': return twilioBalance;
-                                case 'maqsam': return maqsamBalance;
                                 default: return null;
                             }
                         })()}
@@ -482,7 +376,7 @@ function DashboardContent({
                         onClose={() => setWalletModal({ ...walletModal, isOpen: false })}
                     />
 
-                    <main className="flex-1 overflow-auto bg-zinc-50 p-6 relative">
+                    <main className="flex-1 overflow-auto bg-[var(--bg-app)] p-6 relative">
                         {children}
                     </main>
                 </div>

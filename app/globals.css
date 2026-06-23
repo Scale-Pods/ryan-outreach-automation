@@ -1,47 +1,360 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   APPLE LIQUID GLASS MORPHISM — CSS CUSTOM PROPERTIES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* ── Light Theme: Frosted Daylight ─────────────────────────────────────── */
+    --bg-app:    #F2F2F7;
+    --bg-layer1: #FFFFFF;
+    --bg-layer2: #F2F2F7;
+    --bg-layer3: #E5E5EA;
+
+    --fill-primary:    rgba(120,120,128,0.36);
+    --fill-secondary:  rgba(120,120,128,0.32);
+    --fill-tertiary:   rgba(118,118,128,0.24);
+    --fill-quaternary: rgba(116,116,128,0.18);
+
+    --glass-fill:       rgba(255,255,255,0.72);
+    --glass-fill-hover: rgba(255,255,255,0.86);
+    --glass-blur:       blur(40px) saturate(180%);
+    --glass-border:     rgba(255,255,255,0.90);
+    --glass-shadow:     0 1px 2px rgba(0,0,0,0.04),
+                        0 4px 8px rgba(0,0,0,0.06),
+                        0 16px 32px rgba(0,0,0,0.08),
+                        inset 0 1px 0 rgba(255,255,255,1.0);
+    --glass-shadow-hover: 0 2px 4px rgba(0,0,0,0.06),
+                          0 8px 16px rgba(0,0,0,0.08),
+                          0 24px 48px rgba(0,0,0,0.12),
+                          inset 0 1px 0 rgba(255,255,255,1.0);
+
+    --label-primary:    rgba(0,0,0,0.88);
+    --label-secondary:  rgba(60,60,67,0.60);
+    --label-tertiary:   rgba(60,60,67,0.30);
+    --label-quaternary: rgba(60,60,67,0.18);
+
+    --separator:        rgba(60,60,67,0.29);
+    --separator-opaque: #C6C6C8;
+
+    /* Apple System Colours (Light) */
+    --blue:   #007AFF;  --green:  #34C759;  --indigo: #5856D6;
+    --orange: #FF9500;  --pink:   #FF2D55;  --purple: #AF52DE;
+    --red:    #FF3B30;  --teal:   #5AC8FA;  --yellow: #FFCC00;
+
+    /* shadcn/ui HSL bridge — map Apple system colours to HSL for backward compat */
+    --background: 230 100% 97%;
+    --foreground: 230 15% 12%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 230 15% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
+    --popover-foreground: 230 15% 12%;
+    --primary: 215 100% 24%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
+    --secondary: 230 10% 96%;
+    --secondary-foreground: 230 15% 12%;
+    --muted: 230 10% 96%;
+    --muted-foreground: 220 9% 46%;
+    --accent: 230 10% 96%;
+    --accent-foreground: 230 15% 12%;
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 215 100% 24%;
+    --radius: 14px;
+
+    /* Chart colours */
+    --chart-1: 215 100% 50%;
+    --chart-2: 142 71% 45%;
+    --chart-3: 270 60% 60%;
+    --chart-4: 25 95% 53%;
+    --chart-5: 180 70% 50%;
 }
+
+/* ── Dark Theme: Midnight Glass ──────────────────────────────────────────── */
+.dark {
+    --bg-app:    #1C1C1E;
+    --bg-layer1: #2C2C2E;
+    --bg-layer2: #3A3A3C;
+    --bg-layer3: #48484A;
+
+    --fill-primary:    rgba(120,120,128,0.36);
+    --fill-secondary:  rgba(120,120,128,0.32);
+    --fill-tertiary:   rgba(118,118,128,0.24);
+    --fill-quaternary: rgba(116,116,128,0.18);
+
+    --glass-fill:       rgba(44,44,46,0.72);
+    --glass-fill-hover: rgba(58,58,60,0.80);
+    --glass-blur:       blur(40px) saturate(180%);
+    --glass-border:     rgba(255,255,255,0.08);
+    --glass-shadow:     0 2px 4px rgba(0,0,0,0.12),
+                        0 8px 16px rgba(0,0,0,0.18),
+                        0 24px 48px rgba(0,0,0,0.24),
+                        inset 0 1px 0 rgba(255,255,255,0.08);
+    --glass-shadow-hover: 0 4px 8px rgba(0,0,0,0.14),
+                          0 16px 32px rgba(0,0,0,0.22),
+                          0 40px 72px rgba(0,0,0,0.28),
+                          inset 0 1px 0 rgba(255,255,255,0.12);
+
+    --label-primary:    rgba(255,255,255,0.92);
+    --label-secondary:  rgba(235,235,245,0.60);
+    --label-tertiary:   rgba(235,235,245,0.30);
+    --label-quaternary: rgba(235,235,245,0.18);
+
+    --separator:        rgba(84,84,88,0.65);
+    --separator-opaque: #38383A;
+
+    /* Apple System Colours (Dark) */
+    --blue:   #0A84FF;  --green:  #30D158;  --indigo: #5E5CE6;
+    --orange: #FF9F0A;  --pink:   #FF375F;  --purple: #BF5AF2;
+    --red:    #FF453A;  --teal:   #40CBE0;  --yellow: #FFD60A;
+
+    --background: 230 15% 12%;
+    --foreground: 0 0% 92%;
+    --card: 230 12% 17%;
+    --card-foreground: 0 0% 92%;
+    --popover: 230 12% 17%;
+    --popover-foreground: 0 0% 92%;
+    --primary: 213 100% 52%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 230 12% 22%;
+    --secondary-foreground: 0 0% 92%;
+    --muted: 230 12% 22%;
+    --muted-foreground: 220 9% 55%;
+    --accent: 230 12% 22%;
+    --accent-foreground: 0 0% 92%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 230 10% 24%;
+    --input: 230 10% 24%;
+    --ring: 213 100% 52%;
+
+    --chart-1: 213 100% 52%;
+    --chart-2: 142 70% 50%;
+    --chart-3: 270 65% 65%;
+    --chart-4: 25 90% 58%;
+    --chart-5: 180 65% 55%;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BASE LAYER
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 @layer base {
     * {
         @apply border-border;
     }
 
+    html {
+        font-family: -apple-system, "Plus Jakarta Sans", BlinkMacSystemFont, system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+    }
+
     body {
         @apply bg-background text-foreground;
+        background-color: var(--bg-app);
+        background-image:
+            radial-gradient(ellipse 120% 60% at 10% 0%,   rgba(88,86,214,0.06) 0%, transparent 55%),
+            radial-gradient(ellipse 80%  50% at 90% 100%, rgba(10,132,255,0.05) 0%, transparent 50%);
+        letter-spacing: -0.011em;
+        line-height: 1.47;
+    }
+
+    .dark body {
+        background-color: var(--bg-app);
+        background-image:
+            radial-gradient(ellipse 140% 80% at 15% -5%,  rgba(88,86,214,0.12) 0%, transparent 55%),
+            radial-gradient(ellipse 80%  60% at 85% 95%,  rgba(10,132,255,0.08) 0%, transparent 50%),
+            radial-gradient(ellipse 60%  40% at 50% 50%,  rgba(48,209,88,0.04)  0%, transparent 50%);
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        letter-spacing: -0.022em;
+        line-height: 1.21;
     }
 }
 
-/* ─── Cross-browser range input (used in audio player) ─────────────────────
-   `appearance: none` removes all native chrome but also hides the thumb in
-   Firefox and misaligns it in Safari. These pseudo-element rules restore a
-   consistent, on-brand thumb across every browser.
-   Webkit  → Chrome, Safari, Edge (Chromium), Brave
-   Mozilla → Firefox
-──────────────────────────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   GLASS COMPONENTS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@layer components {
+    /* Liquid Glass Card */
+    .liquid-card {
+        background: var(--glass-fill);
+        backdrop-filter: var(--glass-blur);
+        -webkit-backdrop-filter: var(--glass-blur);
+        border-radius: 20px;
+        border: none;
+        box-shadow: var(--glass-shadow);
+        outline: 1px solid var(--glass-border);
+        outline-offset: -1px;
+        padding: 20px;
+        isolation: isolate;
+        transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                    box-shadow 200ms ease;
+    }
+
+    .liquid-card:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--glass-shadow-hover);
+    }
+
+    .liquid-card-lg { border-radius: 28px; padding: 24px; }
+    .liquid-card-sm { border-radius: 14px; padding: 12px 16px; }
+
+    /* No-hover variant for static cards */
+    .liquid-card-static {
+        background: var(--glass-fill);
+        backdrop-filter: var(--glass-blur);
+        -webkit-backdrop-filter: var(--glass-blur);
+        border-radius: 20px;
+        border: none;
+        box-shadow: var(--glass-shadow);
+        outline: 1px solid var(--glass-border);
+        outline-offset: -1px;
+        padding: 20px;
+        isolation: isolate;
+    }
+
+    /* Glass Sidebar */
+    .glass-sidebar {
+        background: rgba(242,242,247,0.82);
+        backdrop-filter: blur(48px) saturate(160%);
+        -webkit-backdrop-filter: blur(48px) saturate(160%);
+        border-right: 1px solid var(--separator);
+    }
+
+    .dark .glass-sidebar {
+        background: rgba(28,28,30,0.82);
+    }
+
+    /* Glass Header */
+    .glass-header {
+        background: rgba(242,242,247,0.72);
+        backdrop-filter: blur(40px) saturate(180%);
+        -webkit-backdrop-filter: blur(40px) saturate(180%);
+        border-bottom: 1px solid var(--separator);
+    }
+
+    .dark .glass-header {
+        background: rgba(28,28,30,0.72);
+    }
+
+    /* Glass Button */
+    .glass-btn {
+        background: var(--fill-tertiary);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--glass-border);
+        border-radius: 10px;
+        transition: all 150ms ease;
+    }
+
+    .glass-btn:hover {
+        background: var(--fill-secondary);
+    }
+
+    .glass-btn:active {
+        transform: scale(0.97);
+    }
+
+    /* Glass Input */
+    .glass-input {
+        background: var(--fill-quaternary);
+        border: 1px solid var(--separator);
+        border-radius: 10px;
+        transition: border-color 150ms ease, box-shadow 150ms ease;
+    }
+
+    .glass-input:focus {
+        border-color: var(--blue);
+        box-shadow: 0 0 0 3px rgba(10,132,255,0.25);
+        outline: none;
+    }
+
+    /* Metric Tile */
+    .metric-tile {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .metric-tile::before {
+        content: '';
+        position: absolute;
+        top: -40px; right: -40px;
+        width: 120px; height: 120px;
+        border-radius: 50%;
+        background: var(--tile-accent-color, var(--blue));
+        opacity: 0.12;
+        filter: blur(40px);
+        pointer-events: none;
+    }
+
+    /* Modal Overlay */
+    .modal-overlay {
+        background: rgba(0,0,0,0.4);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+
+    .dark .modal-overlay {
+        background: rgba(0,0,0,0.6);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CHART OVERRIDES — Apple Style
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.recharts-xAxis .recharts-cartesian-axis-line,
+.recharts-yAxis .recharts-cartesian-axis-line,
+.recharts-xAxis .recharts-cartesian-axis-tick-line,
+.recharts-yAxis .recharts-cartesian-axis-tick-line { display: none; }
+
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+    stroke: var(--separator);
+    stroke-width: 0.5;
+    stroke-dasharray: 3 6;
+}
+
+.recharts-text {
+    fill: var(--label-secondary);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCROLLBAR — macOS Style
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+::-webkit-scrollbar       { width: 8px; height: 8px; background: transparent; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+    background: var(--fill-secondary);
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--fill-primary); }
+
+/* Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--fill-secondary) transparent;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CROSS-BROWSER RANGE INPUT (Audio Player)
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 input[type="range"] {
     -webkit-appearance: none;
@@ -51,47 +364,41 @@ input[type="range"] {
     cursor: pointer;
 }
 
-/* Track — webkit (Chrome / Safari / Edge / Brave) */
 input[type="range"]::-webkit-slider-runnable-track {
     height: 6px;
     border-radius: 9999px;
-    /* background is set via inline style on each instance for live gradient */
     background: transparent;
 }
 
-/* Thumb — webkit */
 input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    background: #2563eb;
+    background: var(--blue);
     border: 2px solid #ffffff;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     margin-top: -4px;
-    /* vertically centre thumb on the track */
     transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
 
 input[type="range"]::-webkit-slider-thumb:hover {
     transform: scale(1.2);
-    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.4);
+    box-shadow: 0 2px 6px rgba(0, 122, 255, 0.4);
 }
 
-/* Track — Firefox */
 input[type="range"]::-moz-range-track {
     height: 6px;
     border-radius: 9999px;
     background: transparent;
 }
 
-/* Thumb — Firefox */
 input[type="range"]::-moz-range-thumb {
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    background: #2563eb;
+    background: var(--blue);
     border: 2px solid #ffffff;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     cursor: pointer;
@@ -100,46 +407,36 @@ input[type="range"]::-moz-range-thumb {
 
 input[type="range"]::-moz-range-thumb:hover {
     transform: scale(1.2);
-    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.4);
+    box-shadow: 0 2px 6px rgba(0, 122, 255, 0.4);
 }
 
-/* Focus ring (accessibility) */
 input[type="range"]:focus-visible {
-    outline: 2px solid #2563eb;
+    outline: 2px solid var(--blue);
     outline-offset: 2px;
     border-radius: 4px;
 }
 
-/* Email Content Rendering Styles */
-.email-content {
-    word-break: break-word;
-}
+/* ═══════════════════════════════════════════════════════════════════════════
+   EMAIL CONTENT RENDERING
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-.email-content p {
-    margin-bottom: 1em;
-}
+.email-content { word-break: break-word; }
+.email-content p { margin-bottom: 1em; }
 
 .email-content h1,
 .email-content h2,
 .email-content h3,
 .email-content h4 {
-    font-weight: 700;
+    font-weight: 600;
     margin-top: 1.5em;
     margin-bottom: 0.5em;
-    line-height: 1.2;
+    line-height: 1.21;
+    letter-spacing: -0.022em;
 }
 
-.email-content h1 {
-    font-size: 1.5rem;
-}
-
-.email-content h2 {
-    font-size: 1.25rem;
-}
-
-.email-content h3 {
-    font-size: 1.125rem;
-}
+.email-content h1 { font-size: 1.5rem; }
+.email-content h2 { font-size: 1.25rem; }
+.email-content h3 { font-size: 1.125rem; }
 
 .email-content ul {
     list-style-type: disc;
@@ -154,22 +451,22 @@ input[type="range"]:focus-visible {
 }
 
 .email-content blockquote {
-    border-left: 4px solid #e2e8f0;
+    border-left: 4px solid var(--separator-opaque);
     padding-left: 1rem;
     margin-left: 0;
     font-style: italic;
-    color: #64748b;
+    color: var(--label-secondary);
 }
 
 .email-content a {
-    color: #2563eb;
+    color: var(--blue);
     text-decoration: underline;
 }
 
 .email-content img {
     max-width: 100%;
     height: auto;
-    border-radius: 0.5rem;
+    border-radius: 10px;
 }
 
 .email-content table {
@@ -189,5 +486,36 @@ input[type="range"]:focus-visible {
 }
 
 .email-content th {
-    background-color: #f8fafc;
+    background-color: var(--fill-quaternary);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ANIMATION UTILITIES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.94) translateY(12px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(16px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+.animate-fade-in {
+    animation: fadeIn 280ms cubic-bezier(0.0, 0.0, 0.2, 1) forwards;
+}
+
+.animate-scale-in {
+    animation: scaleIn 320ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-slide-in {
+    animation: slideInRight 280ms cubic-bezier(0.0, 0.0, 0.2, 1) forwards;
 }

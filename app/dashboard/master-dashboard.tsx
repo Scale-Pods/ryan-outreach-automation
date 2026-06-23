@@ -3,9 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Users,
-    Mail,
     MessageCircle,
-    Phone,
     TrendingUp,
     PieChart as PieChartIcon,
     Activity,
@@ -154,8 +152,8 @@ export default function MasterDashboard() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Master Overview</h1>
-                    <p className="text-slate-500">Holistic view of all your marketing channels performance.</p>
+                    <h1 className="text-2xl font-bold text-[var(--label-primary)]">Master Overview</h1>
+                    <p className="text-[var(--label-secondary)]">Holistic view of all your marketing channels performance.</p>
                 </div>
                 <DateRangePicker onUpdate={({ range }) => setDateRange(range)} />
             </div>
@@ -169,7 +167,7 @@ export default function MasterDashboard() {
                     isUp={true}
                     icon={<Users className="h-6 w-6" />}
                     color="text-blue-600"
-                    bg="bg-blue-50"
+                    bg="bg-[rgba(0,122,255,0.08)]"
                     border="border-blue-100"
                     onClick={() => router.push('/dashboard/leads')}
                 />
@@ -178,9 +176,9 @@ export default function MasterDashboard() {
                     value="—"
                     change="Real-time"
                     isUp={true}
-                    icon={<Mail className="h-6 w-6" />}
+                    icon={<TrendingUp className="h-6 w-6" />}
                     color="text-emerald-600"
-                    bg="bg-emerald-50"
+                    bg="bg-[rgba(52,199,89,0.08)]"
                     border="border-emerald-100"
                     onClick={() => router.push('/dashboard/email/sent')}
                 />
@@ -191,7 +189,7 @@ export default function MasterDashboard() {
                     isUp={true}
                     icon={<MessageCircle className="h-6 w-6" />}
                     color="text-purple-600"
-                    bg="bg-purple-50"
+                    bg="bg-[rgba(175,82,222,0.08)]"
                     border="border-purple-100"
                     onClick={() => router.push('/dashboard/whatsapp/chat')}
                 />
@@ -202,7 +200,7 @@ export default function MasterDashboard() {
                     isUp={true}
                     icon={<Activity className="h-6 w-6" />}
                     color="text-orange-600"
-                    bg="bg-orange-50"
+                    bg="bg-[rgba(255,149,0,0.08)]"
                     border="border-orange-100"
                     onClick={() => router.push('/dashboard/voice')}
                     info="This shows Normal calls containing US, UK, UAE, 1731 leads, openhouse leads."
@@ -221,7 +219,7 @@ export default function MasterDashboard() {
                     action={<Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-slate-400 hover:text-slate-600"
+                        className="h-8 w-8 text-[var(--label-tertiary)] hover:text-[var(--label-primary)]"
                         onClick={(e) => {
                             e.stopPropagation();
                             setIsRepliesExpanded(!isRepliesExpanded);
@@ -232,66 +230,14 @@ export default function MasterDashboard() {
                 />
             </div>
 
-            {/* Owner Leads Section */}
-            <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                    <div className="p-2 bg-amber-100 text-amber-700 rounded-lg">
-                        <Users className="h-5 w-5" />
-                    </div>
-                    <h2 className="text-xl font-bold text-slate-900">Owner Leads Data</h2>
-                </div>
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                    <MetricCard
-                        title="Total Owner Leads"
-                        value={loading ? "..." : (m?.totalOwnerLeads ?? 0).toLocaleString()}
-                        change="Real-time"
-                        isUp={true}
-                        icon={<Users className="h-6 w-6" />}
-                        color="text-amber-600"
-                        bg="bg-amber-50"
-                        border="border-amber-100"
-                    />
-                    <MetricCard
-                        title="Total Whatsapp Reachouts (owner)"
-                        value={loading ? "..." : (m?.ownerWaReachouts ?? 0).toLocaleString()}
-                        change="Real-time"
-                        isUp={true}
-                        icon={<MessageCircle className="h-6 w-6" />}
-                        color="text-emerald-600"
-                        bg="bg-emerald-50"
-                        border="border-emerald-100"
-                    />
-                    <MetricCard
-                        title="Total Voice Calls (owner)"
-                        value={loading ? "..." : (m?.ownerVoiceCalls ?? 0).toLocaleString()}
-                        change="Real-time"
-                        isUp={true}
-                        icon={<Phone className="h-6 w-6" />}
-                        color="text-blue-600"
-                        bg="bg-blue-50"
-                        border="border-blue-100"
-                        info="This count is derived from real-time Vapi call logs for the 'owners' account."
-                    />
-                    <MetricCard
-                        title="Total Replies (owner)"
-                        value={loading ? "..." : (m?.ownerWaReplies ?? 0).toLocaleString()}
-                        change="Real-time"
-                        isUp={true}
-                        icon={<MessageCircle className="h-6 w-6" />}
-                        color="text-purple-600"
-                        bg="bg-purple-50"
-                        border="border-purple-100"
-                    />
-                </div>
-            </div>
 
             {/* Expanded Replies View */}
             {isRepliesExpanded && (
-                <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
+                <div className="bg-[var(--glass-fill)] border border-[var(--separator)] rounded-xl p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] animate-in fade-in slide-in-from-top-4 duration-300">
                     <div className="flex items-center justify-between mb-6">
                         <div>
-                            <h2 className="text-lg font-bold text-slate-900">Total Replies Details</h2>
-                            <p className="text-sm text-slate-500">Detailed view of all replies across channels</p>
+                            <h2 className="text-lg font-bold text-[var(--label-primary)]">Total Replies Details</h2>
+                            <p className="text-sm text-[var(--label-secondary)]">Detailed view of all replies across channels</p>
                         </div>
                         <Button variant="ghost" size="sm" onClick={() => setIsRepliesExpanded(false)}>
                             <X className="h-4 w-4 mr-2" />
@@ -330,10 +276,10 @@ export default function MasterDashboard() {
 
             {/* Charts */}
             <div className="grid gap-6 lg:grid-cols-3">
-                <Card className="lg:col-span-2 border-slate-200 shadow-sm bg-white overflow-hidden">
+                <Card className="lg:col-span-2 border-[var(--separator)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] bg-[var(--glass-fill)] overflow-hidden">
                     <CardHeader className="pb-2">
                         <div className="flex items-center gap-2">
-                            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                            <div className="p-2 bg-[rgba(0,122,255,0.08)] text-blue-600 rounded-lg">
                                 <TrendingUp className="h-5 w-5" />
                             </div>
                             <CardTitle className="text-lg">Lead Acquisition</CardTitle>
@@ -360,10 +306,10 @@ export default function MasterDashboard() {
                     </CardContent>
                 </Card>
 
-                <Card className="border-slate-200 shadow-sm bg-white overflow-hidden">
+                <Card className="border-[var(--separator)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] bg-[var(--glass-fill)] overflow-hidden">
                     <CardHeader className="pb-2">
                         <div className="flex items-center gap-2">
-                            <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
+                            <div className="p-2 bg-[rgba(175,82,222,0.08)] text-purple-600 rounded-lg">
                                 <PieChartIcon className="h-5 w-5" />
                             </div>
                             <CardTitle className="text-lg">Response Performance</CardTitle>
@@ -413,7 +359,7 @@ function MetricCard({ title, value, change, isUp, icon, color, bg, border, onCli
 }) {
     return (
         <Card
-            className={`bg-white border ${border} shadow-sm overflow-hidden relative group hover:shadow-md transition-all duration-300 ${onClick ? 'cursor-pointer' : ''}`}
+            className={`bg-[var(--glass-fill)] border ${border} shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] overflow-hidden relative group hover:shadow-[var(--glass-shadow-hover)] transition-all duration-300 ${onClick ? 'cursor-pointer' : ''}`}
             onClick={onClick}
         >
             <CardContent className="p-6">
@@ -421,7 +367,7 @@ function MetricCard({ title, value, change, isUp, icon, color, bg, border, onCli
                     <div className="flex-1">
                         <div className="flex items-center justify-between mr-2">
                             <div className="flex items-center gap-1.5">
-                                <p className="text-sm font-semibold text-slate-500 mb-1">{title}</p>
+                                <p className="text-sm font-semibold text-[var(--label-secondary)] mb-1">{title}</p>
                                 {info && (
                                     <UITooltipProvider>
                                         <UITooltip>
@@ -437,12 +383,12 @@ function MetricCard({ title, value, change, isUp, icon, color, bg, border, onCli
                             </div>
                             {action && <div className="z-20">{action}</div>}
                         </div>
-                        <h3 className="text-3xl font-bold text-slate-900">{value}</h3>
+                        <h3 className="text-3xl font-bold text-[var(--label-primary)]">{value}</h3>
                         <div className={`flex items-center gap-1 mt-2 text-xs font-bold ${isUp ? 'text-emerald-600' : 'text-rose-600'}`}>
                             {change}
                         </div>
                     </div>
-                    <div className={`p-4 rounded-2xl ${bg} ${color} shadow-sm`}>
+                    <div className={`p-4 rounded-2xl ${bg} ${color} shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)]`}>
                         {icon}
                     </div>
                 </div>

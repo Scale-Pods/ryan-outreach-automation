@@ -13,7 +13,6 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export interface DateRangePickerProps extends React.HTMLAttributes<HTMLDivElement> {
     onUpdate?: (values: { range: DateRange | undefined, label?: string }) => void;
@@ -45,7 +44,7 @@ export function DateRangePicker({
     }, [open, date])
 
     if (!isMounted) {
-        return <div className={cn("grid gap-2 h-10 w-[260px] bg-slate-100 rounded-xl animate-pulse", className)}></div>
+        return <div className={cn("grid gap-2 h-10 w-[260px] bg-[var(--fill-quaternary)] rounded-[10px] animate-pulse", className)}></div>
     }
 
     const presets = [
@@ -137,11 +136,11 @@ export function DateRangePicker({
                         id="date"
                         variant={"outline"}
                         className={cn(
-                            "w-[260px] justify-start text-left font-normal bg-white border-zinc-200 text-slate-900 hover:bg-zinc-50 rounded-xl h-10 shadow-sm",
-                            !date && "text-muted-foreground"
+                            "w-[260px] justify-start text-left font-normal bg-[var(--glass-fill)] border-[var(--separator)] text-[var(--label-primary)] hover:bg-[var(--fill-tertiary)] rounded-[10px] h-10",
+                            !date && "text-[var(--label-tertiary)]"
                         )}
                     >
-                        <CalendarIcon className="mr-2 h-4 w-4 text-blue-500" />
+                        <CalendarIcon className="mr-2 h-4 w-4 text-[var(--blue)]" />
                         {date?.from ? (
                             date.to ? (
                                 <>
@@ -156,24 +155,24 @@ export function DateRangePicker({
                         )}
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
-                    <div className="flex">
-                        <div className="p-2 border-r border-slate-100 w-[160px]">
-                            <div className="space-y-1">
+                <PopoverContent className="w-auto p-0 bg-transparent border-none shadow-none" align="end">
+                    <div className="flex rounded-[20px] bg-[var(--glass-fill)] backdrop-blur-[60px] shadow-[0_8px_16px_rgba(0,0,0,0.16),0_32px_64px_rgba(0,0,0,0.32)] outline outline-1 outline-[var(--glass-border)] overflow-hidden">
+                        <div className="p-2.5 border-r border-[var(--separator)] w-[160px]">
+                            <div className="space-y-0.5">
                                 {presets.map((preset) => (
                                     <Button
                                         key={preset.label}
                                         variant="ghost"
-                                        className="w-full justify-start font-normal text-sm h-8"
+                                        className="w-full justify-start font-normal text-[14px] h-8 rounded-[8px]"
                                         onClick={() => handlePresetChange(preset.label)}
                                     >
                                         {preset.label}
                                     </Button>
                                 ))}
-                                <div className="pt-2 mt-2 border-t border-slate-100">
+                                <div className="pt-2 mt-2 border-t border-[var(--separator)]">
                                     <Button
                                         variant="ghost"
-                                        className="w-full justify-start font-normal text-sm h-8 text-slate-500 hover:text-slate-900"
+                                        className="w-full justify-start font-normal text-[14px] h-8 text-[var(--label-secondary)] hover:text-[var(--label-primary)] rounded-[8px]"
                                         onClick={() => setTempLabel("Custom Range")}
                                     >
                                         Custom Range
@@ -195,14 +194,14 @@ export function DateRangePicker({
                             />
                         </div>
                     </div>
-                    <div className="p-3 border-t border-slate-100 flex items-center justify-end gap-2 bg-slate-50/50">
-                        <Button variant="ghost" size="sm" onClick={handleClear} className="h-8 px-4 text-red-500 hover:text-red-600 hover:bg-red-50 mr-auto font-medium">
+                    <div className="p-3 flex items-center justify-end gap-2 mt-1 rounded-[14px] bg-[var(--glass-fill)] backdrop-blur-[40px] shadow-[var(--glass-shadow)] outline outline-1 outline-[var(--glass-border)]">
+                        <Button variant="ghost" size="sm" onClick={handleClear} className="h-8 px-4 text-[var(--red)] hover:bg-[rgba(255,59,48,0.1)] mr-auto font-medium rounded-[8px]">
                             Clear
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={handleCancel} className="h-8 px-4 text-slate-500 hover:text-slate-900 font-medium">
+                        <Button variant="ghost" size="sm" onClick={handleCancel} className="h-8 px-4 text-[var(--label-secondary)] hover:text-[var(--label-primary)] font-medium rounded-[8px]">
                             Cancel
                         </Button>
-                        <Button size="sm" onClick={handleApply} className="h-8 px-4 bg-blue-600 hover:bg-blue-700 text-white shadow-sm font-medium">
+                        <Button size="sm" onClick={handleApply} className="h-8 px-4 bg-[var(--blue)] hover:opacity-90 text-white font-medium rounded-[8px]">
                             Apply
                         </Button>
                     </div>

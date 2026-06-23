@@ -19,8 +19,8 @@ export const ResetPasswordEmail: React.FC<Readonly<ResetPasswordEmailProps>> = (
     }}>
         <div style={{ marginBottom: '30px' }}>
             <img
-                src="https://ryansautomation.com/logoheader.webp"
-                alt="Ryan's Automation"
+                src="https://www.napleshomes.com/inc/skins/custom/img/nh-final-white.png"
+                alt="Naples Homes"
                 style={{ width: '180px', height: 'auto' }}
             />
         </div>

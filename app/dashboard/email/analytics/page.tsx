@@ -232,8 +232,8 @@ export default function EmailAnalyticsPage() {
             {/* Page Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Email Analytics</h1>
-                    <p className="text-slate-500">Comprehensive campaign and warm-up performance</p>
+                    <h1 className="text-2xl font-bold text-[var(--label-primary)]">Email Analytics</h1>
+                    <p className="text-[var(--label-secondary)]">Comprehensive campaign and warm-up performance</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <DateRangePicker onUpdate={handleDateUpdate} />
@@ -258,13 +258,13 @@ export default function EmailAnalyticsPage() {
 
             {/* Campaign Performance Section */}
             <div className="space-y-4">
-                <h2 className="text-xl font-bold text-slate-900">Campaign Performance</h2>
+                <h2 className="text-xl font-bold text-[var(--label-primary)]">Campaign Performance</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4">
                     <MetricCard
                         label="Total Sent"
                         value={totalSent.toLocaleString()}
                         icon={Send}
-                        iconBg="bg-blue-50"
+                        iconBg="bg-[rgba(0,122,255,0.08)]"
                         iconColor="text-blue-600"
                     />
 
@@ -287,15 +287,15 @@ export default function EmailAnalyticsPage() {
                         label="Total Leads"
                         value={totalLeads.toLocaleString()}
                         icon={Users}
-                        iconBg="bg-slate-50"
-                        iconColor="text-slate-600"
+                        iconBg="bg-[var(--bg-app)]"
+                        iconColor="text-[var(--label-secondary)]"
                     />
                 </div>
             </div>
 
             {/* Warm-up Analytics Section */}
             <div className="space-y-4">
-                <h2 className="text-xl font-bold text-slate-900">Warm-up Health</h2>
+                <h2 className="text-xl font-bold text-[var(--label-primary)]">Warm-up Health</h2>
                 {!loading && warmupData.length === 0 && !error && (
                     <Alert>
                         <AlertCircle className="h-4 w-4" />
@@ -307,15 +307,15 @@ export default function EmailAnalyticsPage() {
                 <div className="grid gap-8">
                     {warmupData.map((account) => (
                         <div key={account.email} className="space-y-4">
-                            <Card className="overflow-hidden border-slate-200">
-                                <div className="border-b border-slate-100 bg-slate-50/50 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <Card className="overflow-hidden border-[var(--separator)]">
+                                <div className="border-b border-[var(--separator)] bg-[var(--bg-app)]/50 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                     <div className="flex items-center gap-3">
                                         <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">
                                             {account.email.charAt(0).toUpperCase()}
                                         </div>
                                         <div>
-                                            <h3 className="font-semibold text-slate-900">{account.email}</h3>
-                                            <p className="text-xs text-slate-500">Warm-up Status</p>
+                                            <h3 className="font-semibold text-[var(--label-primary)]">{account.email}</h3>
+                                            <p className="text-xs text-[var(--label-secondary)]">Warm-up Status</p>
                                         </div>
                                     </div>
                                     <StatusBadge status={account.status} score={account.health_score} />
@@ -336,7 +336,7 @@ export default function EmailAnalyticsPage() {
                                             value={`${account.inbox_rate}%`}
                                             icon={CheckCircle2}
                                             color="text-emerald-600"
-                                            bg="bg-emerald-50"
+                                            bg="bg-[rgba(52,199,89,0.08)]"
                                         />
                                         <MiniMetric
                                             label="Spam Rate"
@@ -350,14 +350,14 @@ export default function EmailAnalyticsPage() {
                                             value={account.total_sent}
                                             icon={Send}
                                             color="text-blue-600"
-                                            bg="bg-blue-50"
+                                            bg="bg-[rgba(0,122,255,0.08)]"
                                         />
                                         <MiniMetric
                                             label="Landed Inbox"
                                             value={account.landed_inbox}
                                             icon={ShieldCheck}
                                             color="text-emerald-600"
-                                            bg="bg-emerald-50"
+                                            bg="bg-[rgba(52,199,89,0.08)]"
                                         />
                                         <MiniMetric
                                             label="Landed Spam"
@@ -371,7 +371,7 @@ export default function EmailAnalyticsPage() {
                                     {/* Graph Section */}
                                     {account.history && account.history.length > 0 ? (
                                         <div className="h-[400px] w-full mt-4">
-                                            <h4 className="text-sm font-semibold text-slate-500 mb-4">Daily Performance</h4>
+                                            <h4 className="text-sm font-semibold text-[var(--label-secondary)] mb-4">Daily Performance</h4>
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <AreaChart data={account.history} margin={{ top: 20, right: 60, left: 10, bottom: 30 }}>
                                                     <defs>
@@ -427,8 +427,8 @@ export default function EmailAnalyticsPage() {
                                             </ResponsiveContainer>
                                         </div>
                                     ) : (
-                                        <div className="h-[200px] w-full flex items-center justify-center bg-slate-50 rounded-lg border border-dashed border-slate-200">
-                                            <p className="text-sm text-slate-400">No historical data available</p>
+                                        <div className="h-[200px] w-full flex items-center justify-center bg-[var(--bg-app)] rounded-lg border border-dashed border-[var(--separator)]">
+                                            <p className="text-sm text-[var(--label-tertiary)]">No historical data available</p>
                                         </div>
                                     )}
                                 </CardContent>
@@ -446,7 +446,7 @@ export default function EmailAnalyticsPage() {
 }
 
 function StatusBadge({ status, score }: { status: string, score: number }) {
-    let colorClass = "bg-slate-100 text-slate-700 hover:bg-slate-100";
+    let colorClass = "bg-[var(--fill-quaternary)] text-[var(--label-primary)] hover:bg-[var(--fill-quaternary)]";
     if (status === "Healthy") colorClass = "bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-emerald-200";
     else if (status === "Medium") colorClass = "bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200";
     else if (status === "Poor") colorClass = "bg-rose-100 text-rose-700 hover:bg-rose-100 border-rose-200";
@@ -460,16 +460,16 @@ function StatusBadge({ status, score }: { status: string, score: number }) {
 
 function MiniMetric({ label, value, subtext, icon: Icon, color, bg }: any) {
     return (
-        <div className="flex flex-col gap-1 p-3 rounded-xl bg-white border border-slate-100 shadow-sm">
+        <div className="flex flex-col gap-1 p-3 rounded-xl bg-[var(--glass-fill)] border border-[var(--separator)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)]">
             <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">{label}</span>
+                <span className="text-[10px] uppercase tracking-wider text-[var(--label-tertiary)] font-semibold">{label}</span>
                 <div className={cn("p-1.5 rounded-full", bg, color)}>
                     <Icon className="h-3 w-3" />
                 </div>
             </div>
             <div className="flex items-baseline gap-1">
-                <span className="text-xl font-bold text-slate-900">{value}</span>
-                {subtext && <span className="text-xs text-slate-500">{subtext}</span>}
+                <span className="text-xl font-bold text-[var(--label-primary)]">{value}</span>
+                {subtext && <span className="text-xs text-[var(--label-secondary)]">{subtext}</span>}
             </div>
         </div>
     );
@@ -477,17 +477,17 @@ function MiniMetric({ label, value, subtext, icon: Icon, color, bg }: any) {
 
 function MetricCard({ label, value, subtext, icon: Icon, color, iconBg, iconColor }: any) {
     return (
-        <Card className="bg-white border-slate-200 shadow-sm">
+        <Card className="bg-[var(--glass-fill)] border-[var(--separator)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)]">
             <CardContent className="p-4 flex flex-col justify-between h-full">
                 <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{label}</span>
+                    <span className="text-xs font-bold text-[var(--label-tertiary)] uppercase tracking-wider">{label}</span>
                     <div className={cn("p-1.5 rounded-lg", iconBg, iconColor)}>
                         <Icon className="h-4 w-4" />
                     </div>
                 </div>
                 <div>
-                    <h3 className="text-2xl font-bold text-slate-900">{value}</h3>
-                    {subtext && <p className="text-xs font-medium text-slate-500 mt-1">{subtext}</p>}
+                    <h3 className="text-2xl font-bold text-[var(--label-primary)]">{value}</h3>
+                    {subtext && <p className="text-xs font-medium text-[var(--label-secondary)] mt-1">{subtext}</p>}
                 </div>
             </CardContent>
         </Card>

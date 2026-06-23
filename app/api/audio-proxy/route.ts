@@ -17,7 +17,6 @@ export async function GET(request: NextRequest) {
         if (range) headers['Range'] = range;
 
         // Auth for providers
-        if (url.includes('api.elevenlabs.io') && process.env.ELEVENLABS_API_KEY) headers['xi-api-key'] = process.env.ELEVENLABS_API_KEY;
         if (url.includes('api.vapi.ai') && process.env.VAPI_PRIVATE_KEY) headers['Authorization'] = `Bearer ${process.env.VAPI_PRIVATE_KEY}`;
 
         const response = await fetch(url, { headers, redirect: 'follow' });

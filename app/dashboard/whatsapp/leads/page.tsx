@@ -13,7 +13,6 @@ import {
     MoreVertical,
     Briefcase,
     RefreshCw,
-    Building2,
     Users
 } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback } from "react";
@@ -49,26 +48,6 @@ interface WALead {
     [key: string]: any;
 }
 
-interface WAOwner {
-    id?: string;
-    name?: string;
-    contactNo?: string;
-    "Whatsapp_1_Date"?: string;
-    "Whatsapp_1"?: string;
-    "WTS_Reply_Track"?: string;
-    whatsapp_1_parsed_date?: string;
-    [key: string]: any;
-}
-
-// Extract the best available date for an owner row.
-// RPC returns a pre-parsed whatsapp_1_parsed_date; fall back to Whatsapp_1_Date.
-function getOwnerDate(owner: WAOwner): Date | null {
-    const parsed = owner["whatsapp_1_parsed_date"];
-    if (parsed) { const d = new Date(parsed); if (!isNaN(d.getTime())) return d; }
-    const raw = owner["Whatsapp_1_Date"];
-    if (raw) { const d = new Date(raw); if (!isNaN(d.getTime())) return d; }
-    return null;
-}
 
 // Best available date for a lead row — RPC returns wp1_parsed_date.
 function getLeadDate(lead: WALead): Date | null {
@@ -79,7 +58,6 @@ function getLeadDate(lead: WALead): Date | null {
 
 export default function WhatsappLeadsPage() {
     const [waLeads, setWaLeads] = useState<WALead[]>([]);
-    const [waOwners, setWaOwners] = useState<WAOwner[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
@@ -87,7 +65,6 @@ export default function WhatsappLeadsPage() {
     const [selectedLeadObj, setSelectedLeadObj] = useState<WALead | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const leadsPerPage = 10;
-    const [activeTab, setActiveTab] = useState<"leads" | "owners">("leads");
 
     const [dateRange, setDateRange] = useState<any>({
         from: subDays(new Date(), 7),
@@ -98,6 +75,21 @@ export default function WhatsappLeadsPage() {
         replyStatus: string[];
         loops: string[];
     }>({ replyStatus: [], loops: [] });
+
+    const resetFilters = useCallback(() => {
+        setActiveFilters({ replyStatus: [], loops: [] });
+        setSearchQuery("");
+    }, []);
+
+    const toggleFilter = useCallback((category: 'replyStatus' | 'loops', value: string) => {
+        setActiveFilters(prev => {
+            const current = prev[category];
+            const updated = current.includes(value)
+                ? current.filter(v => v !== value)
+                : [...current, value];
+            return { ...prev, [category]: updated };
+        });
+    }, []);
 
     // Fetch from the dedicated WhatsApp leads endpoint
     const fetchWAData = useCallback(async (from: Date, to: Date) => {
@@ -112,7 +104,6 @@ export default function WhatsappLeadsPage() {
             const followup: WALead[] = (data.followup || []).map((l: any) => ({ ...l, source_loop: "Follow Up" }));
             const nurture: WALead[] = (data.nurture || []).map((l: any) => ({ ...l, source_loop: "Nurture" }));
             setWaLeads([...nr_wf, ...followup, ...nurture]);
-            setWaOwners(data.owners || []);
         } catch (err) {
             console.error("[WA leads]", err);
         } finally {
@@ -155,66 +146,26 @@ export default function WhatsappLeadsPage() {
         });
     }, [waLeads, searchQuery, activeFilters]);
 
-    const filteredOwners = useMemo(() => {
-        setCurrentPage(1);
-        return waOwners.filter(owner => {
-            const name = String(owner.name || "").toLowerCase();
-            const phone = String(owner.contactNo || "");
-            const matchesSearch =
-                name.includes(searchQuery.toLowerCase()) ||
-                phone.includes(searchQuery);
-            if (!matchesSearch) return false;
+    const toggleSelectAll = useCallback(() => {
+        if (selectedLeads.length === filteredLeads.length) {
+            setSelectedLeads([]);
+        } else {
+            setSelectedLeads(filteredLeads.map((l: any) => l["Lead ID"] || l.id || l.phone).filter(Boolean));
+        }
+    }, [selectedLeads, filteredLeads]);
 
-            const wtR = owner["WTS_Reply_Track"];
-            const hasReplied = wtR && wtR !== "" && String(wtR).toLowerCase() !== "no";
-            if (activeFilters.replyStatus.length > 0) {
-                const ok = (activeFilters.replyStatus.includes("Replied") && hasReplied) ||
-                    (activeFilters.replyStatus.includes("Sent") && !hasReplied);
-                if (!ok) return false;
-            }
+    const toggleSelect = useCallback((id: string) => {
+        setSelectedLeads(prev =>
+            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+        );
+    }, []);
 
-            return true;
-        });
-    }, [waOwners, searchQuery, activeFilters]);
-
-    const toggleFilter = (type: 'replyStatus' | 'loops', value: string) => {
-        setActiveFilters(prev => {
-            const current = prev[type];
-            return current.includes(value)
-                ? { ...prev, [type]: current.filter(v => v !== value) }
-                : { ...prev, [type]: [...current, value] };
-        });
-    };
-
-    const resetFilters = () => {
-        setActiveFilters({ replyStatus: [], loops: [] });
-        setSearchQuery("");
-    };
-
-    const totalPages = activeTab === "leads"
-        ? Math.ceil(filteredLeads.length / leadsPerPage)
-        : Math.ceil(filteredOwners.length / leadsPerPage);
+    const totalPages = Math.ceil(filteredLeads.length / leadsPerPage);
 
     const paginatedLeads = filteredLeads.slice(
         (currentPage - 1) * leadsPerPage,
         currentPage * leadsPerPage
     );
-
-    const paginatedOwners = filteredOwners.slice(
-        (currentPage - 1) * leadsPerPage,
-        currentPage * leadsPerPage
-    );
-
-    const toggleSelectAll = () => {
-        if (selectedLeads.length === filteredLeads.length) setSelectedLeads([]);
-        else setSelectedLeads(filteredLeads.map(l => String(l["Lead ID"] || "")));
-    };
-
-    const toggleSelect = (id: string) => {
-        setSelectedLeads(prev =>
-            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-        );
-    };
 
 
     return (
@@ -224,31 +175,16 @@ export default function WhatsappLeadsPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">WhatsApp Leads</h1>
-                    <p className="text-slate-500 text-sm">Review leads successfully contacted via WhatsApp</p>
+                    <h1 className="text-2xl font-bold text-[var(--label-primary)]">WhatsApp Leads</h1>
+                    <p className="text-[var(--label-secondary)] text-sm">Review leads successfully contacted via WhatsApp</p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <div className="flex bg-slate-100 rounded-lg p-0.5 mr-2">
-                        <button
-                            onClick={() => { setActiveTab("leads"); setCurrentPage(1); }}
-                            className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${activeTab === "leads" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
-                        >
-                            <Users className="h-3.5 w-3.5" /> Leads
-                        </button>
-                        <button
-                            onClick={() => { setActiveTab("owners"); setCurrentPage(1); }}
-                            className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${activeTab === "owners" ? "bg-white text-amber-700 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
-                        >
-                            <Building2 className="h-3.5 w-3.5" /> Owners
-                        </button>
-                    </div>
-
+                    <div className="flex items-center gap-3">
                     {(activeFilters.replyStatus.length > 0 || activeFilters.loops.length > 0 || searchQuery) && (
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={resetFilters}
-                            className="text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 px-2"
+                            className="text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:bg-[rgba(52,199,89,0.08)] px-2"
                         >
                             RESET FILTERS
                         </Button>
@@ -258,12 +194,12 @@ export default function WhatsappLeadsPage() {
             </div>
 
             {/* Search & Filter Bar */}
-            <div className="flex flex-col md:flex-row items-center gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <div className="flex flex-col md:flex-row items-center gap-4 bg-[var(--glass-fill)] p-4 rounded-xl border border-[var(--separator)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)]">
                 <div className="relative flex-1 w-full">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--label-tertiary)]" />
                     <Input
-                        className="pl-10 h-10 bg-slate-50/50 border-slate-200"
-                        placeholder={`Search ${activeTab}...`}
+                        className="pl-10 h-10 bg-[var(--bg-app)]/50 border-[var(--separator)]"
+                        placeholder="Search leads..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -271,7 +207,7 @@ export default function WhatsappLeadsPage() {
                 <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className={`gap-2 h-10 border-slate-200 ${activeFilters.replyStatus.length > 0 ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : ''}`}>
+                            <Button variant="outline" className={`gap-2 h-10 border-[var(--separator)] ${activeFilters.replyStatus.length > 0 ? 'bg-[rgba(52,199,89,0.08)] border-emerald-200 text-emerald-700' : ''}`}>
                                 <Filter className="h-4 w-4" />
                                 {activeFilters.replyStatus.length > 0 ? `Status (${activeFilters.replyStatus.length})` : 'Status'}
                             </Button>
@@ -286,10 +222,9 @@ export default function WhatsappLeadsPage() {
                         </DropdownMenuContent>
                     </DropdownMenu>
 
-                    {activeTab === "leads" && (
-                        <DropdownMenu>
+                    <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" className={`gap-2 h-10 border-slate-200 ${activeFilters.loops.length > 0 ? 'bg-purple-50 border-purple-200 text-purple-700' : ''}`}>
+                                <Button variant="outline" className={`gap-2 h-10 border-[var(--separator)] ${activeFilters.loops.length > 0 ? 'bg-purple-50 border-purple-200 text-purple-700' : ''}`}>
                                     <Briefcase className="h-4 w-4" />
                                     {activeFilters.loops.length > 0 ? `Loops (${activeFilters.loops.length})` : 'Loops'}
                                 </Button>
@@ -303,9 +238,8 @@ export default function WhatsappLeadsPage() {
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
-                    )}
 
-                    <Button variant="outline" className="gap-2 h-10 border-slate-200" onClick={() => {
+                    <Button variant="outline" className="gap-2 h-10 border-[var(--separator)]" onClick={() => {
                         if (dateRange?.from) fetchWAData(dateRange.from, dateRange.to || dateRange.from);
                     }}>
                         <RefreshCw className="h-4 w-4" /> Refresh
@@ -315,158 +249,100 @@ export default function WhatsappLeadsPage() {
 
             {/* Bulk Action Bar */}
             {selectedLeads.length > 0 && (
-                <div className="bg-white border border-emerald-100 p-3 rounded-lg flex items-center justify-between shadow-sm">
-                    <span className="text-sm font-bold text-slate-700">{selectedLeads.length} leads selected</span>
+                <div className="bg-[var(--glass-fill)] border border-emerald-100 p-3 rounded-lg flex items-center justify-between shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)]">
+                    <span className="text-sm font-bold text-[var(--label-primary)]">{selectedLeads.length} leads selected</span>
                     <div className="flex gap-2">
-                        <Button size="sm" variant="outline" className="h-8 border-slate-200 text-slate-600 hover:text-slate-900">Export Selected</Button>
+                        <Button size="sm" variant="outline" className="h-8 border-[var(--separator)] text-[var(--label-secondary)] hover:text-[var(--label-primary)]">Export Selected</Button>
                     </div>
                 </div>
             )}
 
             {/* Table */}
-            <Card className="border-slate-200 overflow-hidden shadow-sm">
+            <Card className="border-[var(--separator)] overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)]">
                 <CardContent className="p-0">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead>
-                                <tr className="bg-slate-50 text-slate-500 text-xs font-bold uppercase border-b border-slate-200">
+                                <tr className="bg-[var(--bg-app)] text-[var(--label-secondary)] text-xs font-bold uppercase border-b border-[var(--separator)]">
                                     <th className="px-4 py-4 w-[40px]">
                                         <Checkbox
                                             checked={selectedLeads.length === filteredLeads.length && filteredLeads.length > 0}
                                             onCheckedChange={toggleSelectAll}
                                         />
                                     </th>
-                                    <th className="px-4 py-4">{activeTab === "leads" ? "Name" : "Owner"}</th>
+                                    <th className="px-4 py-4">Name</th>
                                     <th className="px-4 py-4">Phone</th>
-                                    <th className="px-4 py-4">{activeTab === "leads" ? "Loop" : "Source"}</th>
+                                    <th className="px-4 py-4">Loop</th>
                                     <th className="px-4 py-4 text-center">Reply Status</th>
                                     <th className="px-4 py-4">WhatsApp Date</th>
                                     <th className="px-4 py-4 text-right"></th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {activeTab === "leads" ? (
-                                    loading ? (
-                                        <tr>
-                                            <td colSpan={7} className="px-4 py-20 text-center text-slate-400">
-                                                <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2 text-emerald-500" />
-                                                Loading WhatsApp leads...
-                                            </td>
-                                        </tr>
-                                    ) : filteredLeads.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={7} className="px-4 py-20 text-center text-slate-400">
-                                                No leads found for this date range.
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        paginatedLeads.map((lead, index) => {
-                                            const id = String(lead["Lead ID"] || index);
-                                            const wtR = lead["WP_Replied_track"];
-                                            const hasReplied = wtR && wtR !== "" && String(wtR).trim().toLowerCase() !== "no";
-                                            const waDate = getLeadDate(lead);
-                                            return (
-                                                <tr
-                                                    key={`${id}-${index}`}
-                                                    className="hover:bg-slate-50 transition-colors group cursor-pointer"
-                                                    onClick={() => { setSelectedLeadIdForChat(id); setSelectedLeadObj(lead); }}
-                                                >
-                                                    <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
-                                                        <Checkbox
-                                                            checked={selectedLeads.includes(id)}
-                                                            onCheckedChange={() => toggleSelect(id)}
-                                                        />
-                                                    </td>
-                                                    <td className="px-4 py-4 font-bold text-slate-900 group-hover:text-emerald-700">{lead["Name"] || "—"}</td>
-                                                    <td className="px-4 py-4 text-slate-600 font-mono text-xs">{lead["Phone"] || "—"}</td>
-                                                    <td className="px-4 py-4">
-                                                        <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-100 text-[10px] uppercase font-bold">
-                                                            {lead.source_loop || "—"}
-                                                        </Badge>
-                                                    </td>
-                                                    <td className="px-4 py-4 text-center">
-                                                        {hasReplied
-                                                            ? <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none text-[10px] font-bold">REPLIED</Badge>
-                                                            : <Badge variant="outline" className="text-[10px] text-slate-400 border-slate-200">SENT</Badge>
-                                                        }
-                                                    </td>
-                                                    <td className="px-4 py-4 text-slate-500 text-xs">
-                                                        {waDate ? waDate.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' }) : "—"}
-                                                    </td>
-                                                    <td className="px-4 py-4 text-right" onClick={(e) => e.stopPropagation()}>
-                                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                                            <MoreVertical className="h-4 w-4" />
-                                                        </Button>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })
-                                    )
+                            <tbody className="divide-y divide-[var(--separator)]">
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan={7} className="px-4 py-20 text-center text-[var(--label-tertiary)]">
+                                            <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2 text-emerald-500" />
+                                            Loading WhatsApp leads...
+                                        </td>
+                                    </tr>
+                                ) : filteredLeads.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={7} className="px-4 py-20 text-center text-[var(--label-tertiary)]">
+                                            No leads found for this date range.
+                                        </td>
+                                    </tr>
                                 ) : (
-                                    loading ? (
-                                        <tr>
-                                            <td colSpan={7} className="px-4 py-20 text-center text-slate-400">
-                                                <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2 text-amber-500" />
-                                                Loading owner leads...
-                                            </td>
-                                        </tr>
-                                    ) : filteredOwners.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={7} className="px-4 py-20 text-center text-slate-400">
-                                                No owner leads found for this date range.
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        paginatedOwners.map((owner, index) => {
-                                            const wtsReply = owner["WTS_Reply_Track"];
-                                            const hasReplied = wtsReply && wtsReply !== "" && String(wtsReply).toLowerCase() !== "no";
-                                            const waDate = getOwnerDate(owner);
-                                            return (
-                                                <tr
-                                                    key={`${owner.id || ''}-${owner.contactNo || ''}-${index}`}
-                                                    className="hover:bg-amber-50/30 transition-colors group cursor-pointer"
-                                                >
-                                                    <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
-                                                        <Checkbox />
-                                                    </td>
-                                                    <td className="px-4 py-4 font-bold text-slate-900 group-hover:text-amber-700">{owner.name || "—"}</td>
-                                                    <td className="px-4 py-4 text-slate-600 font-mono text-xs">{owner.contactNo || "—"}</td>
-                                                    <td className="px-4 py-4">
-                                                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-100 text-[10px] uppercase font-bold">
-                                                            OWNER DATA
-                                                        </Badge>
-                                                    </td>
-                                                    <td className="px-4 py-4 text-center">
-                                                        {hasReplied
-                                                            ? <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none text-[10px] font-bold">REPLIED</Badge>
-                                                            : <Badge variant="outline" className="text-[10px] text-slate-400 border-slate-200">SENT</Badge>
-                                                        }
-                                                    </td>
-                                                    <td className="px-4 py-4 text-slate-500 text-xs">
-                                                        {waDate ? waDate.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' }) : "—"}
-                                                    </td>
-                                                    <td className="px-4 py-4 text-right" onClick={(e) => e.stopPropagation()}>
-                                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                                            <MoreVertical className="h-4 w-4" />
-                                                        </Button>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })
-                                    )
+                                    paginatedLeads.map((lead, index) => {
+                                        const id = String(lead["Lead ID"] || index);
+                                        const wtR = lead["WP_Replied_track"];
+                                        const hasReplied = wtR && wtR !== "" && String(wtR).trim().toLowerCase() !== "no";
+                                        const waDate = getLeadDate(lead);
+                                        return (
+                                            <tr
+                                                key={`${id}-${index}`}
+                                                className="hover:bg-[var(--bg-app)] transition-colors group cursor-pointer"
+                                                onClick={() => { setSelectedLeadIdForChat(id); setSelectedLeadObj(lead); }}
+                                            >
+                                                <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
+                                                    <Checkbox
+                                                        checked={selectedLeads.includes(id)}
+                                                        onCheckedChange={() => toggleSelect(id)}
+                                                    />
+                                                </td>
+                                                <td className="px-4 py-4 font-bold text-[var(--label-primary)] group-hover:text-emerald-700">{lead["Name"] || "—"}</td>
+                                                <td className="px-4 py-4 text-[var(--label-secondary)] font-mono text-xs">{lead["Phone"] || "—"}</td>
+                                                <td className="px-4 py-4">
+                                                    <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-100 text-[10px] uppercase font-bold">
+                                                        {lead.source_loop || "—"}
+                                                    </Badge>
+                                                </td>
+                                                <td className="px-4 py-4 text-center">
+                                                    {hasReplied
+                                                        ? <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none text-[10px] font-bold">REPLIED</Badge>
+                                                        : <Badge variant="outline" className="text-[10px] text-[var(--label-tertiary)] border-[var(--separator)]">SENT</Badge>
+                                                    }
+                                                </td>
+                                                <td className="px-4 py-4 text-[var(--label-secondary)] text-xs">
+                                                    {waDate ? waDate.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' }) : "—"}
+                                                </td>
+                                                <td className="px-4 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                                        <MoreVertical className="h-4 w-4" />
+                                                    </Button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
                                 )}
                             </tbody>
                         </table>
                     </div>
 
                     {/* Footer */}
-                    <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex flex-col md:flex-row items-center justify-between gap-4">
-                        <p className="text-sm text-slate-500">
-                            Showing <span className="font-bold text-slate-900">
-                                {activeTab === "leads" ? paginatedLeads.length : paginatedOwners.length}
-                            </span> of <span className="font-bold text-slate-900">
-                                {activeTab === "leads" ? filteredLeads.length : filteredOwners.length}
-                            </span> {activeTab}
+                    <div className="p-4 border-t border-[var(--separator)] bg-[var(--bg-app)]/50 flex flex-col md:flex-row items-center justify-between gap-4">
+                        <p className="text-sm text-[var(--label-secondary)]">
+                            Showing <span className="font-bold text-[var(--label-primary)]">{paginatedLeads.length}</span> of <span className="font-bold text-[var(--label-primary)]">{filteredLeads.length}</span> leads
                         </p>
 
                         {totalPages > 1 && (

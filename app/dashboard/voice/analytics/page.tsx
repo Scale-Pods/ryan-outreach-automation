@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Phone, CheckCircle, PhoneIncoming, Crown } from "lucide-react";
+import { Phone, CheckCircle, PhoneIncoming } from "lucide-react";
 import { LMLoader } from "@/components/ryan-loader";
 import {
     BarChart,
@@ -21,7 +21,7 @@ import { format, subDays } from "date-fns";
 import { useData } from "@/context/DataContext";
 
 export default function VoiceAnalyticsPage() {
-    const { voiceMetrics, loadingVoiceMetrics, allTimeVoiceCount, allTimeOwnerVoiceCount, refreshVoiceMetrics } = useData();
+    const { voiceMetrics, loadingVoiceMetrics, allTimeVoiceCount, refreshVoiceMetrics } = useData();
 
     const [accountFilter, setAccountFilter] = useState("vapi");
     const [dateRange, setDateRange] = useState<any>({
@@ -34,7 +34,6 @@ export default function VoiceAnalyticsPage() {
 
     // Which sections to show based on the dropdown
     const showNormal = accountFilter === 'vapi' || accountFilter === 'vapi-normal';
-    const showOwners = accountFilter === 'vapi' || accountFilter === 'vapi-owners';
 
     // Re-fetch whenever date or account filter changes
     useEffect(() => {
@@ -42,7 +41,6 @@ export default function VoiceAnalyticsPage() {
         refreshVoiceMetrics({
             from: dateRange.from,
             to: dateRange.to || dateRange.from,
-            includeElevenLabs: accountFilter === 'elevenlabs',
         });
     }, [dateRange, accountFilter, refreshVoiceMetrics]);
 
@@ -65,8 +63,8 @@ export default function VoiceAnalyticsPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Voice Analytics</h1>
-                    <p className="text-slate-500">Comprehensive insights across all voice accounts.</p>
+                    <h1 className="text-2xl font-bold text-[var(--label-primary)]">Voice Analytics</h1>
+                    <p className="text-[var(--label-secondary)]">Comprehensive insights across all voice accounts.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                     <Select value={accountFilter} onValueChange={setAccountFilter}>
@@ -75,9 +73,7 @@ export default function VoiceAnalyticsPage() {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="vapi">All Vapi Calls</SelectItem>
-                            <SelectItem value="vapi-owners">Owner Leads</SelectItem>
                             <SelectItem value="vapi-normal">Normal Calls</SelectItem>
-                            <SelectItem value="elevenlabs">ElevenLabs</SelectItem>
                         </SelectContent>
                     </Select>
                     <DateRangePicker onUpdate={(values) => setDateRange(values.range)} />
@@ -92,22 +88,14 @@ export default function VoiceAnalyticsPage() {
                     change="All Time"
                     icon={<Phone className="h-5 w-5" />}
                     color="text-blue-600"
-                    bg="bg-blue-50"
-                />
-                <StatCard
-                    title="Total Owner Calls"
-                    value={(m?.allTimeOwnerCalls ?? allTimeOwnerVoiceCount).toLocaleString()}
-                    change="All Time"
-                    icon={<Crown className="h-5 w-5" />}
-                    color="text-amber-600"
-                    bg="bg-amber-50"
+                    bg="bg-[rgba(0,122,255,0.08)]"
                 />
             </div>
 
             {/* Normal Calls Funnel */}
             {showNormal && (
                 <div>
-                    <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-[var(--label-primary)] mb-4 flex items-center gap-2">
                         <span className="p-1.5 bg-blue-600 rounded-lg">
                             <PhoneIncoming className="h-4 w-4 text-white" />
                         </span>
@@ -120,7 +108,7 @@ export default function VoiceAnalyticsPage() {
                             change="Selected Dates"
                             icon={<Phone className="h-5 w-5" />}
                             color="text-blue-600"
-                            bg="bg-blue-50"
+                            bg="bg-[rgba(0,122,255,0.08)]"
                         />
                         <StatCard
                             title="Call Pick-up Rate"
@@ -136,7 +124,7 @@ export default function VoiceAnalyticsPage() {
                             change="Completed Conversation"
                             icon={<CheckCircle className="h-5 w-5" />}
                             color="text-emerald-600"
-                            bg="bg-emerald-50"
+                            bg="bg-[rgba(52,199,89,0.08)]"
                         />
                         <StatCard
                             title="Positive Response Rate"
@@ -144,53 +132,7 @@ export default function VoiceAnalyticsPage() {
                             change="Positive & Hesitant"
                             icon={<CheckCircle className="h-5 w-5" />}
                             color="text-blue-600"
-                            bg="bg-blue-50"
-                        />
-                    </div>
-                </div>
-            )}
-
-            {/* Owner Calls Funnel */}
-            {showOwners && (
-                <div>
-                    <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                        <span className="p-1.5 bg-amber-600 rounded-lg">
-                            <Crown className="h-4 w-4 text-white" />
-                        </span>
-                        Owner Data Analytics
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <StatCard
-                            title="Calls in Range"
-                            value={(m?.ownerCalls ?? 0).toLocaleString()}
-                            change="Selected Dates"
-                            icon={<Crown className="h-5 w-5" />}
-                            color="text-amber-600"
-                            bg="bg-amber-50"
-                        />
-                        <StatCard
-                            title="Call Pick-up Rate"
-                            value={`${(m?.ownerPickupRate ?? 0).toFixed(1)}%`}
-                            change="Picked & duration > 18 sec"
-                            icon={<Phone className="h-5 w-5" />}
-                            color="text-amber-600"
-                            bg="bg-amber-50"
-                        />
-                        <StatCard
-                            title="Call Completion Rate"
-                            value={`${(m?.ownerCompletionRate ?? 0).toFixed(1)}%`}
-                            change="Completed Conversation"
-                            icon={<CheckCircle className="h-5 w-5" />}
-                            color="text-emerald-600"
-                            bg="bg-emerald-50"
-                        />
-                        <StatCard
-                            title="Positive Response Rate"
-                            value={`${(m?.ownerPositiveRate ?? 0).toFixed(1)}%`}
-                            change="EOI & Callback"
-                            icon={<CheckCircle className="h-5 w-5" />}
-                            color="text-blue-600"
-                            bg="bg-blue-50"
+                            bg="bg-[rgba(0,122,255,0.08)]"
                         />
                     </div>
                 </div>
@@ -198,7 +140,7 @@ export default function VoiceAnalyticsPage() {
 
             {/* Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="border-slate-200">
+                <Card className="border-[var(--separator)]">
                     <CardHeader>
                         <CardTitle className="text-lg">Call Volume Trends</CardTitle>
                     </CardHeader>
@@ -217,7 +159,7 @@ export default function VoiceAnalyticsPage() {
                     </CardContent>
                 </Card>
 
-                <Card className="border-slate-200">
+                <Card className="border-[var(--separator)]">
                     <CardHeader>
                         <CardTitle className="text-lg">Duration Distribution</CardTitle>
                     </CardHeader>
@@ -242,12 +184,12 @@ export default function VoiceAnalyticsPage() {
 
 function StatCard({ title, value, change, icon, color, bg, isNegative }: any) {
     return (
-        <Card className="border-slate-200">
+        <Card className="border-[var(--separator)]">
             <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-tighter">{title}</p>
-                        <h3 className="text-2xl font-bold text-slate-950 mt-1">{value}</h3>
+                        <p className="text-xs font-bold text-[var(--label-secondary)] uppercase tracking-tighter">{title}</p>
+                        <h3 className="text-2xl font-bold text-[var(--label-primary)] mt-1">{value}</h3>
                         <span className={`text-xs font-bold ${isNegative ? 'text-rose-600' : 'text-emerald-600'}`}>
                             {change} {isNegative ? '↓' : '↑'}
                         </span>

@@ -58,8 +58,8 @@ export default function WhatsappLayout({
     const isSpecificChat = pathname.startsWith("/dashboard/whatsapp/chat/") && pathname !== "/dashboard/whatsapp/chat";
     if (isSpecificChat) {
         return (
-            <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 sm:p-6 md:p-8">
-                <main className="w-full max-w-5xl h-[90vh] bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200 p-2 sm:p-6 flex flex-col relative">
+            <div className="min-h-screen bg-[var(--bg-app)] flex items-center justify-center p-4 sm:p-6 md:p-8">
+                <main className="w-full max-w-5xl h-[90vh] bg-[var(--glass-fill)] backdrop-blur-[48px] shadow-[var(--glass-shadow)] rounded-2xl overflow-hidden border border-[var(--separator)] p-2 sm:p-6 flex flex-col relative">
                     {children}
                 </main>
             </div>
@@ -67,15 +67,15 @@ export default function WhatsappLayout({
     }
 
     return (
-        <div className="flex h-screen overflow-hidden bg-zinc-50 text-slate-900">
+        <div className="flex h-screen overflow-hidden bg-[var(--bg-app)] text-[var(--label-primary)]">
             {/* WhatsApp Sidebar */}
-            <aside className="w-64 flex-col bg-white border-r border-zinc-200 hidden md:flex font-sans">
+            <aside className="w-64 flex-col bg-[var(--glass-fill)] backdrop-blur-[48px] shadow-[var(--glass-shadow)] border-r border-[var(--separator)] hidden md:flex font-sans">
                 {/* Logo Section */}
                 <div className="p-6 pb-4 flex justify-center">
                     <div className="relative w-48 h-16">
                         <Image
-                            src="https://ryansautomation.com/logoheader.webp"
-                            alt="Ryan's Automation Logo"
+                            src="https://www.napleshomes.com/inc/skins/custom/img/nh-final-white.png"
+                            alt="Naples Homes Logo"
                             fill
                             className="object-contain"
                             priority
@@ -88,7 +88,7 @@ export default function WhatsappLayout({
                         <DropdownMenuTrigger asChild>
                             <Button
                                 variant="outline"
-                                className="w-full justify-between bg-white border-slate-200 text-slate-700 hover:bg-slate-50 h-10 shadow-sm"
+                                className="w-full justify-between bg-[var(--glass-fill)] backdrop-blur-[48px] border-[var(--separator)] text-[var(--label-primary)] hover:bg-[var(--glass-fill-hover)] h-10 shadow-[var(--glass-shadow)]"
                             >
                                 <span className="flex items-center gap-2">
                                     <LayoutDashboard className="h-4 w-4 text-green-600" />
@@ -123,7 +123,7 @@ export default function WhatsappLayout({
                 </div>
 
                 <div className="px-4 py-2">
-                    <div className="h-[1px] w-full bg-zinc-100"></div>
+                    <div className="h-[1px] w-full bg-[var(--separator)]"></div>
                 </div>
 
                 <nav className="flex-1 overflow-auto px-4 space-y-2">
@@ -134,11 +134,11 @@ export default function WhatsappLayout({
                                 key={index}
                                 href={item.href}
                                 className={`group flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-medium transition-all ${isActive
-                                    ? "bg-gradient-to-r from-green-600 to-emerald-500 text-white shadow-md shadow-green-500/20"
-                                    : "text-slate-500 hover:text-slate-900 hover:bg-zinc-100"
+                                    ? "bg-[var(--blue)] text-white shadow-[var(--glass-shadow)]"
+                                    : "text-[var(--label-secondary)] hover:text-[var(--label-primary)] hover:bg-[var(--glass-fill-hover)]"
                                     }`}
                             >
-                                <item.icon className={`h-5 w-5 ${isActive ? "text-white" : "text-slate-400 group-hover:text-slate-600 transition-colors"}`} />
+                                <item.icon className={`h-5 w-5 ${isActive ? "text-white" : "text-[var(--label-tertiary)] group-hover:text-[var(--label-secondary)] transition-colors"}`} />
                                 {item.title}
                             </Link>
                         );
@@ -151,7 +151,7 @@ export default function WhatsappLayout({
             </aside>
 
             {/* Main Content Area */}
-            <main className="flex-1 overflow-auto bg-zinc-50 p-6">
+            <main className="flex-1 overflow-auto bg-[var(--bg-app)] p-6">
                 {children}
             </main>
         </div>

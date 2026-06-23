@@ -1,74 +1,34 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabase';
 
-export async function GET() {
-    const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim();
-    const secretKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
+export const dynamic = 'force-dynamic';
 
-    if (!supabaseUrl || !secretKey) {
-        return NextResponse.json({ error: "Config missing" }, { status: 500 });
-    }
-
-    const baseUrl = `${supabaseUrl.replace(/\/$/, "")}/rest/v1`;
-
-    const headers = {
-        "apikey": secretKey,
-        "Authorization": `Bearer ${secretKey}`,
-        "Content-Type": "application/json"
-    };
-
-    const fetchTable = async (tableName: string) => {
-        const url = `${baseUrl}${tableName}?select=*`;
-
-        // Stable timeout for Node 22
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 60000);
-
-        try {
-            const response = await fetch(url, {
-                headers,
-                cache: 'no-store',
-                signal: controller.signal
-            });
-            clearTimeout(timeoutId);
-
-            const contentType = response.headers.get("content-type");
-            if (contentType && contentType.includes("text/html")) {
-                console.error(`Error: HTML returned from ${url}. Endpoint might be wrong.`);
-                return [];
-            }
-
-            if (!response.ok) {
-                console.error(`Error fetching ${tableName}:`, await response.text());
-                return [];
-            }
-
-            return response.json();
-        } catch (err: any) {
-            clearTimeout(timeoutId);
-            if (err.name === 'AbortError') {
-                console.error(`Timeout error for ${tableName}: Request aborted after 60s.`);
-            } else {
-                console.error(`Fetch error for ${tableName}:`, err);
-            }
-            return [];
-        }
-    };
-
+export async function GET(request: NextRequest) {
     try {
-        const [nr_wf, followup, nurture] = await Promise.all([
-            fetchTable("nr_wf"),
-            fetchTable("followup"),
-            fetchTable("nurture")
-        ]);
+        const { searchParams } = new URL(request.url);
+        const from = searchParams.get('from');
+        const to = searchParams.get('to');
 
-        return NextResponse.json({
-            nr_wf,
-            followup,
-            nurture
+        const fromDate = from || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+        const toDate = to || new Date().toISOString();
+
+        const { data, error } = await supabaseAdmin
+            .from('fello_leads')
+            .select('*')
+            .gte('created_at', fromDate)
+            .lte('created_at', toDate)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching raw leads:', error);
+            return NextResponse.json([], { status: 500 });
+        }
+
+        return NextResponse.json(data || [], {
+            headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' },
         });
-
-    } catch (error: any) {
-        console.error('Raw fetch error:', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+    } catch (error) {
+        console.error('Error in leads-raw route:', error);
+        return NextResponse.json([], { status: 500 });
     }
 }

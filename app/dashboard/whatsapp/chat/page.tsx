@@ -13,7 +13,6 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { WhatsAppChatDetail } from "@/components/dashboard/whatsapp-chat-detail";
-import { OwnerChatDetail } from "@/components/dashboard/owner-chat-detail";
 import {
     Dialog,
     DialogContent,
@@ -314,7 +313,7 @@ export default function WhatsappChatPage() {
     const leadsPerPage = 10;
 
     // Tab state: "leads" or "owners"
-    const [activeTab, setActiveTab] = useState<"leads" | "owners">("leads");
+    const [activeTab, setActiveTab] = useState<"leads">("leads");
 
     // URL Sync for chat
     const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
@@ -322,7 +321,6 @@ export default function WhatsappChatPage() {
     const initialTab = searchParams?.get('tab');
 
     const [selectedLeadId, setSelectedLeadId] = useState<string | null>(initialSelectedId || null);
-    const [selectedOwner, setSelectedOwner] = useState<any | null>(null);
     const initialProcessed = useRef(false);
 
     useEffect(() => {
@@ -330,48 +328,24 @@ export default function WhatsappChatPage() {
         if (selectedLeadId) {
             url.searchParams.set('chat', selectedLeadId);
             url.searchParams.set('tab', 'leads');
-        } else if (selectedOwner) {
-            const ownerId = selectedOwner.id || selectedOwner.contactNo || selectedOwner.Phone || selectedOwner.phone;
-            url.searchParams.set('chat', ownerId);
-            url.searchParams.set('tab', 'owners');
         } else {
             url.searchParams.delete('chat');
             url.searchParams.delete('tab');
         }
         window.history.replaceState({}, '', url.toString());
-    }, [selectedLeadId, selectedOwner]);
+    }, [selectedLeadId]);
 
     // Handle initial URL parameters
     useEffect(() => {
         if (initialProcessed.current) return;
         
-        if (initialTab === 'owners') {
-            setActiveTab('owners');
-        }
-        
         if (initialSelectedId) {
-            if (initialTab === 'owners') {
-                // Find in waOwners (already fetched)
-                if (waOwners.length > 0) {
-                    const found = waOwners.find(o =>
-                        String(o.id) === initialSelectedId ||
-                        String(o.contactNo) === initialSelectedId ||
-                        String(o.Phone) === initialSelectedId ||
-                        String(o.phone) === initialSelectedId
-                    );
-                    if (found) {
-                        setSelectedOwner(found);
-                        initialProcessed.current = true;
-                    }
-                }
-            } else {
-                setSelectedLeadId(initialSelectedId);
-                initialProcessed.current = true;
-            }
+            setSelectedLeadId(initialSelectedId);
+            initialProcessed.current = true;
         } else {
             initialProcessed.current = true;
         }
-    }, [initialSelectedId, initialTab, waOwners]);
+    }, [initialSelectedId]);
 
     // Filter State
     const [pendingFilters, setPendingFilters] = useState<{
@@ -620,9 +594,7 @@ export default function WhatsappChatPage() {
         return filteredLeads.slice(start, start + leadsPerPage);
     }, [filteredLeads, currentPage]);
 
-    const totalPages = activeTab === "leads" 
-        ? Math.ceil(filteredLeads.length / leadsPerPage) 
-        : Math.ceil(filteredOwners.length / leadsPerPage);
+    const totalPages = Math.ceil(filteredLeads.length / leadsPerPage);
 
     useEffect(() => { setCurrentPage(1); }, [searchQuery, activeFilters, dateRange]);
 
@@ -638,7 +610,7 @@ export default function WhatsappChatPage() {
             items.push(renderPageButton(1));
 
             if (currentPage > 3) {
-                items.push(<span key="dots-1" className="flex items-center justify-center w-8 h-8 text-slate-400"><MoreHorizontal className="h-4 w-4" /></span>);
+                items.push(<span key="dots-1" className="flex items-center justify-center w-8 h-8 text-[var(--label-tertiary)]"><MoreHorizontal className="h-4 w-4" /></span>);
             }
 
             const start = Math.max(2, currentPage - 1);
@@ -651,7 +623,7 @@ export default function WhatsappChatPage() {
             }
 
             if (currentPage < totalPages - 2) {
-                items.push(<span key="dots-2" className="flex items-center justify-center w-8 h-8 text-slate-400"><MoreHorizontal className="h-4 w-4" /></span>);
+                items.push(<span key="dots-2" className="flex items-center justify-center w-8 h-8 text-[var(--label-tertiary)]"><MoreHorizontal className="h-4 w-4" /></span>);
             }
 
             items.push(renderPageButton(totalPages));
@@ -664,7 +636,7 @@ export default function WhatsappChatPage() {
             key={page}
             variant={currentPage === page ? "default" : "outline"}
             size="sm"
-            className={`h-8 w-8 text-xs font-bold ${currentPage === page ? 'bg-slate-900 text-white' : 'text-slate-600'
+            className={`h-8 w-8 text-xs font-bold ${currentPage === page ? 'bg-slate-900 text-white' : 'text-[var(--label-secondary)]'
                 }`}
             onClick={() => setCurrentPage(page)}
         >
@@ -678,26 +650,20 @@ export default function WhatsappChatPage() {
 
     return (
         <div className="space-y-6 pb-10 relative min-h-[500px]">
-            {(activeTab === "leads" ? loading : loadingWA) && <LMLoader />}
+            {loading && <LMLoader />}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">WhatsApp Chats</h1>
-                    <p className="text-slate-500 text-sm">Real-time engagement across your leads</p>
+                    <h1 className="text-2xl font-bold text-[var(--label-primary)]">WhatsApp Chats</h1>
+                    <p className="text-[var(--label-secondary)] text-sm">Real-time engagement across your leads</p>
                 </div>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                     {/* Tab Switcher */}
-                    <div className="flex bg-slate-100 rounded-lg p-0.5">
+                    <div className="flex bg-[var(--fill-quaternary)] rounded-lg p-0.5">
                         <button
                             onClick={() => { setActiveTab("leads"); setCurrentPage(1); }}
-                            className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${activeTab === "leads" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                            className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${activeTab === "leads" ? "bg-[var(--glass-fill)] text-[var(--label-primary)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)]" : "text-[var(--label-secondary)] hover:text-[var(--label-primary)]"}`}
                         >
                             <Users className="h-3.5 w-3.5 inline mr-1.5" />Leads
-                        </button>
-                        <button
-                            onClick={() => { setActiveTab("owners"); setCurrentPage(1); }}
-                            className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${activeTab === "owners" ? "bg-white text-amber-700 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
-                        >
-                            <Building2 className="h-3.5 w-3.5 inline mr-1.5" />Owners
                         </button>
                     </div>
                     <DateRangePicker onUpdate={(values) => setDateRange(values.range)} />
@@ -709,10 +675,10 @@ export default function WhatsappChatPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 <div className="lg:col-span-1 space-y-4">
-                    <Card className="border-slate-200 shadow-sm bg-white h-auto">
+                    <Card className="border-[var(--separator)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] bg-[var(--glass-fill)] h-auto">
                         <CardContent className="p-4 space-y-6">
-                            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                                <div className="flex items-center gap-2 text-slate-900 font-bold">
+                            <div className="flex items-center justify-between border-b border-[var(--separator)] pb-2">
+                                <div className="flex items-center gap-2 text-[var(--label-primary)] font-bold">
                                     <Filter className="h-4 w-4" /> Filters
                                 </div>
                                 {(activeFilters.replyStatus.length > 0 || activeFilters.loops.length > 0 || activeFilters.messageStatus.length > 0 || activeFilters.templates.length > 0) && (
@@ -743,7 +709,7 @@ export default function WhatsappChatPage() {
                                                 label={
                                                     <div className="flex flex-col">
                                                         <span className="text-[11px] font-bold">{t.name}</span>
-                                                        <span className="text-[9px] text-slate-400 font-mono uppercase">[{t.column}]</span>
+                                                        <span className="text-[9px] text-[var(--label-tertiary)] font-mono uppercase">[{t.column}]</span>
                                                     </div>
                                                 } 
                                                 checked={pendingFilters.templates.includes(t.name)} 
@@ -751,22 +717,6 @@ export default function WhatsappChatPage() {
                                             />
                                         ))}
                                     </div>
-                                </FilterSection>
-                            )}
-
-                            {activeTab === "owners" && (
-                                <FilterSection title="Templates">
-                                    <FilterOption 
-                                        id="owner-whatsapp-1"
-                                        label={
-                                            <div className="flex flex-col">
-                                                <span className="text-[11px] font-bold">Owner Message #1</span>
-                                                <span className="text-[9px] text-slate-400 font-mono uppercase">[Whatsapp_1]</span>
-                                            </div>
-                                        } 
-                                        checked={pendingFilters.templates.includes("Owner Message #1")} 
-                                        onCheckedChange={() => toggleFilter('templates', "Owner Message #1")} 
-                                    />
                                 </FilterSection>
                             )}
 
@@ -786,19 +736,19 @@ export default function WhatsappChatPage() {
                 <div className="lg:col-span-3 space-y-4">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <MetricCard title="Messages Sent" value={(activeTab === "leads" ? loading : loadingWA) ? "..." : stats.sentCount.toLocaleString()} desc="Total outgoing pulses" icon={Send} />
-                            <MetricCard title="Unique Msg Sent" value={(activeTab === "leads" ? loading : loadingWA) ? "..." : stats.uniqueSentCount.toLocaleString()} desc="Unique entities contacted" icon={Users} />
-                            <MetricCard title="Total Replies" value={(activeTab === "leads" ? loading : loadingWA) ? "..." : stats.repliedCount.toLocaleString()} desc={`${stats.responseRate}% Response Rate`} icon={MessageSquare} />
+                            <MetricCard title="Messages Sent" value={loading ? "..." : stats.sentCount.toLocaleString()} desc="Total outgoing pulses" icon={Send} />
+                            <MetricCard title="Unique Msg Sent" value={loading ? "..." : stats.uniqueSentCount.toLocaleString()} desc="Unique entities contacted" icon={Users} />
+                            <MetricCard title="Total Replies" value={loading ? "..." : stats.repliedCount.toLocaleString()} desc={`${stats.responseRate}% Response Rate`} icon={MessageSquare} />
                         </div>
-                        <Card className="border-slate-200 shadow-sm bg-white">
+                        <Card className="border-[var(--separator)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] bg-[var(--glass-fill)]">
                             <CardContent className="p-4 space-y-4">
                                 <div>
-                                    <h3 className="text-sm font-bold text-slate-900">Delivery Status</h3>
-                                    <p className="text-xs text-slate-500">Global outbound health</p>
+                                    <h3 className="text-sm font-bold text-[var(--label-primary)]">Delivery Status</h3>
+                                    <p className="text-xs text-[var(--label-secondary)]">Global outbound health</p>
                                 </div>
                                 <div className="space-y-3">
                                     <StatusBar label="Sent" value={stats.sentCount} total={stats.sentCount || 1} color="bg-blue-400" />
-                                    <StatusBar label="Replied" value={stats.repliedCount} total={stats.uniqueSentCount || 1} color="bg-emerald-500" />
+                                    <StatusBar label="Replied" value={stats.repliedCount} total={stats.uniqueSentCount || 1} color="bg-[rgba(52,199,89,0.08)]0" />
                                     {stats.failedCount > 0 && (
                                         <StatusBar label="Failed" value={stats.failedCount} total={stats.sentCount || 1} color="bg-rose-500" />
                                     )}
@@ -808,131 +758,58 @@ export default function WhatsappChatPage() {
                     </div>
 
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                        <Input className="pl-10 bg-white" placeholder={`Search ${activeTab} by name or phone...`} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--label-tertiary)]" />
+                        <Input className="pl-10 bg-[var(--glass-fill)]" placeholder={`Search ${activeTab} by name or phone...`} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                     </div>
 
-                    <Card className="border-slate-200 shadow-sm bg-white overflow-hidden">
-                        {activeTab === "leads" ? (
-                            <>
-                                {loading ? (
-                                    <div className="p-10 text-center text-slate-500 flex flex-col items-center gap-2">
-                                        <RefreshCw className="h-6 w-6 animate-spin text-emerald-500" />
-                                        Loading real-time chats...
-                                    </div>
-                                ) : filteredLeads.length === 0 ? (
-                                    <div className="p-10 text-center text-slate-500">No WhatsApp chats found.</div>
-                                ) : (
-                                    <TooltipProvider>
-                                        <table className="w-full text-left text-sm">
-                                            <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
-                                                <tr>
-                                                    <th className="px-4 py-3">Lead</th>
-                                                    <th className="px-4 py-3 text-center">Loop</th>
-                                                    <th className="px-4 py-3 text-center">Messages Sent</th>
-                                                    <th className="px-4 py-3 text-center">Status</th>
-                                                    <th className="px-4 py-3 text-center">Message Status</th>
-                                                    <th className="px-4 py-3 text-right">Last Contacted</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-100">
-                                                {paginatedLeads.map((lead, idx) => {
-                                                    const leadId = lead["Lead ID"] || lead.id || String(idx);
-                                                    return (
-                                                        <CustomerRow key={`${leadId}-${idx}`} lead={lead} onClick={() => {
-                                                            setSelectedOwner(null);
-                                                            // Normalize DB-column-cased keys to the shape WhatsAppChatDetail expects
-                                                            setSelectedLeadObj({
-                                                                ...lead,
-                                                                id: leadId,
-                                                                name: lead["Name"] || lead.name || "",
-                                                                phone: lead["Phone"] || lead.phone || "",
-                                                                email: lead["Email"] || lead.email || "",
-                                                                source_loop: lead.source_loop,
-                                                            });
-                                                            setSelectedLeadId(leadId);
-                                                        }} />
-                                                    );
-                                                })}
-                                            </tbody>
-                                        </table>
-                                    </TooltipProvider>
-                                )}
-                            </>
+                    <Card className="border-[var(--separator)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] bg-[var(--glass-fill)] overflow-hidden">
+                        {loading ? (
+                            <div className="p-10 text-center text-[var(--label-secondary)] flex flex-col items-center gap-2">
+                                <RefreshCw className="h-6 w-6 animate-spin text-emerald-500" />
+                                Loading real-time chats...
+                            </div>
+                        ) : filteredLeads.length === 0 ? (
+                            <div className="p-10 text-center text-[var(--label-secondary)]">No WhatsApp chats found.</div>
                         ) : (
-                            <>
-                                {loadingWA ? (
-                                    <div className="p-10 text-center text-slate-500 flex flex-col items-center gap-2">
-                                        <RefreshCw className="h-6 w-6 animate-spin text-amber-500" />
-                                        Loading owner chats...
-                                    </div>
-                                ) : filteredOwners.length === 0 ? (
-                                    <div className="p-10 text-center text-slate-500">No owner chats found.</div>
-                                ) : (
-                                    <TooltipProvider>
-                                        <table className="w-full text-left text-sm">
-                                            <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
-                                                <tr>
-                                                    <th className="px-4 py-3">Owner</th>
-                                                    <th className="px-4 py-3 text-center">WTS Reply</th>
-                                                    <th className="px-4 py-3 text-center">Status</th>
-                                                    <th className="px-4 py-3 text-center">Messages</th>
-                                                    <th className="px-4 py-3 text-right">Date</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-100">
-                                                {paginatedOwners.map((owner, idx) => {
-                                                    const wtsReply = owner["WTS_Reply_Track"];
-                                                    const hasReply = wtsReply && wtsReply !== "" && String(wtsReply).toLowerCase() !== "no";
-                                                    let msgCount = 0;
-                                                    if (owner["Whatsapp_1"]) msgCount++;
-                                                    if (owner["retry_1"]) msgCount++;
-                                                    for (let i = 1; i <= 5; i++) {
-                                                        if (owner[`User_Replied_${i}`]) msgCount++;
-                                                        if (owner[`Bot_Replied_${i}`]) msgCount++;
-                                                    }
-                                                    const wpDate = extractOwnerWADate(owner);
-                                                    return (
-                                                        <tr key={`${owner.id || ''}-${owner.contactNo || owner.Phone || owner.phone || ''}-${idx}`} className="hover:bg-slate-50 transition-colors cursor-pointer group" onClick={() => {
-                                                            setSelectedLeadId(null);
-                                                            setSelectedOwner(owner);
-                                                        }}>
-                                                            <td className="px-4 py-3">
-                                                                <div className="font-bold text-slate-900 group-hover:text-amber-700">{owner.Name || owner.name || "—"}</div>
-                                                                <div className="text-xs text-slate-500">{owner.contactNo || owner.Phone || owner.phone || "—"}</div>
-                                                            </td>
-                                                            <td className="px-4 py-3 text-center">
-                                                                {hasReply ? (
-                                                                    <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none text-[10px] font-bold">REPLIED</Badge>
-                                                                ) : (
-                                                                    <Badge variant="outline" className="text-[10px] text-slate-400 border-slate-200">SENT</Badge>
-                                                                )}
-                                                            </td>
-                                                            <td className="px-4 py-3 text-center">
-                                                                {owner["Whatsapp_1_status"] ? (
-                                                                    <MessageStatusBadge index={1} status={owner["Whatsapp_1_status"]} />
-                                                                ) : (
-                                                                    <span className="text-slate-300 text-[10px]">—</span>
-                                                                )}
-                                                            </td>
-                                                            <td className="px-4 py-3 text-center font-bold text-slate-700">{msgCount}</td>
-                                                            <td className="px-4 py-3 text-right text-slate-500 text-xs text-nowrap">
-                                                                {wpDate ? wpDate.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' }) : "—"}
-                                                            </td>
-                                                        </tr>
-                                                    );
-                                                })}
-                                            </tbody>
-                                        </table>
-                                    </TooltipProvider>
-                                )}
-                            </>
+                            <TooltipProvider>
+                                <table className="w-full text-left text-sm">
+                                    <thead className="bg-[var(--bg-app)] text-[var(--label-secondary)] font-bold border-b border-[var(--separator)]">
+                                        <tr>
+                                            <th className="px-4 py-3">Lead</th>
+                                            <th className="px-4 py-3 text-center">Loop</th>
+                                            <th className="px-4 py-3 text-center">Messages Sent</th>
+                                            <th className="px-4 py-3 text-center">Status</th>
+                                            <th className="px-4 py-3 text-center">Message Status</th>
+                                            <th className="px-4 py-3 text-right">Last Contacted</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-[var(--separator)]">
+                                        {paginatedLeads.map((lead, idx) => {
+                                            const leadId = lead["Lead ID"] || lead.id || String(idx);
+                                            return (
+                                                <CustomerRow key={`${leadId}-${idx}`} lead={lead} onClick={() => {
+                                                    // Normalize DB-column-cased keys to the shape WhatsAppChatDetail expects
+                                                    setSelectedLeadObj({
+                                                        ...lead,
+                                                        id: leadId,
+                                                        name: lead["Name"] || lead.name || "",
+                                                        phone: lead["Phone"] || lead.phone || "",
+                                                        email: lead["Email"] || lead.email || "",
+                                                        source_loop: lead.source_loop,
+                                                    });
+                                                    setSelectedLeadId(leadId);
+                                                }} />
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </TooltipProvider>
                         )}
 
                         {totalPages > 1 && (
-                            <div className="bg-slate-50 border-t border-slate-100 px-4 py-3 flex items-center justify-between">
-                                <div className="text-xs text-slate-500 font-medium">
-                                    Showing <span className="text-slate-900 font-bold">{(currentPage - 1) * leadsPerPage + 1}</span> to <span className="text-slate-900 font-bold">{Math.min(currentPage * leadsPerPage, (activeTab === "leads" ? filteredLeads.length : filteredOwners.length))}</span> of <span className="text-slate-900 font-bold">{(activeTab === "leads" ? filteredLeads.length : filteredOwners.length)}</span> {activeTab}
+                            <div className="bg-[var(--bg-app)] border-t border-[var(--separator)] px-4 py-3 flex items-center justify-between">
+                                <div className="text-xs text-[var(--label-secondary)] font-medium">
+                                    Showing <span className="text-[var(--label-primary)] font-bold">{(currentPage - 1) * leadsPerPage + 1}</span> to <span className="text-[var(--label-primary)] font-bold">{Math.min(currentPage * leadsPerPage, filteredLeads.length)}</span> of <span className="text-[var(--label-primary)] font-bold">{filteredLeads.length}</span> leads
                                 </div>
                                 <div className="flex gap-1 items-center">
                                     <Button variant="outline" size="sm" className="h-8 w-8 p-0" disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)}>
@@ -964,29 +841,21 @@ export default function WhatsappChatPage() {
                     )}
                 </DialogContent>
             </Dialog>
-
-            {/* Owner Chat Dialog */}
-            <Dialog open={!!selectedOwner} onOpenChange={(open) => !open && setSelectedOwner(null)}>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-6 gap-0">
-                    <DialogHeader className="sr-only"><DialogTitle>Owner Chat Detail</DialogTitle></DialogHeader>
-                    {selectedOwner && <OwnerChatDetail owner={selectedOwner} onClose={() => setSelectedOwner(null)} />}
-                </DialogContent>
-            </Dialog>
         </div>
     );
 }
 
 function MetricCard({ title, value, desc, icon: Icon, dots }: any) {
     return (
-        <Card className="bg-white border-slate-200 shadow-sm">
+        <Card className="bg-[var(--glass-fill)] border-[var(--separator)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)]">
             <CardContent className="p-4">
-                <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg w-fit mb-2"><Icon className="h-5 w-5" /></div>
-                <h3 className="text-2xl font-bold text-slate-900">{value}</h3>
-                <p className="text-xs font-medium text-slate-500">{title}</p>
-                <p className="text-[10px] text-slate-400 mt-1">{desc}</p>
+                <div className="p-2 bg-[rgba(52,199,89,0.08)] text-emerald-600 rounded-lg w-fit mb-2"><Icon className="h-5 w-5" /></div>
+                <h3 className="text-2xl font-bold text-[var(--label-primary)]">{value}</h3>
+                <p className="text-xs font-medium text-[var(--label-secondary)]">{title}</p>
+                <p className="text-[10px] text-[var(--label-tertiary)] mt-1">{desc}</p>
                 {dots && (
                     <div className="flex gap-1 mt-2">
-                        <div className="h-2 w-2 rounded-full bg-blue-400" /><div className="h-2 w-2 rounded-full bg-emerald-500" /><div className="h-2 w-2 rounded-full bg-rose-500" />
+                        <div className="h-2 w-2 rounded-full bg-blue-400" /><div className="h-2 w-2 rounded-full bg-[rgba(52,199,89,0.08)]0" /><div className="h-2 w-2 rounded-full bg-rose-500" />
                     </div>
                 )}
             </CardContent>
@@ -997,10 +866,10 @@ function MetricCard({ title, value, desc, icon: Icon, dots }: any) {
 function StatusBar({ label, value, total, color }: any) {
     return (
         <div className="space-y-1">
-            <div className="flex justify-between text-[10px] font-medium text-slate-600">
+            <div className="flex justify-between text-[10px] font-medium text-[var(--label-secondary)]">
                 <span>{label}</span><span>{value} ({((value / total) * 100).toFixed(1)}%)</span>
             </div>
-            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+            <div className="h-1.5 w-full bg-[var(--fill-quaternary)] rounded-full overflow-hidden">
                 <div className={`h-full ${color}`} style={{ width: `${(value / total) * 100}%` }} />
             </div>
         </div>
@@ -1010,7 +879,7 @@ function StatusBar({ label, value, total, color }: any) {
 function FilterSection({ title, children }: any) {
     return (
         <div className="space-y-2">
-            <h4 className="text-xs font-bold uppercase text-slate-400">{title}</h4>
+            <h4 className="text-xs font-bold uppercase text-[var(--label-tertiary)]">{title}</h4>
             <div className="space-y-1.5">{children}</div>
         </div>
     );
@@ -1020,8 +889,8 @@ function FilterOption({ id, label, checked, onCheckedChange }: any) {
     const finalId = id || (typeof label === 'string' ? label : Math.random().toString());
     return (
         <div className="flex items-center gap-2">
-            <Checkbox id={finalId} className="h-3.5 w-3.5 border-slate-300" checked={checked} onCheckedChange={onCheckedChange} />
-            <label htmlFor={finalId} className="text-sm font-medium text-slate-600 cursor-pointer flex-1">{label}</label>
+            <Checkbox id={finalId} className="h-3.5 w-3.5 border-[var(--separator)]" checked={checked} onCheckedChange={onCheckedChange} />
+            <label htmlFor={finalId} className="text-sm font-medium text-[var(--label-secondary)] cursor-pointer flex-1">{label}</label>
         </div>
     );
 }
@@ -1070,17 +939,17 @@ function CustomerRow({ lead: leadRaw, onClick }: { lead: any; onClick: () => voi
     };
 
     return (
-        <tr className="hover:bg-slate-50 transition-colors cursor-pointer group" onClick={onClick}>
+        <tr className="hover:bg-[var(--bg-app)] transition-colors cursor-pointer group" onClick={onClick}>
             <td className="px-4 py-3">
                 <div className="block">
-                    <div className="font-bold text-slate-900 group-hover:text-emerald-700">{displayName}</div>
-                    <div className="text-xs text-slate-500">{displayPhone}</div>
+                    <div className="font-bold text-[var(--label-primary)] group-hover:text-emerald-700">{displayName}</div>
+                    <div className="text-xs text-[var(--label-secondary)]">{displayPhone}</div>
                 </div>
             </td>
             <td className="px-4 py-3 text-center">
-                <Badge variant="outline" className="text-[10px] uppercase font-bold border-blue-100 text-blue-600 bg-blue-50">{lead.source_loop}</Badge>
+                <Badge variant="outline" className="text-[10px] uppercase font-bold border-blue-100 text-blue-600 bg-[rgba(0,122,255,0.08)]">{lead.source_loop}</Badge>
             </td>
-            <td className="px-4 py-3 text-center font-bold text-slate-700">{sentCount}</td>
+            <td className="px-4 py-3 text-center font-bold text-[var(--label-primary)]">{sentCount}</td>
             <td className="px-4 py-3 text-center">
                 <TooltipProvider>
                     <Tooltip>
@@ -1089,7 +958,7 @@ function CustomerRow({ lead: leadRaw, onClick }: { lead: any; onClick: () => voi
                                 {hasReplied ? (
                                     <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none text-[10px] font-bold">REPLIED</Badge>
                                 ) : (
-                                    <Badge variant="outline" className="text-[10px] text-slate-400 border-slate-200">SENT</Badge>
+                                    <Badge variant="outline" className="text-[10px] text-[var(--label-tertiary)] border-[var(--separator)]">SENT</Badge>
                                 )}
                             </div>
                         </TooltipTrigger>
@@ -1106,10 +975,10 @@ function CustomerRow({ lead: leadRaw, onClick }: { lead: any; onClick: () => voi
                     {displayStatuses.map((s) => (
                         <MessageStatusBadge key={s.index} index={s.index} status={s.status} />
                     ))}
-                    {displayStatuses.length === 0 && <span className="text-slate-300 text-[10px]">—</span>}
+                    {displayStatuses.length === 0 && <span className="text-[var(--label-tertiary)] text-[10px]">—</span>}
                 </div>
             </td>
-            <td className="px-4 py-3 text-right text-slate-500 text-xs text-nowrap">
+            <td className="px-4 py-3 text-right text-[var(--label-secondary)] text-xs text-nowrap">
                 {latestDate.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' })}
             </td>
         </tr>
@@ -1133,9 +1002,9 @@ function MessageStatusBadge({ index, status }: { index: number, status: string }
     };
 
     const formatted = statusText.charAt(0).toUpperCase() + statusText.slice(1).toLowerCase();
-    let badgeClass = "bg-slate-100 text-slate-600 border-slate-200";
-    if (formatted.includes("Delivered")) badgeClass = "bg-emerald-50 text-emerald-700 border-emerald-100";
-    if (formatted.includes("Read")) badgeClass = "bg-blue-50 text-blue-700 border-blue-100";
+    let badgeClass = "bg-[var(--fill-quaternary)] text-[var(--label-secondary)] border-[var(--separator)]";
+    if (formatted.includes("Delivered")) badgeClass = "bg-[rgba(52,199,89,0.08)] text-emerald-700 border-emerald-100";
+    if (formatted.includes("Read")) badgeClass = "bg-[rgba(0,122,255,0.08)] text-blue-700 border-blue-100";
     if (formatted.includes("Failed")) badgeClass = "bg-red-50 text-red-700 border-red-100";
 
     return (
@@ -1143,7 +1012,7 @@ function MessageStatusBadge({ index, status }: { index: number, status: string }
             <Tooltip>
                 <TooltipTrigger asChild>
                     <div className="flex items-center gap-1.5 w-full justify-center cursor-help">
-                        <span className="text-[9px] text-slate-400 font-mono select-none">{index}</span>
+                        <span className="text-[9px] text-[var(--label-tertiary)] font-mono select-none">{index}</span>
                         <Badge variant="outline" className={`h-5 px-1.5 text-[9px] font-bold uppercase tracking-wider ${badgeClass}`}>{formatted}</Badge>
                     </div>
                 </TooltipTrigger>

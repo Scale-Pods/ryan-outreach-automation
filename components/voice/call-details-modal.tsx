@@ -258,41 +258,41 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-3xl p-0 gap-0 bg-white overflow-hidden max-h-[90vh] flex flex-col">
-                <DialogHeader className="p-6 border-b border-slate-100 flex flex-row items-center justify-between space-y-0">
+            <DialogContent className="max-w-3xl p-0 gap-0 bg-[var(--glass-fill)] overflow-hidden max-h-[90vh] flex flex-col">
+                <DialogHeader className="p-6 border-b border-[var(--separator)] flex flex-row items-center justify-between space-y-0">
                     <DialogTitle className="text-xl font-semibold">Call Details</DialogTitle>
                 </DialogHeader>
 
                 <div className="flex-1 overflow-auto relative">
                     {localLoading && (
-                        <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-[1px]">
+                        <div className="absolute inset-0 z-50 flex items-center justify-center bg-[var(--glass-fill)]/80 backdrop-blur-[1px]">
                             <LMLoader fullScreen={false} />
                         </div>
                     )}
                     {/* Call Overview */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 p-6 bg-slate-50/50 border-b border-slate-100 items-start">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 p-6 bg-[var(--glass-fill)] border-b border-[var(--separator)] items-start">
                         {/* Column 1: Status & Type */}
                         <div className="space-y-6">
                             <div>
-                                <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Status</p>
+                                <p className="text-xs text-[var(--label-secondary)] font-medium uppercase tracking-wider mb-1">Status</p>
                                 <Badge className={`${displayCall.status === 'done' || displayCall.status === 'ended' || displayCall.status === 'success' || displayCall.status === 'answered' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'} border-none shadow-none uppercase text-[10px] px-2.5 py-0.5`}>
                                     {displayCall.status || 'Unknown'}
                                 </Badge>
                             </div>
                             <div>
-                                <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Type</p>
-                                <Badge variant="outline" className="border-slate-300 text-slate-600 uppercase text-[10px] px-2.5 py-0.5">
+                                <p className="text-xs text-[var(--label-secondary)] font-medium uppercase tracking-wider mb-1">Type</p>
+                                <Badge variant="outline" className="border-slate-300 text-[var(--label-secondary)] uppercase text-[10px] px-2.5 py-0.5">
                                     {callTypeDisplay}
                                 </Badge>
                             </div>
                             <div>
-                                <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Agent / Bot</p>
+                                <p className="text-xs text-[var(--label-secondary)] font-medium uppercase tracking-wider mb-1">Agent / Bot</p>
                                 <div className="flex flex-col">
-                                    <span className="font-bold text-slate-900 text-sm truncate max-w-[180px]" title={assistantName}>{assistantName}</span>
+                                    <span className="font-bold text-[var(--label-primary)] text-sm truncate max-w-[180px]" title={assistantName}>{assistantName}</span>
                                     {(assistantNumber !== "Unknown" && assistantNumber !== assistantId) ? (
-                                        <span className="text-[10px] text-slate-500 font-bold mt-0.5 tracking-wider">+{assistantNumber.replace(/\+/g, '')}</span>
+                                        <span className="text-[10px] text-[var(--label-secondary)] font-bold mt-0.5 tracking-wider">+{assistantNumber.replace(/\+/g, '')}</span>
                                     ) : (assistantId !== "N/A" && (
-                                        <span className="text-[10px] text-slate-400 font-medium mt-0.5 truncate max-w-[180px]">ID: {assistantId}</span>
+                                        <span className="text-[10px] text-[var(--label-tertiary)] font-medium mt-0.5 truncate max-w-[180px]">ID: {assistantId}</span>
                                     ))}
                                 </div>
                             </div>
@@ -301,17 +301,17 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
                         {/* Column 2: Duration & Date */}
                         <div className="space-y-6">
                             <div>
-                                <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Duration</p>
+                                <p className="text-xs text-[var(--label-secondary)] font-medium uppercase tracking-wider mb-1">Duration</p>
                                 <div className="flex items-center gap-2">
-                                    <Clock className="h-4 w-4 text-slate-400" />
-                                    <span className="font-bold text-slate-900">{durationDisplay}</span>
+                                    <Clock className="h-4 w-4 text-[var(--label-tertiary)]" />
+                                    <span className="font-bold text-[var(--label-primary)]">{durationDisplay}</span>
                                 </div>
                             </div>
                             <div>
-                                <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Date & Time</p>
+                                <p className="text-xs text-[var(--label-secondary)] font-medium uppercase tracking-wider mb-1">Date & Time</p>
                                 <div className="flex items-center gap-2">
-                                    <Calendar className="h-4 w-4 text-slate-400" />
-                                    <span className="text-sm text-slate-700">{startedAtDisplay}</span>
+                                    <Calendar className="h-4 w-4 text-[var(--label-tertiary)]" />
+                                    <span className="text-sm text-[var(--label-primary)]">{startedAtDisplay}</span>
                                 </div>
                             </div>
                         </div>
@@ -320,14 +320,14 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
                         <div className="space-y-6">
                             {(displayCall.metadata?.charging?.call_charge > 0) && (
                                 <div>
-                                    <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Call Cost</p>
-                                    <span className="font-bold text-slate-900">{displayCall.metadata.charging.call_charge} credits</span>
+                                    <p className="text-xs text-[var(--label-secondary)] font-medium uppercase tracking-wider mb-1">Call Cost</p>
+                                    <span className="font-bold text-[var(--label-primary)]">{displayCall.metadata.charging.call_charge} credits</span>
                                 </div>
                             )}
                             {(displayCall.llm_charge > 0 || displayCall.metadata?.charging?.llm_charge > 0) && (
                                 <div>
-                                    <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Credits (LLM)</p>
-                                    <span className="font-bold text-slate-900">{displayCall.llm_charge || displayCall.metadata?.charging?.llm_charge}</span>
+                                    <p className="text-xs text-[var(--label-secondary)] font-medium uppercase tracking-wider mb-1">Credits (LLM)</p>
+                                    <span className="font-bold text-[var(--label-primary)]">{displayCall.llm_charge || displayCall.metadata?.charging?.llm_charge}</span>
                                 </div>
                             )}
                         </div>
@@ -336,22 +336,22 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
                         <div className="space-y-6">
                             {(displayCall.llm_price > 0 || displayCall.metadata?.charging?.llm_price > 0) && (
                                 <div>
-                                    <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">LLM Cost</p>
+                                    <p className="text-xs text-[var(--label-secondary)] font-medium uppercase tracking-wider mb-1">LLM Cost</p>
                                     <div className="flex flex-col">
-                                        <span className="font-bold text-slate-900">
+                                        <span className="font-bold text-[var(--label-primary)]">
                                             ${((displayCall.llm_price || displayCall.metadata?.charging?.llm_price || 0) / Math.max(1, (displayCall.durationSeconds / 60) || 1)).toFixed(4)} / min
                                         </span>
-                                        <span className="text-xs text-slate-500 mt-0.5">
+                                        <span className="text-xs text-[var(--label-secondary)] mt-0.5">
                                             Total: ${(displayCall.llm_price || displayCall.metadata?.charging?.llm_price || 0).toFixed(4)}
                                         </span>
                                     </div>
                                 </div>
                             )}
                             <div>
-                                <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Guest Name</p>
+                                <p className="text-xs text-[var(--label-secondary)] font-medium uppercase tracking-wider mb-1">Guest Name</p>
                                 <div className="flex items-center gap-2">
-                                    <User className="h-4 w-4 text-slate-400" />
-                                    <span className="font-bold text-slate-900 truncate max-w-[150px]" title={extractedGuestName}>{extractedGuestName}</span>
+                                    <User className="h-4 w-4 text-[var(--label-tertiary)]" />
+                                    <span className="font-bold text-[var(--label-primary)] truncate max-w-[150px]" title={extractedGuestName}>{extractedGuestName}</span>
                                 </div>
                             </div>
                         </div>
@@ -360,22 +360,22 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
                     <div className="p-6 space-y-6">
                         {/* Call Information */}
                         <div>
-                            <h3 className="text-sm font-bold text-slate-900 mb-3 uppercase tracking-wide">Call Information</h3>
-                            <div className="p-5 border border-slate-200 rounded-xl bg-white shadow-sm">
+                            <h3 className="text-sm font-bold text-[var(--label-primary)] mb-3 uppercase tracking-wide">Call Information</h3>
+                            <div className="p-5 border border-[var(--separator)] rounded-xl bg-[var(--glass-fill)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)]">
                                 <div className="flex justify-between items-center mb-3 px-2">
-                                    <p className="text-xs uppercase tracking-wider text-slate-500 font-bold">{fromLabel}</p>
-                                    <p className="text-xs uppercase tracking-wider text-slate-500 font-bold">{toLabel}</p>
+                                    <p className="text-xs uppercase tracking-wider text-[var(--label-secondary)] font-bold">{fromLabel}</p>
+                                    <p className="text-xs uppercase tracking-wider text-[var(--label-secondary)] font-bold">{toLabel}</p>
                                 </div>
                                 <div className="flex items-center justify-between gap-4">
 
                                     <div className="flex items-center gap-4 flex-1">
-                                        <div className={`h-11 w-11 shrink-0 rounded-full flex items-center justify-center ${fromLabel.includes('Assistant') ? 'bg-purple-100 text-purple-600' : 'bg-blue-50 text-blue-600'}`}>
+                                        <div className={`h-11 w-11 shrink-0 rounded-full flex items-center justify-center ${fromLabel.includes('Assistant') ? 'bg-[rgba(175,82,222,0.08)] text-purple-600' : 'bg-[rgba(0,122,255,0.08)] text-blue-600'}`}>
                                             {fromLabel.includes('Assistant') ? <Avatar><AvatarFallback>AI</AvatarFallback></Avatar> : <Phone className="h-5 w-5" />}
                                         </div>
-                                        <div className="flex-1 font-semibold text-slate-900 border border-slate-200 bg-slate-50/50 rounded-lg px-4 py-3">
+                                        <div className="flex-1 font-semibold text-[var(--label-primary)] border border-[var(--separator)] bg-[var(--glass-fill)] rounded-lg px-4 py-3">
                                             <span className="block text-sm">{fromName}</span>
                                             {fromSubInfo !== "Unknown" && fromSubInfo !== "Website/API" && (
-                                                <span className="block text-xs font-normal text-slate-500 mt-0.5 tracking-wide">{`+${fromSubInfo.replace(/\+/g, '')}`}</span>
+                                                <span className="block text-xs font-normal text-[var(--label-secondary)] mt-0.5 tracking-wide">{`+${fromSubInfo.replace(/\+/g, '')}`}</span>
                                             )}
                                         </div>
                                     </div>
@@ -388,13 +388,13 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
                                     </div>
 
                                     <div className="flex items-center gap-4 flex-1">
-                                        <div className="flex-1 font-semibold text-slate-900 border border-slate-200 bg-slate-50/50 rounded-lg px-4 py-3 text-right">
+                                        <div className="flex-1 font-semibold text-[var(--label-primary)] border border-[var(--separator)] bg-[var(--glass-fill)] rounded-lg px-4 py-3 text-right">
                                             <span className="block text-sm">{toName}</span>
                                             {toSubInfo !== "Unknown" && toSubInfo !== "Website/API" && (
-                                                <span className="block text-xs font-normal text-slate-500 mt-0.5 tracking-wide">{`+${toSubInfo.replace(/\+/g, '')}`}</span>
+                                                <span className="block text-xs font-normal text-[var(--label-secondary)] mt-0.5 tracking-wide">{`+${toSubInfo.replace(/\+/g, '')}`}</span>
                                             )}
                                         </div>
-                                        <div className={`h-11 w-11 shrink-0 rounded-full flex items-center justify-center ${toLabel.includes('Assistant') ? 'bg-purple-100 text-purple-600' : 'bg-blue-50 text-blue-600'}`}>
+                                        <div className={`h-11 w-11 shrink-0 rounded-full flex items-center justify-center ${toLabel.includes('Assistant') ? 'bg-[rgba(175,82,222,0.08)] text-purple-600' : 'bg-[rgba(0,122,255,0.08)] text-blue-600'}`}>
                                             {toLabel.includes('Assistant') ? <Avatar><AvatarFallback>AI</AvatarFallback></Avatar> : <Phone className="h-5 w-5" />}
                                         </div>
                                     </div>
@@ -442,12 +442,12 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
                             if (!summaryText) return null;
 
                                 return (
-                                    <div className="mb-8 p-6 bg-slate-50 border border-slate-200 rounded-2xl shadow-sm">
+                                    <div className="mb-8 p-6 bg-[var(--bg-app)] border border-[var(--separator)] rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)]">
                                         <div className="flex items-center gap-2 mb-4">
-                                            <div className="h-7 w-7 rounded-lg bg-blue-600 flex items-center justify-center shadow-sm">
+                                            <div className="h-7 w-7 rounded-lg bg-blue-600 flex items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)]">
                                                 <FileText className="h-4 w-4 text-white" />
                                             </div>
-                                            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Conversation Summary</h3>
+                                            <h3 className="text-sm font-bold text-[var(--label-primary)] uppercase tracking-wider">Conversation Summary</h3>
                                         </div>
                                         <div className="space-y-4">
                                             {typeof summaryText === 'string' && summaryText.split('\n').map((line, i) => {
@@ -466,10 +466,10 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
                                                     return (
                                                         <div key={i} className="flex gap-4 group">
                                                             <div className="mt-2 h-1.5 w-1.5 rounded-full bg-blue-400 group-hover:bg-blue-600 transition-colors shrink-0" />
-                                                            <div className="text-[13px] leading-relaxed text-slate-600 font-medium">
+                                                            <div className="text-[13px] leading-relaxed text-[var(--label-secondary)] font-medium">
                                                                 {boldMatch ? (
                                                                     <>
-                                                                        <span className="font-bold text-slate-900 border-b-2 border-blue-100 mr-1">{boldMatch[2].replace(/:/g, '').trim()}</span>
+                                                                        <span className="font-bold text-[var(--label-primary)] border-b-2 border-blue-100 mr-1">{boldMatch[2].replace(/:/g, '').trim()}</span>
                                                                         {boldMatch[4].trim()}
                                                                     </>
                                                                 ) : content}
@@ -479,10 +479,10 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
                                                 }
 
                                                 return (
-                                                    <p key={i} className="text-[13px] leading-relaxed text-slate-600 font-medium pl-0">
+                                                    <p key={i} className="text-[13px] leading-relaxed text-[var(--label-secondary)] font-medium pl-0">
                                                         {boldMatch ? (
                                                             <>
-                                                                <span className="font-bold text-slate-900 border-b-2 border-blue-100 mr-1">{boldMatch[2].replace(/:/g, '').trim()}</span>
+                                                                <span className="font-bold text-[var(--label-primary)] border-b-2 border-blue-100 mr-1">{boldMatch[2].replace(/:/g, '').trim()}</span>
                                                                 {boldMatch[4].trim()}
                                                             </>
                                                         ) : content}
@@ -497,18 +497,18 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
                         {/* Transcript */}
                         <div className="flex-1 min-h-[200px]">
                             <div className="flex items-center justify-between mb-3">
-                                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Transcript</h3>
+                                <h3 className="text-sm font-bold text-[var(--label-primary)] uppercase tracking-wide">Transcript</h3>
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    className={`h-8 gap-2 text-[10px] font-bold uppercase transition-all ${transcriptCopied ? 'text-emerald-600 bg-emerald-50' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
+                                    className={`h-8 gap-2 text-[10px] font-bold uppercase transition-all ${transcriptCopied ? 'text-emerald-600 bg-[rgba(52,199,89,0.08)]' : 'text-[var(--label-secondary)] hover:text-[var(--label-primary)] hover:bg-[var(--fill-quaternary)]'}`}
                                     onClick={handleCopyTranscript}
                                 >
                                     {transcriptCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                                     {transcriptCopied ? 'Copied' : 'Copy Transcript'}
                                 </Button>
                             </div>
-                            <ScrollArea className="h-[300px] w-full rounded-lg border border-slate-200 bg-slate-50 p-4">
+                            <ScrollArea className="h-[300px] w-full rounded-lg border border-[var(--separator)] bg-[var(--bg-app)] p-4">
                                 <div className="space-y-4">
                                     {Array.isArray(messages) && messages
                                         .filter((msg: any) => msg.role !== 'system') // Filter out system prompt
@@ -521,7 +521,7 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
                                             />
                                         ))}
                                     {(!messages || messages.length === 0) && (
-                                        <p className="text-sm text-slate-500 text-center italic">No transcript available.</p>
+                                        <p className="text-sm text-[var(--label-secondary)] text-center italic">No transcript available.</p>
                                     )}
                                 </div>
                             </ScrollArea>
@@ -723,7 +723,7 @@ function ModernAudioPlayer({ audioUrl, initialDuration = 0 }: { audioUrl: string
     const volPct = (isMuted ? 0 : volume) * 100;
 
     return (
-        <div className="mt-6 p-5 border border-slate-200 rounded-xl bg-slate-50/50 shadow-sm">
+        <div className="mt-6 p-5 border border-[var(--separator)] rounded-xl bg-[var(--glass-fill)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)]">
             {/* Hidden native audio element — all browser compat underneath */}
             <audio
                 ref={audioRef}
@@ -735,18 +735,18 @@ function ModernAudioPlayer({ audioUrl, initialDuration = 0 }: { audioUrl: string
             {/* Header: title + download */}
             <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center h-8 w-8 rounded-full bg-blue-50 text-blue-600">
+                    <div className="flex items-center justify-center h-8 w-8 rounded-full bg-[rgba(0,122,255,0.08)] text-blue-600">
                         <Volume2 className="h-4 w-4" />
                     </div>
                     <div>
-                        <h3 className="text-sm font-bold text-slate-900 leading-none">Call Recording</h3>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mt-1">Play to review conversation</p>
+                        <h3 className="text-sm font-bold text-[var(--label-primary)] leading-none">Call Recording</h3>
+                        <p className="text-[10px] font-bold text-[var(--label-tertiary)] uppercase tracking-wide mt-1">Play to review conversation</p>
                     </div>
                 </div>
                 <button
                     onClick={handleDownload}
                     disabled={isDownloading}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] font-bold uppercase tracking-wide transition-colors ${isDownloading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--fill-quaternary)] hover:bg-[var(--fill-tertiary)] text-[var(--label-secondary)] text-[11px] font-bold uppercase tracking-wide transition-colors ${isDownloading ? 'opacity-70 cursor-not-allowed' : ''}`}
                     title="Download Recording"
                 >
                     {isDownloading ? (
@@ -768,7 +768,7 @@ function ModernAudioPlayer({ audioUrl, initialDuration = 0 }: { audioUrl: string
             {/* Seek Bar */}
             <div
                 ref={seekRef}
-                className="relative h-2.5 w-full rounded-full bg-slate-200 cursor-pointer mb-2 group"
+                className="relative h-2.5 w-full rounded-full bg-[var(--fill-tertiary)] cursor-pointer mb-2 group"
                 onClick={handleSeekClick}
                 onMouseDown={() => setIsDragging(true)}
                 onMouseUp={() => setIsDragging(false)}
@@ -779,13 +779,13 @@ function ModernAudioPlayer({ audioUrl, initialDuration = 0 }: { audioUrl: string
                     style={{ width: `${progressPct}%`, transition: isDragging ? 'none' : 'width 75ms linear' }}
                 />
                 <div
-                    className="absolute top-1/2 -translate-y-1/2 h-4 w-4 rounded-full bg-blue-600 shadow-md border-2 border-white opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-1/2 -translate-y-1/2 h-4 w-4 rounded-full bg-blue-600 shadow-[var(--glass-shadow)] border-2 border-white opacity-0 group-hover:opacity-100 transition-opacity"
                     style={{ left: `calc(${progressPct}% - 8px)` }}
                 />
             </div>
 
             {/* Time display */}
-            <div className="flex justify-between text-[11px] font-mono text-slate-400 mb-4">
+            <div className="flex justify-between text-[11px] font-mono text-[var(--label-tertiary)] mb-4">
                 <span>{formatTime(currentTime)}</span>
                 <span>{(isLoading && duration === 0) ? '–:––' : formatTime(duration)}</span>
             </div>
@@ -796,14 +796,14 @@ function ModernAudioPlayer({ audioUrl, initialDuration = 0 }: { audioUrl: string
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => skip(-10)}
-                        className="h-8 w-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors text-[11px] font-bold"
+                        className="h-8 w-8 flex items-center justify-center rounded-full bg-[var(--fill-quaternary)] hover:bg-[var(--fill-tertiary)] text-[var(--label-secondary)] transition-colors text-[11px] font-bold"
                         title="Rewind 10s"
                     >
                         ‑10
                     </button>
                     <button
                         onClick={togglePlay}
-                        className="h-10 w-10 flex items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all active:scale-95 disabled:opacity-50"
+                        className="h-10 w-10 flex items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-[var(--glass-shadow)] transition-all active:scale-95 disabled:opacity-50"
                         title={isPlaying ? 'Pause' : 'Play'}
                     >
                         {isStalled ? (
@@ -819,7 +819,7 @@ function ModernAudioPlayer({ audioUrl, initialDuration = 0 }: { audioUrl: string
                     </button>
                     <button
                         onClick={() => skip(10)}
-                        className="h-8 w-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors text-[11px] font-bold"
+                        className="h-8 w-8 flex items-center justify-center rounded-full bg-[var(--fill-quaternary)] hover:bg-[var(--fill-tertiary)] text-[var(--label-secondary)] transition-colors text-[11px] font-bold"
                         title="Forward 10s"
                     >
                         +10
@@ -830,7 +830,7 @@ function ModernAudioPlayer({ audioUrl, initialDuration = 0 }: { audioUrl: string
                 <div className="flex items-center gap-3">
                     <button
                         onClick={changeSpeed}
-                        className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold transition-colors min-w-[44px] text-center"
+                        className="px-2.5 py-1 rounded-lg bg-[var(--fill-quaternary)] hover:bg-[var(--fill-tertiary)] text-[var(--label-primary)] text-[11px] font-bold transition-colors min-w-[44px] text-center"
                         title="Cycle playback speed"
                     >
                         {speed === 1 ? '1×' : `${speed}×`}
@@ -838,7 +838,7 @@ function ModernAudioPlayer({ audioUrl, initialDuration = 0 }: { audioUrl: string
                     <div className="flex items-center gap-1.5">
                         <button
                             onClick={toggleMute}
-                            className="h-7 w-7 flex items-center justify-center rounded-full hover:bg-slate-200 text-slate-500 transition-colors"
+                            className="h-7 w-7 flex items-center justify-center rounded-full hover:bg-[var(--fill-tertiary)] text-[var(--label-secondary)] transition-colors"
                             title={isMuted ? 'Unmute' : 'Mute'}
                         >
                             {isMuted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
@@ -883,7 +883,7 @@ function TranscriptMessage({ role, text, startTime }: { role: string; text: stri
     if (isTool) {
         return (
             <div className="flex gap-3 justify-center my-2">
-                <div className="text-[10px] text-slate-400 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200 font-mono tracking-tight uppercase">
+                <div className="text-[10px] text-[var(--label-tertiary)] bg-[var(--bg-app)] px-3 py-1.5 rounded-full border border-[var(--separator)] font-mono tracking-tight uppercase">
                     System Event: {cleanText.substring(0, 50)}{cleanText.length > 50 ? '...' : ''}
                 </div>
             </div>
@@ -902,14 +902,14 @@ function TranscriptMessage({ role, text, startTime }: { role: string; text: stri
     return (
         <div className={`flex gap-3 mb-4 ${isAssistant ? 'justify-start' : 'justify-end'}`}>
             {isAssistant && (
-                <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center shrink-0 border border-indigo-200 shadow-sm">
+                <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center shrink-0 border border-indigo-200 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)]">
                     <span className="text-[10px] font-black text-indigo-700">AI</span>
                 </div>
             )}
             
             <div className={`flex flex-col ${isAssistant ? 'items-start' : 'items-end'} max-w-[85%]`}>
-                <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm transition-all hover:shadow-md ${isAssistant
-                    ? 'bg-white border border-slate-200 text-slate-700 rounded-tl-none'
+                <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] transition-all hover:shadow-[var(--glass-shadow)] ${isAssistant
+                    ? 'bg-[var(--glass-fill)] border border-[var(--separator)] text-[var(--label-primary)] rounded-tl-none'
                     : 'bg-blue-600 text-white rounded-tr-none'
                     }`}>
                     {cleanText}
@@ -917,7 +917,7 @@ function TranscriptMessage({ role, text, startTime }: { role: string; text: stri
             </div>
 
             {isUser && (
-                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0 border border-blue-200 shadow-sm">
+                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0 border border-blue-200 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)]">
                     <User className="h-4 w-4 text-blue-600" />
                 </div>
             )}

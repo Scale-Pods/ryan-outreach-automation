@@ -16,7 +16,6 @@ export interface MasterMetrics {
     normalVapiCost: number;
     ownerVapiCost: number;
     leadsDaily: { date: string; leads: number }[];
-    totalOwnerLeads: number;
     ownerWaReachouts: number;
     ownerWaReplies: number;
 }
@@ -64,12 +63,10 @@ export interface VoiceMetrics {
 interface DataContextType {
     leads: ConsolidatedLead[];
     calls: any[];
-    ownerLeads: any[];
     allTimeVoiceCount: number;
     allTimeOwnerVoiceCount: number;
     loadingLeads: boolean;
     loadingCalls: boolean;
-    loadingOwners: boolean;
     loadingBalances: boolean;
     loadingVoiceMetrics: boolean;
     loadingMasterMetrics: boolean;
@@ -78,17 +75,15 @@ interface DataContextType {
     masterMetrics: MasterMetrics | null;
     whatsappMetrics: WhatsappMetrics | null;
     voiceBalance: any;
-    maqsamBalance: any;
     twilioBalance: any;
     error: string | null;
     refreshLeads: (params?: { from?: Date; to?: Date; force?: boolean }) => Promise<void>;
-    refreshCalls: (params?: { from?: Date; to?: Date; includeElevenLabs?: boolean; provider?: string; force?: boolean }) => Promise<void>;
-    refreshOwners: (params?: { from?: Date; to?: Date; force?: boolean }) => Promise<void>;
+    refreshCalls: (params?: { from?: Date; to?: Date; provider?: string; force?: boolean; account?: string; status?: string; type?: string; phone?: string; region?: string; sort?: string; page?: number; limit?: number }) => Promise<void>;
     refreshBalances: () => Promise<void>;
-    refreshVoiceMetrics: (params?: { from?: Date; to?: Date; includeElevenLabs?: boolean; force?: boolean }) => Promise<void>;
+    refreshVoiceMetrics: (params?: { from?: Date; to?: Date; force?: boolean }) => Promise<void>;
     refreshMasterMetrics: (params?: { from?: Date; to?: Date; force?: boolean }) => Promise<void>;
     refreshWhatsappMetrics: (params?: { from?: Date; to?: Date; force?: boolean }) => Promise<void>;
-    refreshAll: (params?: { from?: Date; to?: Date; includeElevenLabs?: boolean }) => Promise<void>;
+    refreshAll: (params?: { from?: Date; to?: Date }) => Promise<void>;
     computeWPReplies: (dateRange?: { from?: Date; to?: Date } | null) => number;
 }
 
@@ -99,10 +94,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const [calls, setCalls] = useState<any[]>([]);
     const [allTimeVoiceCount, setAllTimeVoiceCount] = useState(0);
     const [allTimeOwnerVoiceCount, setAllTimeOwnerVoiceCount] = useState(0);
-    const [ownerLeads, setOwnerLeads] = useState<any[]>([]);
     const [loadingLeads, setLoadingLeads] = useState(true);
     const [loadingCalls, setLoadingCalls] = useState(true);
-    const [loadingOwners, setLoadingOwners] = useState(true);
     const [loadingBalances, setLoadingBalances] = useState(true);
     const [loadingVoiceMetrics, setLoadingVoiceMetrics] = useState(true);
     const [loadingMasterMetrics, setLoadingMasterMetrics] = useState(true);
@@ -111,7 +104,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const [masterMetrics, setMasterMetrics] = useState<MasterMetrics | null>(null);
     const [whatsappMetrics, setWhatsappMetrics] = useState<WhatsappMetrics | null>(null);
     const [voiceBalance, setVoiceBalance] = useState<any>(null);
-    const [maqsamBalance, setMaqsamBalance] = useState<any>(null);
     const [twilioBalance, setTwilioBalance] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
 
@@ -144,32 +136,36 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         }
     }, []);
 
-    const fetchCalls = useCallback(async (params?: { from?: Date; to?: Date; includeElevenLabs?: boolean; provider?: string; force?: boolean }) => {
+    const fetchCalls = useCallback(async (params?: {
+        from?: Date; to?: Date; provider?: string; force?: boolean;
+        account?: string; status?: string; type?: string;
+        phone?: string; region?: string; sort?: string;
+        page?: number; limit?: number;
+    }) => {
         try {
-            // Normalize defaults to Last 7 Days (Start of Day) to ensure stable query strings across components
-            // Using full-day boundaries (12am - 12pm) ensures identical cache keys for the entire day.
             const now = new Date();
             const fromDate = params?.from ? startOfDay(params.from) : subDays(startOfDay(now), 7);
             const toDate = params?.to ? endOfDay(params.to) : endOfDay(now);
-            const includeElevenLabs = params?.includeElevenLabs || false;
-            const provider = params?.provider || 'vapi';
 
             if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
                 console.error("Invalid dates passed to fetchCalls");
                 return;
             }
 
-            const query = new URLSearchParams({
-                from: fromDate.toISOString(),
-                to: toDate.toISOString(),
-                includeElevenLabs: String(includeElevenLabs),
-                provider
-            });
+            const query = new URLSearchParams();
+            query.set('from', fromDate.toISOString());
+            query.set('to', toDate.toISOString());
+            if (params?.account) query.set('account', params.account);
+            if (params?.status && params.status !== 'all') query.set('status', params.status);
+            if (params?.type && params.type !== 'all') query.set('type', params.type);
+            if (params?.phone) query.set('phone', params.phone);
+            if (params?.region && params.region !== 'all') query.set('region', params.region);
+            if (params?.sort) query.set('sort', params.sort);
+            if (params?.page) query.set('page', String(params.page));
+            if (params?.limit) query.set('limit', String(params.limit));
 
             const currentQuery = query.toString();
 
-            // Skip if requested params are identical to the last SUCCESSFUL or ONGOING load
-            // But ALLOW if forced refresh or if calls array is currently empty
             if (!params?.force && lastCallParams.current === currentQuery && (calls.length > 0 || loadingCalls)) {
                 return;
             }
@@ -180,9 +176,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             const response = await fetch(`/api/calls?${currentQuery}`);
             if (response.ok) {
                 const data = await response.json();
-                if (Array.isArray(data)) setCalls(data);
+                if (data && Array.isArray(data.calls)) {
+                    setCalls(data.calls);
+                    setAllTimeVoiceCount(data.total || 0);
+                }
             } else {
-                // If failed, clear last params to allow retry
                 lastCallParams.current = null;
             }
         } catch (err: any) {
@@ -193,43 +191,17 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         }
     }, []);
 
-    const fetchOwners = useCallback(async (params?: { from?: Date; to?: Date; force?: boolean }) => {
-        setLoadingOwners(true);
-        try {
-            const now = new Date();
-            const fromDate = params?.from ? startOfDay(params.from) : subDays(startOfDay(now), 7);
-            const toDate = params?.to ? endOfDay(params.to) : endOfDay(now);
-
-            const query = new URLSearchParams({
-                from: fromDate.toISOString(),
-                to: toDate.toISOString()
-            });
-
-            const response = await fetch(`/api/owner-leads?${query.toString()}`);
-            if (response.ok) {
-                const data = await response.json();
-                setOwnerLeads(data.owner_data || []);
-            }
-        } catch (err: any) {
-            console.error('DataProvider owners fetch error:', err);
-        } finally {
-            setLoadingOwners(false);
-        }
-    }, []);
-
     const hasVoiceMetrics = useRef(false);
 
-    const fetchVoiceMetrics = useCallback(async (params?: { from?: Date; to?: Date; includeElevenLabs?: boolean; force?: boolean }) => {
+    const fetchVoiceMetrics = useCallback(async (params?: { from?: Date; to?: Date; force?: boolean }) => {
         try {
             const now = new Date();
             const fromDate = params?.from ? startOfDay(params.from) : subDays(startOfDay(now), 7);
             const toDate = params?.to ? endOfDay(params.to) : endOfDay(now);
-            const includeElevenLabs = params?.includeElevenLabs || false;
 
             const query = new URLSearchParams({
                 from: fromDate.toISOString(),
                 to: toDate.toISOString(),
-                includeElevenLabs: String(includeElevenLabs),
             });
 
             const currentQuery = query.toString();
@@ -337,55 +309,51 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     const fetchBalances = useCallback(async () => {
         try {
-            const [vapiRes, maqsamRes, twilioRes] = await Promise.all([
+            const [vapiRes, twilioRes] = await Promise.all([
                 fetch('/api/vapi/balance'),
-                fetch('/api/maqsam/balance'),
                 fetch('/api/twilio/balance')
             ]);
             if (vapiRes.ok) setVoiceBalance(await vapiRes.json());
-            if (maqsamRes.ok) setMaqsamBalance(await maqsamRes.json());
             if (twilioRes.ok) setTwilioBalance(await twilioRes.json());
         } catch (err) { }
         finally { setLoadingBalances(false); }
     }, []);
 
-    const refreshAll = useCallback(async (params?: { from?: Date; to?: Date; includeElevenLabs?: boolean }) => {
+    const refreshAll = useCallback(async (params?: { from?: Date; to?: Date }) => {
         await Promise.all([
             fetchLeads(params),
             fetchCalls(params),
-            fetchOwners(params),
             fetchBalances(),
             fetchVoiceMetrics(params),
             fetchMasterMetrics(params),
             fetchWhatsappMetrics(params),
         ]);
-    }, [fetchLeads, fetchCalls, fetchOwners, fetchBalances, fetchVoiceMetrics, fetchMasterMetrics, fetchWhatsappMetrics]);
+    }, [fetchLeads, fetchCalls, fetchBalances, fetchVoiceMetrics, fetchMasterMetrics, fetchWhatsappMetrics]);
 
     const router = useRouter();
 
     // Track whether we've already done the one-time 90-day fallback
     const didAutoExpand = useRef(false);
 
-    // After the initial 7-day fetch completes, if we got no leads AND no owners,
+    // After the initial 7-day fetch completes, if we got no leads,
     // re-fetch everything with a 90-day window so pages always have data to show.
     useEffect(() => {
-        if (loadingLeads || loadingOwners || loadingMasterMetrics || loadingWhatsappMetrics) return;
+        if (loadingLeads || loadingMasterMetrics || loadingWhatsappMetrics) return;
         if (didAutoExpand.current) return;
         didAutoExpand.current = true;
 
-        if (leads.length === 0 && ownerLeads.length === 0) {
+        if (leads.length === 0) {
             const from = subDays(startOfDay(new Date()), 90);
             const to = endOfDay(new Date());
-            // Only expand raw leads/owners data — metrics are controlled per-page
+            // Only expand raw leads data — metrics are controlled per-page
             fetchLeads({ from, to });
-            fetchOwners({ from, to });
         }
-    }, [loadingLeads, loadingOwners, loadingMasterMetrics, loadingWhatsappMetrics,
-        leads, ownerLeads, fetchLeads, fetchOwners]);
+    }, [loadingLeads, loadingMasterMetrics, loadingWhatsappMetrics,
+        leads, fetchLeads]);
 
     useEffect(() => {
         // Master Dashboard strategy: Fetch everything on mount
-        refreshAll({ includeElevenLabs: false });
+        refreshAll();
 
         // Session Monitor: Checks every 1 minute if the session is still valid
         const checkSession = async () => {
@@ -468,12 +436,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         <DataContext.Provider value={{
             leads,
             calls,
-            ownerLeads,
             allTimeVoiceCount,
             allTimeOwnerVoiceCount,
             loadingLeads,
             loadingCalls,
-            loadingOwners,
             loadingBalances,
             loadingVoiceMetrics,
             loadingMasterMetrics,
@@ -482,12 +448,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             masterMetrics,
             whatsappMetrics,
             voiceBalance,
-            maqsamBalance,
             twilioBalance,
             error,
             refreshLeads: fetchLeads,
             refreshCalls: fetchCalls,
-            refreshOwners: fetchOwners,
             refreshBalances: fetchBalances,
             refreshVoiceMetrics: fetchVoiceMetrics,
             refreshMasterMetrics: fetchMasterMetrics,

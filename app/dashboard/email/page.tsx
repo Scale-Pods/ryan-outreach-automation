@@ -180,7 +180,7 @@ export default function EmailDashboardPage() {
 
     // Derived Data for Metric Card
     const loopMetricData = {
-        intro: { value: data.loopTotals.intro, label: "Intro Loop Emails", iconColor: "text-blue-600", bgColor: "bg-blue-50" },
+        intro: { value: data.loopTotals.intro, label: "Intro Loop Emails", iconColor: "text-blue-600", bgColor: "bg-[rgba(0,122,255,0.08)]" },
         followup: { value: data.loopTotals.followup, label: "Follow Up Loop Emails", iconColor: "text-amber-600", bgColor: "bg-amber-50" },
         nurture: { value: data.loopTotals.nurture, label: "Nurture Loop Emails", iconColor: "text-purple-600", bgColor: "bg-purple-50" },
     };
@@ -192,7 +192,7 @@ export default function EmailDashboardPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold">Email Marketing Center</h1>
-                    <p className="text-slate-500">Monitor your campaigns and inbox health</p>
+                    <p className="text-[var(--label-secondary)]">Monitor your campaigns and inbox health</p>
                 </div>
                 <DateRangePicker onUpdate={handleDateUpdate} />
             </div>
@@ -212,15 +212,15 @@ export default function EmailDashboardPage() {
                     subtitle={dateSubtitle}
                     value={data.firstEmail}
                     icon={<Send className="h-6 w-6 text-blue-600" />}
-                    bg="bg-blue-50"
+                    bg="bg-[rgba(0,122,255,0.08)]"
                 />
 
                 {/* Dynamic Loop Card */}
-                <Card className="border-slate-200 hover:shadow-md transition-all cursor-pointer bg-white">
+                <Card className="border-[var(--separator)] hover:shadow-[var(--glass-shadow)] transition-all cursor-pointer bg-[var(--glass-fill)]">
                     <CardContent className="p-6 flex flex-col justify-between h-full">
                         <div className="flex items-center justify-between mb-2">
                             <Select value={selectedLoopMetric} onValueChange={setSelectedLoopMetric}>
-                                <SelectTrigger className="w-[140px] h-8 text-xs font-medium border-slate-200">
+                                <SelectTrigger className="w-[140px] h-8 text-xs font-medium border-[var(--separator)]">
                                     <SelectValue placeholder="Select Loop" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -234,8 +234,8 @@ export default function EmailDashboardPage() {
                             </div>
                         </div>
                         <div>
-                            <h3 className="text-2xl font-bold text-slate-900">{currentMetric.value}</h3>
-                            <p className="text-xs text-slate-500">{currentMetric.label}</p>
+                            <h3 className="text-2xl font-bold text-[var(--label-primary)]">{currentMetric.value}</h3>
+                            <p className="text-xs text-[var(--label-secondary)]">{currentMetric.label}</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -262,15 +262,15 @@ export default function EmailDashboardPage() {
             {/* Campaign Breakdown with Tabs */}
             <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-bold text-slate-900 uppercase tracking-wider">Campaign Performance</h2>
+                    <h2 className="text-lg font-bold text-[var(--label-primary)] uppercase tracking-wider">Campaign Performance</h2>
                 </div>
 
                 <Tabs defaultValue="intro" className="w-full">
                     <div className="flex justify-start mb-6">
-                        <TabsList className="bg-slate-100 p-1 rounded-lg">
-                            <TabsTrigger value="intro" className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-4">Intro Loop</TabsTrigger>
-                            <TabsTrigger value="followup" className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-4">Follow Up Loop</TabsTrigger>
-                            <TabsTrigger value="nurture" className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-4">Nurture Loop</TabsTrigger>
+                        <TabsList className="bg-[var(--fill-quaternary)] p-1 rounded-lg">
+                            <TabsTrigger value="intro" className="data-[state=active]:bg-[var(--glass-fill)] data-[state=active]:shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] px-4">Intro Loop</TabsTrigger>
+                            <TabsTrigger value="followup" className="data-[state=active]:bg-[var(--glass-fill)] data-[state=active]:shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] px-4">Follow Up Loop</TabsTrigger>
+                            <TabsTrigger value="nurture" className="data-[state=active]:bg-[var(--glass-fill)] data-[state=active]:shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] px-4">Nurture Loop</TabsTrigger>
                         </TabsList>
                     </div>
 
@@ -327,17 +327,17 @@ export default function EmailDashboardPage() {
 function MetricCard({ title, subtitle, value, icon, bg, onClick }: any) {
     return (
         <Card
-            className="border-slate-200 hover:shadow-md transition-all cursor-pointer bg-white"
+            className="border-[var(--separator)] hover:shadow-[var(--glass-shadow)] transition-all cursor-pointer bg-[var(--glass-fill)]"
             onClick={onClick}
         >
             <CardContent className="p-6 flex items-center justify-between">
                 <div className="flex-1">
                     <div className="flex items-center">
-                        <h3 className="text-2xl font-bold text-slate-900">{value}</h3>
+                        <h3 className="text-2xl font-bold text-[var(--label-primary)]">{value}</h3>
                         {arguments[0].extra}
                     </div>
-                    <p className="text-sm font-bold text-slate-900">{title}</p>
-                    <p className="text-xs text-slate-500">{subtitle}</p>
+                    <p className="text-sm font-bold text-[var(--label-primary)]">{title}</p>
+                    <p className="text-xs text-[var(--label-secondary)]">{subtitle}</p>
                 </div>
                 <div className={`p-3 rounded-xl ${bg}`}>
                     {icon}
@@ -352,7 +352,7 @@ function BreakdownCard({ title, count, total, color, trackColor }: any) {
     const chartData = [{ value: parseFloat(percentage) }, { value: 100 - parseFloat(percentage) }];
 
     return (
-        <Card className="border-slate-200 bg-white shadow-sm hover:shadow-md transition-all">
+        <Card className="border-[var(--separator)] bg-[var(--glass-fill)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] hover:shadow-[var(--glass-shadow)] transition-all">
             <CardContent className="p-6 flex flex-col items-center text-center">
                 <div className="h-32 w-full mb-2 relative">
                     <ResponsiveContainer width="100%" height="100%">
@@ -374,13 +374,13 @@ function BreakdownCard({ title, count, total, color, trackColor }: any) {
                         </PieChart>
                     </ResponsiveContainer>
                     <div className="absolute inset-0 flex items-center justify-center flex-col">
-                        <span className="text-lg font-bold text-slate-900">{percentage}%</span>
+                        <span className="text-lg font-bold text-[var(--label-primary)]">{percentage}%</span>
                     </div>
                 </div>
 
-                <h3 className="text-2xl font-bold text-slate-900 mb-1">{count}</h3>
-                <p className="text-sm font-medium text-slate-500 uppercase tracking-wide">{title}</p>
-                <p className="text-xs text-slate-400 mt-1">Emails Sent</p>
+                <h3 className="text-2xl font-bold text-[var(--label-primary)] mb-1">{count}</h3>
+                <p className="text-sm font-medium text-[var(--label-secondary)] uppercase tracking-wide">{title}</p>
+                <p className="text-xs text-[var(--label-tertiary)] mt-1">Emails Sent</p>
             </CardContent>
         </Card>
     );

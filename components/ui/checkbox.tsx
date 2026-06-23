@@ -14,7 +14,7 @@ const Checkbox = React.forwardRef<
         ref={ref}
         suppressHydrationWarning={true}
         className={cn(
-            "peer h-4 w-4 shrink-0 rounded-sm border border-slate-900 ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-slate-900 data-[state=checked]:text-slate-50",
+            "peer h-[18px] w-[18px] shrink-0 rounded-[5px] border border-[var(--separator)] bg-[var(--fill-quaternary)] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-[var(--blue)] data-[state=checked]:border-[var(--blue)] data-[state=checked]:text-white",
             className
         )}
         {...props}
@@ -22,7 +22,7 @@ const Checkbox = React.forwardRef<
         <CheckboxPrimitive.Indicator
             className={cn("flex items-center justify-center text-current")}
         >
-            <Check className="h-4 w-4" />
+            <Check className="h-3 w-3" strokeWidth={3} />
         </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
 ))

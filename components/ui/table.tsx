@@ -20,7 +20,7 @@ const TableHeader = React.forwardRef<
     HTMLTableSectionElement,
     React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-    <thead ref={ref} className={cn("[&_tr]:border-b", className)} {...props} />
+    <thead ref={ref} className={cn("[&_tr]:border-b border-[var(--separator)]", className)} {...props} />
 ))
 TableHeader.displayName = "TableHeader"
 
@@ -43,7 +43,7 @@ const TableFooter = React.forwardRef<
     <tfoot
         ref={ref}
         className={cn(
-            "border-t bg-slate-100/50 font-medium [&>tr]:last:border-b-0",
+            "border-t border-[var(--separator)] bg-[var(--fill-quaternary)] font-medium [&>tr]:last:border-b-0",
             className
         )}
         {...props}
@@ -58,7 +58,7 @@ const TableRow = React.forwardRef<
     <tr
         ref={ref}
         className={cn(
-            "border-b transition-colors hover:bg-slate-100/50 data-[state=selected]:bg-slate-100",
+            "border-b border-[var(--separator)] transition-colors hover:bg-[var(--fill-quaternary)] data-[state=selected]:bg-[var(--fill-tertiary)]",
             className
         )}
         {...props}
@@ -73,7 +73,7 @@ const TableHead = React.forwardRef<
     <th
         ref={ref}
         className={cn(
-            "h-10 px-4 text-left align-middle font-medium text-slate-500 [&:has([role=checkbox])]:pr-0",
+            "h-11 px-4 text-left align-middle text-[13px] font-medium text-[var(--label-secondary)] tracking-[-0.01em] [&:has([role=checkbox])]:pr-0",
             className
         )}
         {...props}
@@ -88,7 +88,7 @@ const TableCell = React.forwardRef<
     <td
         ref={ref}
         className={cn(
-            "p-4 align-middle [&:has([role=checkbox])]:pr-0",
+            "p-4 align-middle text-[var(--label-primary)] [&:has([role=checkbox])]:pr-0",
             className
         )}
         {...props}
@@ -102,7 +102,7 @@ const TableCaption = React.forwardRef<
 >(({ className, ...props }, ref) => (
     <caption
         ref={ref}
-        className={cn("mt-4 text-sm text-slate-500", className)}
+        className={cn("mt-4 text-[13px] text-[var(--label-secondary)]", className)}
         {...props}
     />
 ))

@@ -162,8 +162,8 @@ export default function WhatsappAnalyticsPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">WhatsApp Analytics</h1>
-                    <p className="text-slate-500 text-sm">Track campaign performance and lead engagement</p>
+                    <h1 className="text-2xl font-bold text-[var(--label-primary)]">WhatsApp Analytics</h1>
+                    <p className="text-[var(--label-secondary)] text-sm">Track campaign performance and lead engagement</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <DateRangePicker onUpdate={({ range }) => setDateRange({ from: range?.from, to: range?.to })} />
@@ -177,21 +177,21 @@ export default function WhatsappAnalyticsPage() {
 
             {/* Core Metrics — Leads */}
             <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lead Campaigns (nr_wf · followup · nurture)</p>
+                <p className="text-xs font-bold text-[var(--label-secondary)] uppercase tracking-wider mb-2">Lead Campaigns (nr_wf · followup · nurture)</p>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                     <StatCard
                         title="Messages Sent"
                         value={loading ? "..." : stats.sentCount.toLocaleString()}
                         icon={Send}
                         color="text-blue-600"
-                        bg="bg-blue-50"
+                        bg="bg-[rgba(0,122,255,0.08)]"
                     />
                     <StatCard
                         title="Unique Msg Sent"
                         value={loading ? "..." : totalUniqueLeads.toLocaleString()}
                         icon={Users}
-                        color="text-slate-600"
-                        bg="bg-slate-50"
+                        color="text-[var(--label-secondary)]"
+                        bg="bg-[var(--bg-app)]"
                         info="Count of unique leads where W.P_1 was sent within the selected date range."
                     />
                     <StatCard
@@ -199,7 +199,7 @@ export default function WhatsappAnalyticsPage() {
                         value={loading ? "..." : stats.totalReplies.toLocaleString()}
                         icon={MessageSquare}
                         color="text-emerald-600"
-                        bg="bg-emerald-50"
+                        bg="bg-[rgba(52,199,89,0.08)]"
                         info="Derived from WP_Replied_track. Feature installed recently — select Last 3 Months for historical data."
                     />
                     <StatCard
@@ -214,7 +214,7 @@ export default function WhatsappAnalyticsPage() {
 
             {/* Owner Analytics */}
             <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+                <p className="text-xs font-bold text-[var(--label-secondary)] uppercase tracking-wider mb-2 flex items-center gap-1">
                     <Building2 className="h-3.5 w-3.5 text-amber-500" /> Owner Campaigns
                 </p>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -230,7 +230,7 @@ export default function WhatsappAnalyticsPage() {
                         value={loading ? "..." : stats.ownerReplies.toLocaleString()}
                         icon={Reply}
                         color="text-emerald-600"
-                        bg="bg-emerald-50"
+                        bg="bg-[rgba(52,199,89,0.08)]"
                     />
                     <StatCard
                         title="Owner Reply Rate"
@@ -245,9 +245,9 @@ export default function WhatsappAnalyticsPage() {
             {/* Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Engagement Trend */}
-                <Card className="lg:col-span-2 border-slate-200 shadow-sm bg-white">
+                <Card className="lg:col-span-2 border-[var(--separator)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] bg-[var(--glass-fill)]">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-bold text-slate-900">Engagement Trend</CardTitle>
+                        <CardTitle className="text-sm font-bold text-[var(--label-primary)]">Engagement Trend</CardTitle>
                         <CardDescription className="text-xs">Outbound reachouts vs incoming replies per day</CardDescription>
                     </CardHeader>
                     <CardContent className="p-3">
@@ -277,18 +277,18 @@ export default function WhatsappAnalyticsPage() {
                 </Card>
 
                 {/* Loop Breakdown */}
-                <Card className="border-slate-200 shadow-sm bg-white">
+                <Card className="border-[var(--separator)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] bg-[var(--glass-fill)]">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-bold text-slate-900">Loop Breakdown</CardTitle>
+                        <CardTitle className="text-sm font-bold text-[var(--label-primary)]">Loop Breakdown</CardTitle>
                         <CardDescription className="text-xs">Reachouts and replies by campaign loop</CardDescription>
                     </CardHeader>
                     <CardContent className="p-3">
                         {loading ? (
-                            <div className="h-[240px] flex items-center justify-center text-slate-400 text-sm">
+                            <div className="h-[240px] flex items-center justify-center text-[var(--label-tertiary)] text-sm">
                                 <RefreshCw className="h-4 w-4 animate-spin mr-2" /> Loading...
                             </div>
                         ) : loopBreakdown.every(l => l.reachouts === 0) ? (
-                            <div className="h-[240px] flex items-center justify-center text-slate-400 text-sm">
+                            <div className="h-[240px] flex items-center justify-center text-[var(--label-tertiary)] text-sm">
                                 No data for this period
                             </div>
                         ) : (
@@ -312,14 +312,14 @@ export default function WhatsappAnalyticsPage() {
 
             {/* Loop Detail Table */}
             {!loading && loopBreakdown.some(l => l.reachouts > 0) && (
-                <Card className="border-slate-200 shadow-sm bg-white">
+                <Card className="border-[var(--separator)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] bg-[var(--glass-fill)]">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-bold text-slate-900">Loop Performance</CardTitle>
+                        <CardTitle className="text-sm font-bold text-[var(--label-primary)]">Loop Performance</CardTitle>
                         <CardDescription className="text-xs">Per-loop reachout and reply breakdown</CardDescription>
                     </CardHeader>
                     <CardContent className="p-0">
                         <table className="w-full text-sm">
-                            <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
+                            <thead className="bg-[var(--bg-app)] text-[var(--label-secondary)] font-bold border-b border-[var(--separator)]">
                                 <tr>
                                     <th className="px-4 py-3 text-left">Loop</th>
                                     <th className="px-4 py-3 text-center">Reachouts</th>
@@ -327,16 +327,16 @@ export default function WhatsappAnalyticsPage() {
                                     <th className="px-4 py-3 text-center">Reply Rate</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="divide-y divide-[var(--separator)]">
                                 {loopBreakdown.map(row => (
-                                    <tr key={row.name} className="hover:bg-slate-50">
-                                        <td className="px-4 py-3 font-bold text-slate-700">
+                                    <tr key={row.name} className="hover:bg-[var(--bg-app)]">
+                                        <td className="px-4 py-3 font-bold text-[var(--label-primary)]">
                                             <span className="inline-block w-2 h-2 rounded-full mr-2" style={{ backgroundColor: row.color }} />
                                             {row.name}
                                         </td>
-                                        <td className="px-4 py-3 text-center text-slate-700 font-bold">{row.reachouts.toLocaleString()}</td>
+                                        <td className="px-4 py-3 text-center text-[var(--label-primary)] font-bold">{row.reachouts.toLocaleString()}</td>
                                         <td className="px-4 py-3 text-center text-emerald-600 font-bold">{row.replied.toLocaleString()}</td>
-                                        <td className="px-4 py-3 text-center text-slate-500 font-bold">
+                                        <td className="px-4 py-3 text-center text-[var(--label-secondary)] font-bold">
                                             {row.reachouts > 0 ? `${((row.replied / row.reachouts) * 100).toFixed(1)}%` : "—"}
                                         </td>
                                     </tr>
@@ -352,7 +352,7 @@ export default function WhatsappAnalyticsPage() {
 
 function StatCard({ title, value, icon: Icon, color, bg, info }: any) {
     return (
-        <Card className="border-slate-200 shadow-sm bg-white overflow-hidden relative">
+        <Card className="border-[var(--separator)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] bg-[var(--glass-fill)] overflow-hidden relative">
             {info && (
                 <div className="absolute top-2 right-2">
                     <TooltipProvider>
@@ -375,8 +375,8 @@ function StatCard({ title, value, icon: Icon, color, bg, info }: any) {
                     <Icon className="h-4 w-4" />
                 </div>
                 <div>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{title}</p>
-                    <h3 className="text-lg font-bold text-slate-900">{value}</h3>
+                    <p className="text-[10px] font-bold text-[var(--label-secondary)] uppercase tracking-wider">{title}</p>
+                    <h3 className="text-lg font-bold text-[var(--label-primary)]">{value}</h3>
                 </div>
             </CardContent>
         </Card>

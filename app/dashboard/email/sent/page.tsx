@@ -232,19 +232,19 @@ export default function SentEmailsPage() {
             {loading && <LMLoader />}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-slate-900">Sent Emails</h1>
-                    <p className="text-slate-500">View and manage your sent email history.</p>
+                    <h1 className="text-2xl font-bold tracking-tight text-[var(--label-primary)]">Sent Emails</h1>
+                    <p className="text-[var(--label-secondary)]">View and manage your sent email history.</p>
                 </div>
             </div>
 
             {/* Search & Filters */}
-            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
+            <div className="bg-[var(--glass-fill)] p-4 rounded-xl border border-[var(--separator)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] space-y-4">
                 <div className="flex flex-col md:flex-row gap-4">
                     <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--label-tertiary)]" />
                         <Input
                             placeholder="Search recipients, subjects..."
-                            className="pl-9 bg-slate-50 border-slate-200"
+                            className="pl-9 bg-[var(--bg-app)] border-[var(--separator)]"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
@@ -256,7 +256,7 @@ export default function SentEmailsPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-2 items-center">
-                    <Filter className="h-4 w-4 text-slate-400 mr-2" />
+                    <Filter className="h-4 w-4 text-[var(--label-tertiary)] mr-2" />
 
                     <Select value={filters.campaign} onValueChange={(val) => handleFilterChange("campaign", val)}>
                         <SelectTrigger className="w-[140px] h-9 text-xs">
@@ -305,7 +305,7 @@ export default function SentEmailsPage() {
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="text-slate-500 h-9 text-xs ml-auto bg-slate-100 hover:bg-slate-200"
+                        className="text-[var(--label-secondary)] h-9 text-xs ml-auto bg-[var(--fill-quaternary)] hover:bg-[var(--fill-tertiary)]"
                         onClick={() => {
                             setSearchQuery("");
                             setDateRange(undefined);
@@ -322,7 +322,7 @@ export default function SentEmailsPage() {
                 {!loading && paginatedEmails.length > 0 ? (
                     paginatedEmails.map((email) => <SentEmailCard key={email.id} email={email} />)
                 ) : !loading ? (
-                    <div className="flex flex-col items-center justify-center h-64 text-slate-400 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                    <div className="flex flex-col items-center justify-center h-64 text-[var(--label-tertiary)] border border-dashed border-[var(--separator)] rounded-xl bg-[var(--bg-app)]/50">
                         <Mail className="h-8 w-8 mb-2 opacity-50" />
                         <p>No emails found matching your filters</p>
                     </div>
@@ -331,8 +331,8 @@ export default function SentEmailsPage() {
 
             {/* Pagination */}
             {!loading && filteredEmails.length > ITEMS_PER_PAGE && (
-                <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-                    <p className="text-sm text-slate-500">
+                <div className="flex items-center justify-between pt-4 border-t border-[var(--separator)]">
+                    <p className="text-sm text-[var(--label-secondary)]">
                         Showing{" "}
                         <span className="font-medium">{(page - 1) * ITEMS_PER_PAGE + 1}</span>–
                         <span className="font-medium">
@@ -350,7 +350,7 @@ export default function SentEmailsPage() {
                         >
                             <ArrowLeft className="h-4 w-4" /> Previous
                         </Button>
-                        <span className="text-sm font-medium text-slate-600">
+                        <span className="text-sm font-medium text-[var(--label-secondary)]">
                             Page {page} of {totalPages}
                         </span>
                         <Button
@@ -384,20 +384,20 @@ function SentEmailCard({ email }: { email: any }) {
         <Collapsible
             open={isOpen}
             onOpenChange={setIsOpen}
-            className="bg-white border border-slate-200 rounded-xl shadow-sm transition-all hover:shadow-md"
+            className="bg-[var(--glass-fill)] border border-[var(--separator)] rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] transition-all hover:shadow-[var(--glass-shadow)]"
         >
             <CollapsibleTrigger asChild>
                 <div className="p-6 cursor-pointer group">
                     <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between">
                         <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 shrink-0 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center border border-emerald-100">
+                            <div className="h-10 w-10 shrink-0 bg-[rgba(52,199,89,0.08)] text-emerald-600 rounded-full flex items-center justify-center border border-emerald-100">
                                 <Mail className="h-5 w-5" />
                             </div>
                             <div className="space-y-1">
                                 <div className="flex items-center gap-2 flex-wrap">
                                     <Badge
                                         variant="secondary"
-                                        className="bg-slate-100 text-slate-600 hover:bg-slate-200 text-[10px] tracking-wider font-bold uppercase"
+                                        className="bg-[var(--fill-quaternary)] text-[var(--label-secondary)] hover:bg-[var(--fill-tertiary)] text-[10px] tracking-wider font-bold uppercase"
                                     >
                                         {email.type}
                                     </Badge>
@@ -410,7 +410,7 @@ function SentEmailCard({ email }: { email: any }) {
                                     {email.hasReplied && (
                                         <Badge
                                             variant="outline"
-                                            className="text-emerald-600 border-emerald-200 bg-emerald-50 text-[10px] font-bold gap-1"
+                                            className="text-emerald-600 border-emerald-200 bg-[rgba(52,199,89,0.08)] text-[10px] font-bold gap-1"
                                         >
                                             <Reply className="h-3 w-3" /> Replied
                                         </Badge>
@@ -424,9 +424,9 @@ function SentEmailCard({ email }: { email: any }) {
                                         </Badge>
                                     )}
                                 </div>
-                                <h4 className="text-lg font-bold text-slate-900">{email.recipient}</h4>
+                                <h4 className="text-lg font-bold text-[var(--label-primary)]">{email.recipient}</h4>
                                 {!isOpen && (
-                                    <p className="text-sm text-slate-500 truncate max-w-md" >
+                                    <p className="text-sm text-[var(--label-secondary)] truncate max-w-md" >
                                         {stripHtml(email.content).substring(0, 80)}...
                                     </p>
                                 )}
@@ -434,9 +434,9 @@ function SentEmailCard({ email }: { email: any }) {
                         </div>
                         <div className="shrink-0">
                             {isOpen ? (
-                                <ChevronUp className="h-4 w-4 text-slate-400" />
+                                <ChevronUp className="h-4 w-4 text-[var(--label-tertiary)]" />
                             ) : (
-                                <ChevronDown className="h-4 w-4 text-slate-400 group-hover:text-slate-600" />
+                                <ChevronDown className="h-4 w-4 text-[var(--label-tertiary)] group-hover:text-[var(--label-secondary)]" />
                             )}
                         </div>
                     </div>
@@ -445,13 +445,13 @@ function SentEmailCard({ email }: { email: any }) {
 
             <CollapsibleContent>
                 <div className="px-6 pb-6 pt-0">
-                    <div className="pl-[56px] space-y-4 border-t border-slate-100 pt-4">
+                    <div className="pl-[56px] space-y-4 border-t border-[var(--separator)] pt-4">
                         {email.sender && (
-                            <p className="text-xs text-slate-400">
-                                <span className="font-semibold text-slate-600">From:</span> {email.sender}
+                            <p className="text-xs text-[var(--label-tertiary)]">
+                                <span className="font-semibold text-[var(--label-secondary)]">From:</span> {email.sender}
                             </p>
                         )}
-                        <div className="mt-4 text-sm text-slate-700 leading-relaxed font-sans overflow-auto max-w-full">
+                        <div className="mt-4 text-sm text-[var(--label-primary)] leading-relaxed font-sans overflow-auto max-w-full">
                             <div
                                 className="email-content"
                                 dangerouslySetInnerHTML={{ __html: email.content }}

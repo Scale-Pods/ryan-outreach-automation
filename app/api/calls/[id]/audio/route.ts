@@ -1,28 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// ─── CRITICAL for Vercel ─────────────────────────────────────────────────────
-// Serverless (Lambda) functions on Vercel buffer the entire response body before
-// sending anything. For a multi-minute audio file, that means the user waits the
-// full download time before a single byte reaches their browser.
-//
-// Edge Runtime runs at the CDN edge node closest to the user, has ZERO cold-start
-// time, and truly streams bytes as they arrive from ElevenLabs — so the browser
-// can start playing almost immediately.
-// ─────────────────────────────────────────────────────────────────────────────
 export const dynamic = 'force-dynamic';
-
-const ELEVENLABS_BASE_URL = 'https://api.elevenlabs.io/v1';
 
 export async function GET(
     request: NextRequest,
     context: { params: Promise<{ id: string }> }
 ) {
     try {
-        const elApiKey = process.env.ELEVENLABS_API_KEY;
         const vapiPrivKey = process.env.VAPI_PRIVATE_KEY;
         const { id } = await context.params;
 
-        // 1. Try Vapi First (since IDs are distinct)
         if (vapiPrivKey) {
             console.log(`[AudioProxy] Attempting Vapi lookup for: ${id}`);
             const vapiRes = await fetch(`https://api.vapi.ai/call/${id}`, {
@@ -65,32 +52,7 @@ export async function GET(
             }
         }
 
-        // 2. Fallback to ElevenLabs
-        if (!elApiKey) return NextResponse.json({ error: "Configuration error" }, { status: 500 });
-
-        const upstream = await fetch(`${ELEVENLABS_BASE_URL}/convai/conversations/${id}/audio`, {
-            headers: {
-                'xi-api-key': elApiKey,
-                ...(request.headers.get('Range') ? { 'Range': request.headers.get('Range')! } : {}),
-            }
-        });
-
-        if (!upstream.ok && upstream.status !== 206) {
-            // Log for debugging since we're hitting 404s
-            console.warn(`[AudioProxy] ElevenLabs returned ${upstream.status} for ${id}`);
-            return NextResponse.json({ error: "Audio not found" }, { status: upstream.status });
-        }
-
-        return new NextResponse(upstream.body, {
-            status: upstream.status,
-            headers: {
-                'Content-Type': upstream.headers.get('Content-Type') || 'audio/mpeg',
-                'Content-Length': upstream.headers.get('Content-Length') || '',
-                'Accept-Ranges': 'bytes',
-                'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
-                'Content-Disposition': `inline; filename="call-${id}.mp3"`,
-            },
-        });
+        return NextResponse.json({ error: "Audio not found" }, { status: 404 });
 
     } catch (error) {
         console.error("Error proxying audio:", error);

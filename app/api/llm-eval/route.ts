@@ -110,36 +110,6 @@ ${enrichedList.filter(s => s.text || s.evalPassed).map((s) => `ID: ${s.id}\nSumm
         const content = JSON.parse(data.choices[0].message.content);
         const results = content.results || {};
         
-        // Save globally to Supabase
-        const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim();
-        const secretKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
-        
-        if (supabaseUrl && secretKey && Object.keys(results).length > 0) {
-            try {
-                const baseUrl = `${supabaseUrl.replace(/\/$/, "")}/rest/v1`;
-                const headers = { 
-                    "apikey": secretKey, 
-                    "Authorization": `Bearer ${secretKey}`,
-                    "Content-Type": "application/json",
-                    "Prefer": "resolution=merge-duplicates"
-                };
-                
-                // Filter out 'none' if it was a ghost result so we only persist valid eval intents
-                const validIds = Object.keys(results).filter(id => results[id] !== "none");
-                const insertData = validIds.map(id => ({
-                    id,
-                    intent: results[id]
-                }));
-                
-                if (insertData.length > 0) {
-                    fetch(`${baseUrl}/call_evaluations`, {
-                        method: "POST",
-                        headers,
-                        body: JSON.stringify(insertData)
-                    }).catch(e => console.error("Could not save to Supabase call_evaluations table", e));
-                }
-            } catch(e) {}
-        }
         
         // Also return the enriched summaries so the frontend can display them properly
         const detailedSummaries: Record<string, string> = {};

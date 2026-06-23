@@ -9,7 +9,7 @@ interface RyanLoaderProps {
 
 export const RyanLoader = ({ fullScreen = false }: RyanLoaderProps) => {
     return (
-        <div className={`${fullScreen ? 'fixed inset-0' : 'absolute inset-0 min-h-[400px]'} z-[50] flex items-center justify-center bg-zinc-50/50 backdrop-blur-[2px] transition-all duration-500`}>
+        <div className={`${fullScreen ? 'fixed inset-0' : 'absolute inset-0 min-h-[400px]'} z-[50] flex items-center justify-center bg-[var(--glass-fill)] backdrop-blur-[2px] transition-all duration-500`}>
             <div className="relative flex flex-col items-center justify-center">
 
                 {/* Animated Background Glow */}
@@ -29,8 +29,8 @@ export const RyanLoader = ({ fullScreen = false }: RyanLoaderProps) => {
                         {/* Ryan's Automation Logo */}
                         <div className="relative z-10 w-24 h-24 flex items-center justify-center animate-pulse">
                             <Image
-                                src="https://ryansautomation.com/logoheader.webp"
-                                alt="Ryan's Automation Logo"
+                                src="https://www.napleshomes.com/inc/skins/custom/img/nh-final-white.png"
+                                alt="Naples Homes Logo"
                                 width={100}
                                 height={100}
                                 className="object-contain"
@@ -45,7 +45,7 @@ export const RyanLoader = ({ fullScreen = false }: RyanLoaderProps) => {
                     <div className="flex flex-col items-center">
                         <h2 className="text-3xl font-black italic tracking-tighter uppercase">
                             <span className="text-yellow-500">RYAN</span>
-                            <span className="text-slate-900 ml-2">AUTOMATION</span>
+                            <span className="text-[var(--label-primary)] ml-2">AUTOMATION</span>
                         </h2>
                         <div className="h-[2px] w-24 bg-gradient-to-r from-transparent via-yellow-500 to-transparent mt-1"></div>
                     </div>

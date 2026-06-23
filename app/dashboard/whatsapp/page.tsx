@@ -8,8 +8,6 @@ import {
     TrendingUp,
     BarChart3,
     Send,
-    Building2,
-    MessageSquare,
     Info
 } from "lucide-react";
 import {
@@ -43,7 +41,7 @@ export default function WhatsappDashboardPage() {
         from: subDays(new Date(), 7),
         to: new Date()
     });
-    const [waData, setWaData] = useState<{ nr_wf: any[], followup: any[], nurture: any[], owners: any[] } | null>(null);
+    const [waData, setWaData] = useState<{ nr_wf: any[], followup: any[], nurture: any[] } | null>(null);
     const [loading, setLoading] = useState(true);
 
     const fetchData = useCallback(async (from: Date, to: Date) => {
@@ -70,7 +68,7 @@ export default function WhatsappDashboardPage() {
     // Messages Sent   = total filled WP slots on those in-range leads.
     // Total Replies   = all leads with a reply tracked.
     const stats = useMemo(() => {
-        if (!waData) return { totalLeads: 0, sentCount: 0, uniqueSentCount: 0, totalReplies: 0, ownerReachouts: 0, ownerReplies: 0, ownerSent: 0, dailyTrend: [] as any[] };
+        if (!waData) return { totalLeads: 0, sentCount: 0, uniqueSentCount: 0, totalReplies: 0, dailyTrend: [] as any[] };
 
         const allLeads = [
             ...(waData.nr_wf || []),
@@ -82,7 +80,6 @@ export default function WhatsappDashboardPage() {
         const to = endOfDay(new Date(dateRange?.to || dateRange?.from || new Date())).getTime();
         const inRange = (t: number) => !from || (t >= from && t <= to);
 
-        // Only leads where W.P_1 was sent within the selected date range
         const inRangeLeads = allLeads.filter(lead => {
             if (!lead["W.P_1"]) return false;
             if (!lead.wp1_parsed_date) return true;
@@ -95,7 +92,6 @@ export default function WhatsappDashboardPage() {
         const dailyMap: Record<string, { reachouts: number; replies: number }> = {};
 
         inRangeLeads.forEach(lead => {
-            // Messages Sent: all filled WP slots on this in-range lead
             for (let i = 1; i <= 12; i++) {
                 if (lead[`W.P_${i}`]) sentCount++;
             }
@@ -108,7 +104,6 @@ export default function WhatsappDashboardPage() {
             const hasReplied = !!(wp && String(wp).trim() && String(wp).trim().toLowerCase() !== "no" && String(wp).trim().toLowerCase() !== "none");
             if (hasReplied) totalReplies++;
 
-            // Daily trend bucketed by wp1_parsed_date
             if (lead.wp1_parsed_date) {
                 const dayKey = new Date(lead.wp1_parsed_date).toISOString().slice(0, 10);
                 if (!dailyMap[dayKey]) dailyMap[dayKey] = { reachouts: 0, replies: 0 };
@@ -121,20 +116,7 @@ export default function WhatsappDashboardPage() {
             .sort(([a], [b]) => a.localeCompare(b))
             .map(([date, vals]) => ({ date, ...vals }));
 
-        // Owner stats
-        const owners = waData.owners || [];
-        const ownerReachouts = owners.filter(o => o["Whatsapp_1"] || o.Whatsapp_1).length;
-        let ownerSent = 0;
-        let ownerReplies = 0;
-        owners.forEach(o => {
-            if (o["Whatsapp_1"]) ownerSent++;
-            if (o["retry_1"]) ownerSent++;
-            for (let i = 1; i <= 5; i++) { if (o[`Bot_Replied_${i}`]) ownerSent++; }
-            const wts = o["WTS_Reply_Track"];
-            if (wts && wts !== "" && String(wts).toLowerCase() !== "no") ownerReplies++;
-        });
-
-        return { totalLeads: allLeads.length, sentCount, uniqueSentCount, totalReplies, ownerReachouts, ownerReplies, ownerSent, dailyTrend };
+        return { totalLeads: allLeads.length, sentCount, uniqueSentCount, totalReplies, dailyTrend };
     }, [waData]);
 
     const trendData = useMemo(() => stats.dailyTrend.map(d => ({
@@ -156,8 +138,8 @@ export default function WhatsappDashboardPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900 tracking-tight">WhatsApp Overview</h1>
-                    <p className="text-slate-500 text-sm">Real-time engagement insights and campaign totals</p>
+                    <h1 className="text-2xl font-bold text-[var(--label-primary)] tracking-tight">WhatsApp Overview</h1>
+                    <p className="text-[var(--label-secondary)] text-sm">Real-time engagement insights and campaign totals</p>
                 </div>
                 <DateRangePicker onUpdate={(range) => setDateRange(range.range)} />
             </div>
@@ -186,41 +168,13 @@ export default function WhatsappDashboardPage() {
                 />
             </div>
 
-            {/* Owner Metrics — 3 cards */}
-            <div>
-                <h2 className="text-sm font-bold text-slate-900 mb-2 flex items-center gap-2">
-                    <Building2 className="h-4 w-4 text-amber-500" /> Owner Metrics
-                </h2>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                    <MetricCard
-                        title="Owner Reachouts"
-                        value={loading ? "..." : stats.ownerReachouts.toLocaleString()}
-                        icon={Building2}
-                        theme="amber"
-                        onClick={() => router.push('/dashboard/whatsapp/chat?tab=owners')}
-                    />
-                    <MetricCard
-                        title="Owner Replies"
-                        value={loading ? "..." : stats.ownerReplies.toLocaleString()}
-                        icon={MessageSquare}
-                        theme="emerald"
-                    />
-                    <MetricCard
-                        title="Owner Messages Sent"
-                        value={loading ? "..." : stats.ownerSent.toLocaleString()}
-                        icon={Send}
-                        theme="amber"
-                    />
-                </div>
-            </div>
-
             {/* Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="border-slate-200 shadow-sm overflow-hidden">
-                    <CardHeader className="bg-slate-50/50 border-b border-slate-100">
+                <Card className="border-[var(--separator)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] overflow-hidden">
+                    <CardHeader className="bg-[var(--bg-app)]/50 border-b border-[var(--separator)]">
                         <div className="flex items-center gap-2">
-                            <TrendingUp className="h-5 w-5 text-slate-500" />
-                            <CardTitle className="text-sm font-bold text-slate-700 uppercase">Conversion Funnel</CardTitle>
+                            <TrendingUp className="h-5 w-5 text-[var(--label-secondary)]" />
+                            <CardTitle className="text-sm font-bold text-[var(--label-primary)] uppercase">Conversion Funnel</CardTitle>
                         </div>
                     </CardHeader>
                     <CardContent className="pt-2">
@@ -252,11 +206,11 @@ export default function WhatsappDashboardPage() {
                     </CardContent>
                 </Card>
 
-                <Card className="border-slate-200 shadow-sm overflow-hidden">
-                    <CardHeader className="bg-slate-50/50 border-b border-slate-100">
+                <Card className="border-[var(--separator)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] overflow-hidden">
+                    <CardHeader className="bg-[var(--bg-app)]/50 border-b border-[var(--separator)]">
                         <div className="flex items-center gap-2">
-                            <BarChart3 className="h-5 w-5 text-slate-500" />
-                            <CardTitle className="text-sm font-bold text-slate-700 uppercase">Activity Trend</CardTitle>
+                            <BarChart3 className="h-5 w-5 text-[var(--label-secondary)]" />
+                            <CardTitle className="text-sm font-bold text-[var(--label-primary)] uppercase">Activity Trend</CardTitle>
                         </div>
                     </CardHeader>
                     <CardContent className="pt-2">
@@ -275,11 +229,11 @@ export default function WhatsappDashboardPage() {
                         <div className="flex justify-center gap-8 mt-4">
                             <div className="flex items-center gap-2">
                                 <div className="h-1 w-4 bg-blue-600 rounded-full" />
-                                <span className="text-xs font-bold text-slate-500 uppercase tracking-tight">Messages Sent</span>
+                                <span className="text-xs font-bold text-[var(--label-secondary)] uppercase tracking-tight">Messages Sent</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className="h-1 w-4 bg-emerald-600 rounded-full" />
-                                <span className="text-xs font-bold text-slate-500 uppercase tracking-tight">Replies Received</span>
+                                <span className="text-xs font-bold text-[var(--label-secondary)] uppercase tracking-tight">Replies Received</span>
                             </div>
                         </div>
                     </CardContent>
@@ -293,15 +247,15 @@ export default function WhatsappDashboardPage() {
 function MetricCard({ title, value, icon: Icon, theme, onClick, info }: any) {
     const themes: any = {
         purple: { bg: "bg-purple-50", text: "text-purple-600", border: "border-purple-100", iconBg: "bg-purple-100/50" },
-        blue: { bg: "bg-blue-50", text: "text-blue-600", border: "border-blue-100", iconBg: "bg-blue-100/50" },
-        emerald: { bg: "bg-emerald-50", text: "text-emerald-600", border: "border-emerald-100", iconBg: "bg-emerald-100/50" },
+        blue: { bg: "bg-[rgba(0,122,255,0.08)]", text: "text-blue-600", border: "border-blue-100", iconBg: "bg-blue-100/50" },
+        emerald: { bg: "bg-[rgba(52,199,89,0.08)]", text: "text-emerald-600", border: "border-emerald-100", iconBg: "bg-emerald-100/50" },
         amber: { bg: "bg-amber-50", text: "text-amber-600", border: "border-amber-100", iconBg: "bg-amber-100/50" },
     };
     const t = themes[theme] || themes.purple;
 
     return (
         <Card
-            className={`border ${t.border} shadow-sm bg-white overflow-hidden relative ${onClick ? 'cursor-pointer hover:shadow-md hover:border-slate-300 transition-all active:scale-[0.98]' : ''}`}
+            className={`border ${t.border} shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] bg-[var(--glass-fill)] overflow-hidden relative ${onClick ? 'cursor-pointer hover:shadow-md hover:border-[var(--fill-tertiary)] transition-all active:scale-[0.98]' : ''}`}
             onClick={onClick}
         >
             {info && (
@@ -327,8 +281,8 @@ function MetricCard({ title, value, icon: Icon, theme, onClick, info }: any) {
                         <Icon className="h-5 w-5" />
                     </div>
                     <div>
-                        <h3 className="text-2xl font-black text-slate-900 tracking-tight">{value}</h3>
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{title}</p>
+                        <h3 className="text-2xl font-black text-[var(--label-primary)] tracking-tight">{value}</h3>
+                        <p className="text-[10px] font-bold text-[var(--label-secondary)] uppercase tracking-wider">{title}</p>
                     </div>
                 </div>
             </CardContent>
@@ -338,7 +292,7 @@ function MetricCard({ title, value, icon: Icon, theme, onClick, info }: any) {
 
 function SummaryPill({ label, value, color }: any) {
     return (
-        <div className={`p-3 rounded-xl flex flex-col items-center justify-center text-white ${color} shadow-sm`}>
+        <div className={`p-3 rounded-xl flex flex-col items-center justify-center text-white ${color} shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)]`}>
             <span className="text-xl font-black">{value}</span>
             <span className="text-[9px] uppercase font-bold opacity-90 text-center leading-tight tracking-wider">{label}</span>
         </div>

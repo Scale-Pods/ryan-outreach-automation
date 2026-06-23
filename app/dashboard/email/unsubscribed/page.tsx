@@ -84,17 +84,17 @@ export default function UnsubscribedPage() {
                         <UserMinus className="h-6 w-6 text-rose-600" />
                         Unsubscribed Leads
                     </h1>
-                    <p className="text-slate-500">View detailed list of users who opted out of email marketing</p>
+                    <p className="text-[var(--label-secondary)]">View detailed list of users who opted out of email marketing</p>
                 </div>
                 <DateRangePicker onUpdate={(range: any) => setDateRange(range.range)} />
             </div>
 
-            <Card className="border-slate-200 shadow-sm bg-white">
-                <CardHeader className="pb-4 border-b border-slate-100 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+            <Card className="border-[var(--separator)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] bg-[var(--glass-fill)]">
+                <CardHeader className="pb-4 border-b border-[var(--separator)] flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
 
                     <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto">
                         <div className="relative w-full sm:w-auto flex-1 sm:flex-none">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-[var(--label-tertiary)]" />
                             <Input
                                 type="text"
                                 placeholder="Search name or email..."
@@ -134,7 +134,7 @@ export default function UnsubscribedPage() {
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm text-left">
-                                <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-100">
+                                <thead className="bg-[var(--bg-app)] text-[var(--label-secondary)] font-medium border-b border-[var(--separator)]">
                                     <tr>
                                         <th className="py-4 px-6">Name</th>
                                         <th className="py-4 px-6">Email</th>
@@ -144,22 +144,22 @@ export default function UnsubscribedPage() {
                                         <th className="py-4 px-6">Timestamp</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-100">
+                                <tbody className="divide-y divide-[var(--separator)]">
                                     {filteredLeads.length > 0 ? (
                                         filteredLeads.map((lead, idx) => {
                                             const dateObj = lead.created_at ? new Date(lead.created_at) : null;
                                             return (
-                                                <tr key={lead.id || idx} className="hover:bg-slate-50/80 transition-colors">
-                                                    <td className="py-4 px-6 font-medium text-slate-900">
+                                                <tr key={lead.id || idx} className="hover:bg-[var(--bg-app)]/80 transition-colors">
+                                                    <td className="py-4 px-6 font-medium text-[var(--label-primary)]">
                                                         {lead.name || "N/A"}
                                                     </td>
-                                                    <td className="py-4 px-6 text-slate-600">
+                                                    <td className="py-4 px-6 text-[var(--label-secondary)]">
                                                         <div className="flex items-center gap-2">
-                                                            <Mail className="h-4 w-4 text-slate-400" />
+                                                            <Mail className="h-4 w-4 text-[var(--label-tertiary)]" />
                                                             {lead.email}
                                                         </div>
                                                     </td>
-                                                    <td className="py-4 px-6 text-slate-600 capitalize">
+                                                    <td className="py-4 px-6 text-[var(--label-secondary)] capitalize">
                                                         {lead.source_loop || "Intro"}
                                                     </td>
                                                     <td className="py-4 px-6">
@@ -167,13 +167,13 @@ export default function UnsubscribedPage() {
                                                             Unsubscribed
                                                         </span>
                                                     </td>
-                                                    <td className="py-4 px-6 text-slate-600">
+                                                    <td className="py-4 px-6 text-[var(--label-secondary)]">
                                                         <div className="flex items-center gap-2">
-                                                            <Calendar className="h-4 w-4 text-slate-400" />
+                                                            <Calendar className="h-4 w-4 text-[var(--label-tertiary)]" />
                                                             {dateObj ? dateObj.toLocaleDateString() : 'N/A'}
                                                         </div>
                                                     </td>
-                                                    <td className="py-4 px-6 text-slate-500">
+                                                    <td className="py-4 px-6 text-[var(--label-secondary)]">
                                                         {dateObj ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
                                                     </td>
                                                 </tr>
@@ -181,7 +181,7 @@ export default function UnsubscribedPage() {
                                         })
                                     ) : (
                                         <tr>
-                                            <td colSpan={6} className="py-12 text-center text-slate-500">
+                                            <td colSpan={6} className="py-12 text-center text-[var(--label-secondary)]">
                                                 No unsubscribed leads match your search criteria.
                                             </td>
                                         </tr>

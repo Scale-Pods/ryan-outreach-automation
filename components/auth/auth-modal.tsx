@@ -27,8 +27,8 @@ export function AuthModal({ isOpen, onClose, defaultMode = 'login' }: AuthModalP
                     <div className="flex justify-center mb-10">
                         <div className="relative w-40 h-10">
                             <Image
-                                src="/logo.png"
-                                alt="Ryan's Automation Logo"
+                                src="https://www.napleshomes.com/inc/skins/custom/img/nh-final-white.png"
+                                alt="Naples Homes Logo"
                                 fill
                                 className="object-contain"
                                 priority

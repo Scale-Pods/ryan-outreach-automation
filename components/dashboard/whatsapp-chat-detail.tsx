@@ -238,7 +238,7 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
 
     if (loading) {
         return (
-            <div className="h-[500px] flex flex-col items-center justify-center space-y-4 text-slate-400">
+            <div className="h-[500px] flex flex-col items-center justify-center space-y-4 text-[var(--label-tertiary)]">
                 <RefreshCw className="h-8 w-8 animate-spin text-emerald-500" />
                 <p className="font-medium">Fetching conversation history...</p>
             </div>
@@ -247,7 +247,7 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
 
     if (!lead) {
         return (
-            <div className="h-[500px] flex flex-col items-center justify-center space-y-4 text-slate-400">
+            <div className="h-[500px] flex flex-col items-center justify-center space-y-4 text-[var(--label-tertiary)]">
                 <MessageSquare className="h-12 w-12 opacity-20" />
                 <p className="font-medium">Lead not found</p>
                 {onClose && <Button variant="outline" onClick={onClose}>Close</Button>}
@@ -260,8 +260,8 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
             {/* Header */}
             <div className="flex items-center justify-between shrink-0">
                 <div>
-                    <h2 className="text-xl font-bold text-slate-900">{lead.name}</h2>
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                    <h2 className="text-xl font-bold text-[var(--label-primary)]">{lead.name}</h2>
+                    <div className="flex items-center gap-2 text-xs text-[var(--label-secondary)]">
                         <span>{lead.phone}</span>
                         <span>•</span>
                         <span>{lead.source_loop}</span>
@@ -272,7 +272,7 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
                         variant="ghost"
                         size="sm"
                         disabled={isTranslating}
-                        className={`gap-2 text-[10px] font-bold uppercase transition-all ${isTranslated ? 'text-blue-600 bg-blue-50' : 'text-slate-400 hover:text-slate-900'}`}
+                        className={`gap-2 text-[10px] font-bold uppercase transition-all ${isTranslated ? 'text-blue-600 bg-[rgba(0,122,255,0.08)]' : 'text-[var(--label-tertiary)] hover:text-[var(--label-primary)]'}`}
                         onClick={handleTranslate}
                     >
                         {isTranslating ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Languages className="h-3.5 w-3.5" />}
@@ -281,7 +281,7 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
                     <Button
                         variant="default"
                         size="sm"
-                        className={`gap-2 text-[10px] font-bold uppercase transition-all shadow-md ${copied ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700 text-white'}`}
+                        className={`gap-2 text-[10px] font-bold uppercase transition-all shadow-[var(--glass-shadow)] ${copied ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700 text-white'}`}
                         onClick={handleCopyLink}
                     >
                         {copied ? <Check className="h-3.5 w-3.5" /> : <LinkIcon className="h-3.5 w-3.5" />}
@@ -293,15 +293,15 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
             {/* Content */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-hidden min-h-0">
                 {/* Chat timeline */}
-                <div className="lg:col-span-2 flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden h-full min-h-0">
-                    <div className="bg-slate-50/50 border-b border-slate-100 p-3 px-4 flex justify-between items-center shrink-0">
-                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Conversation Timeline</h3>
-                        <div className="text-[10px] text-slate-400 font-bold">{messages.length} Messages</div>
+                <div className="lg:col-span-2 flex flex-col bg-[var(--glass-fill)] border border-[var(--separator)] rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] overflow-hidden h-full min-h-0">
+                    <div className="bg-[var(--glass-fill)] border-b border-[var(--separator)] p-3 px-4 flex justify-between items-center shrink-0">
+                        <h3 className="text-xs font-bold text-[var(--label-tertiary)] uppercase tracking-wider">Conversation Timeline</h3>
+                        <div className="text-[10px] text-[var(--label-tertiary)] font-bold">{messages.length} Messages</div>
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-4 space-y-6">
                         {messages.length === 0 ? (
-                            <div className="h-full flex flex-col items-center justify-center text-slate-300 space-y-2">
+                            <div className="h-full flex flex-col items-center justify-center text-[var(--label-tertiary)] space-y-2">
                                 <MessageSquare className="h-10 w-10 opacity-20" />
                                 <p className="text-sm">No WhatsApp messages found in database.</p>
                             </div>
@@ -326,12 +326,12 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
 
                                 return (
                                     <div key={idx} className={`flex flex-col ${msg.type === 'user' ? 'items-start' : 'items-end'}`}>
-                                        <div className={`max-w-[85%] rounded-2xl p-4 shadow-sm ${msg.type === 'user'
-                                            ? 'bg-slate-50 text-slate-800 border border-slate-100 rounded-tl-none'
+                                        <div className={`max-w-[85%] rounded-2xl p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] ${msg.type === 'user'
+                                            ? 'bg-[var(--bg-app)] text-[var(--label-primary)] border border-[var(--separator)] rounded-tl-none'
                                             : 'bg-emerald-600 text-white rounded-tr-none'
                                             }`}>
                                             <div className="flex items-center justify-between mb-2 gap-3">
-                                                <span className={`text-[10px] font-bold uppercase tracking-wide ${msg.type === 'user' ? 'text-slate-400' : 'text-emerald-100'}`}>
+                                                <span className={`text-[10px] font-bold uppercase tracking-wide ${msg.type === 'user' ? 'text-[var(--label-tertiary)]' : 'text-emerald-100'}`}>
                                                     {msg.label}
                                                 </span>
                                                 {tsPill}
@@ -346,7 +346,7 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
                                             </p>
                                         </div>
                                         {msg.date && (
-                                            <span className="text-[10px] text-slate-400 mt-1 px-1">
+                                            <span className="text-[10px] text-[var(--label-tertiary)] mt-1 px-1">
                                                 {new Date(msg.date).toLocaleString([], { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })}
                                             </span>
                                         )}
@@ -359,25 +359,25 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
 
                 {/* Sidebar */}
                 <div className="lg:col-span-1 space-y-4 overflow-y-auto pr-1 h-full pb-4">
-                    <Card className="border-slate-200 shadow-sm bg-white">
+                    <Card className="border-[var(--separator)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] bg-[var(--glass-fill)]">
                         <CardContent className="p-4 space-y-4">
-                            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                                <User className="h-4 w-4 text-slate-400" /> Lead Information
+                            <h3 className="text-sm font-bold text-[var(--label-primary)] flex items-center gap-2">
+                                <User className="h-4 w-4 text-[var(--label-tertiary)]" /> Lead Information
                             </h3>
                             <div className="space-y-3 text-sm">
                                 <div>
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase">Contact info</span>
-                                    <p className="font-medium text-slate-900 mt-1">{lead.phone}</p>
-                                    <p className="text-slate-500 text-xs">{lead.email}</p>
+                                    <span className="text-[10px] font-bold text-[var(--label-tertiary)] uppercase">Contact info</span>
+                                    <p className="font-medium text-[var(--label-primary)] mt-1">{lead.phone}</p>
+                                    <p className="text-[var(--label-secondary)] text-xs">{lead.email}</p>
                                 </div>
                                 <div>
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase">Campaign</span>
-                                    <Badge className="mt-1 bg-purple-100 text-purple-700 hover:bg-purple-100 border-none text-[10px] font-bold uppercase block w-fit">
+                                    <span className="text-[10px] font-bold text-[var(--label-tertiary)] uppercase">Campaign</span>
+                                    <Badge className="mt-1 bg-[rgba(175,82,222,0.08)] text-purple-700 hover:bg-[rgba(175,82,222,0.08)] border-none text-[10px] font-bold uppercase block w-fit">
                                         {lead.source_loop}
                                     </Badge>
                                 </div>
                                 <div>
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase">Source Table</span>
+                                    <span className="text-[10px] font-bold text-[var(--label-tertiary)] uppercase">Source Table</span>
                                     <p className="font-bold text-blue-600 mt-1 text-xs">
                                         {String(lead.id || lead.source_loop || '').startsWith('intro') || String(lead.source_loop || '').toLowerCase() === 'intro' ? 'nr_wf' : (String(lead.id || lead.source_loop || '').startsWith('followup') || String(lead.source_loop || '').toLowerCase().includes('follow') ? 'followup' : 'nurture')}
                                     </p>
@@ -386,9 +386,9 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
                         </CardContent>
                     </Card>
 
-                    <Card className="border-slate-200 shadow-sm bg-white">
+                    <Card className="border-[var(--separator)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] bg-[var(--glass-fill)]">
                         <CardContent className="p-4 space-y-4">
-                            <h3 className="text-sm font-bold text-slate-900">Activity Stats</h3>
+                            <h3 className="text-sm font-bold text-[var(--label-primary)]">Activity Stats</h3>
                             <div className="grid grid-cols-1 gap-2">
                                 <StatBox label="Total Messages" value={messages.length} icon={MessageSquare} />
                                 <StatBox label="Incoming" value={messages.filter(m => m.type === 'user').length} icon={User} />
@@ -404,12 +404,12 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
 
 function StatBox({ label, value, icon: Icon }: any) {
     return (
-        <div className="p-2 px-3 bg-slate-50 rounded-lg border border-slate-100 flex items-center justify-between">
+        <div className="p-2 px-3 bg-[var(--bg-app)] rounded-lg border border-[var(--separator)] flex items-center justify-between">
             <div className="flex items-center gap-2">
-                <Icon className="h-3.5 w-3.5 text-slate-400" />
-                <span className="text-[10px] text-slate-500 uppercase tracking-wide font-bold">{label}</span>
+                <Icon className="h-3.5 w-3.5 text-[var(--label-tertiary)]" />
+                <span className="text-[10px] text-[var(--label-secondary)] uppercase tracking-wide font-bold">{label}</span>
             </div>
-            <span className="text-sm font-bold text-slate-900">{value}</span>
+            <span className="text-sm font-bold text-[var(--label-primary)]">{value}</span>
         </div>
     );
 }

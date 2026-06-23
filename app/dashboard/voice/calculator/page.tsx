@@ -40,7 +40,6 @@ export default function VoiceCalculatorPage() {
             await refreshCalls({
                 from: dateRange.from,
                 to: dateRange.to || dateRange.from,
-                includeElevenLabs: false,
                 provider: 'vapi',
                 force: true
             });
@@ -73,7 +72,6 @@ export default function VoiceCalculatorPage() {
         const filteredCalls = rawCalls.filter((call: any) => {
             if (accountFilter === 'vapi') return call.source === 'vapi';
             if (accountFilter === 'vapi-normal') return call.source === 'vapi' && call.vapiAccount === 'normal';
-            if (accountFilter === 'vapi-owners') return call.source === 'vapi' && call.vapiAccount === 'owners';
             if (accountFilter === 'open-house') return call.assistantId === '1ef6ea66-0a75-45f5-b025-1743e048dc90';
             return true;
         });
@@ -124,8 +122,6 @@ export default function VoiceCalculatorPage() {
                 if (tCost !== undefined && tCost !== -1) {
                     agentTotal += aCost;
                     telephonyTotal += tCost;
-                } else if (call.source === 'elevenlabs') {
-                    agentTotal += (parseFloat(call.cost.replace('$', '')) || 0);
                 } else {
                     const rawTotal = parseFloat(call.cost.replace('$', '')) || 0;
                     agentTotal += aCost;
@@ -164,9 +160,9 @@ export default function VoiceCalculatorPage() {
                     <div className="p-2.5 rounded-xl bg-purple-600 text-white shadow-lg shadow-purple-200">
                         <Calculator className="h-6 w-6" />
                     </div>
-                    <h1 className="text-3xl font-bold text-slate-900">Cost Calculator</h1>
+                    <h1 className="text-3xl font-bold text-[var(--label-primary)]">Cost Calculator</h1>
                 </div>
-                <p className="text-slate-500 max-w-2xl">
+                <p className="text-[var(--label-secondary)] max-w-2xl">
                     Select a date range and account to calculate detailed telephony and agent costs. 
                     This tool uses real-time rate matching and provider APIs for maximum accuracy.
                 </p>
@@ -174,30 +170,29 @@ export default function VoiceCalculatorPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Configuration Panel */}
-                <Card className="lg:col-span-1 border-slate-200 shadow-sm bg-white h-fit">
+                <Card className="lg:col-span-1 border-[var(--separator)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] bg-[var(--glass-fill)] h-fit">
                     <CardHeader className="pb-4">
                         <CardTitle className="text-lg flex items-center gap-2">
-                            <Search className="h-4 w-4 text-slate-400" />
+                            <Search className="h-4 w-4 text-[var(--label-tertiary)]" />
                             Configuration
                         </CardTitle>
                         <CardDescription>Specify the parameters for calculation.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Date Range</label>
+                            <label className="text-xs font-bold text-[var(--label-tertiary)] uppercase tracking-wider">Date Range</label>
                             <DateRangePicker onUpdate={(values) => setDateRange(values.range)} />
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Account / Provider</label>
+                            <label className="text-xs font-bold text-[var(--label-tertiary)] uppercase tracking-wider">Account / Provider</label>
                             <Select value={accountFilter} onValueChange={setAccountFilter}>
-                                <SelectTrigger className="w-full bg-slate-50 border-slate-200 h-11">
+                                <SelectTrigger className="w-full bg-[var(--bg-app)] border-[var(--separator)] h-11">
                                     <SelectValue placeholder="Select Account" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="vapi">All Vapi Calls</SelectItem>
                                     <SelectItem value="vapi-normal">Normal Calls</SelectItem>
-                                    <SelectItem value="vapi-owners">Owner Leads</SelectItem>
                                     <SelectItem value="open-house">🏠 Open House Event</SelectItem>
                                 </SelectContent>
                             </Select>
@@ -221,8 +216,8 @@ export default function VoiceCalculatorPage() {
                             )}
                         </Button>
 
-                        <div className="pt-4 border-t border-slate-100">
-                            <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-50 border border-amber-100">
+                        <div className="pt-4 border-t border-[var(--separator)]">
+                            <div className="flex items-start gap-3 p-3 rounded-lg bg-[rgba(255,204,0,0.08)] border border-amber-100">
                                 <Info className="h-4 w-4 text-amber-600 mt-0.5" />
                                 <p className="text-[11px] text-amber-800 leading-relaxed">
                                     <strong>Note:</strong> Calculations may take a few seconds as we synchronize costs with telephony providers for the selected range.
@@ -235,22 +230,22 @@ export default function VoiceCalculatorPage() {
                 {/* Results Panel */}
                 <div className="lg:col-span-2 space-y-6">
                     {!results && !calculating && (
-                        <Card className="border-dashed border-2 border-slate-200 bg-slate-50/50 h-[400px] flex flex-col items-center justify-center text-center p-8">
-                            <div className="w-16 h-16 rounded-full bg-white shadow-sm border border-slate-100 flex items-center justify-center mb-4">
-                                <Calculator className="h-8 w-8 text-slate-300" />
+                        <Card className="border-dashed border-2 border-[var(--separator)] bg-[var(--bg-app)]/50 h-[400px] flex flex-col items-center justify-center text-center p-8">
+                            <div className="w-16 h-16 rounded-full bg-[var(--glass-fill)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] border border-[var(--separator)] flex items-center justify-center mb-4">
+                                <Calculator className="h-8 w-8 text-[var(--label-tertiary)]" />
                             </div>
-                            <h3 className="text-lg font-bold text-slate-400">Ready to Calculate</h3>
-                            <p className="text-slate-400 max-w-xs mt-2">
+                            <h3 className="text-lg font-bold text-[var(--label-tertiary)]">Ready to Calculate</h3>
+                            <p className="text-[var(--label-tertiary)] max-w-xs mt-2">
                                 Click the "Calculate Total" button to process voice logs for your selected configuration.
                             </p>
                         </Card>
                     )}
 
                     {calculating && (
-                        <Card className="border-slate-200 bg-white h-[400px] flex flex-col items-center justify-center text-center p-8">
+                        <Card className="border-[var(--separator)] bg-[var(--glass-fill)] h-[400px] flex flex-col items-center justify-center text-center p-8">
                             <LMLoader />
-                            <h3 className="text-lg font-bold text-slate-900 mt-6">Processing Voice Logs</h3>
-                            <p className="text-slate-500 max-w-xs mt-2 animate-pulse">
+                            <h3 className="text-lg font-bold text-[var(--label-primary)] mt-6">Processing Voice Logs</h3>
+                            <p className="text-[var(--label-secondary)] max-w-xs mt-2 animate-pulse">
                                 Fetching call records and applying telephony rates...
                             </p>
                         </Card>
@@ -259,7 +254,7 @@ export default function VoiceCalculatorPage() {
                     {results && !calculating && (
                         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <Card className="border-slate-200 bg-emerald-50 border-emerald-100 shadow-sm overflow-hidden relative group">
+                                <Card className="border-[var(--separator)] bg-[rgba(52,199,89,0.08)] border-emerald-100 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] overflow-hidden relative group">
                                     <div className="absolute -right-4 -top-4 text-emerald-100 opacity-50 group-hover:scale-110 transition-transform duration-700">
                                         <Crown className="h-24 w-24" />
                                     </div>
@@ -269,7 +264,7 @@ export default function VoiceCalculatorPage() {
                                     </CardContent>
                                 </Card>
 
-                                <Card className="border-slate-200 bg-blue-50 border-blue-100 shadow-sm overflow-hidden relative group">
+                                <Card className="border-[var(--separator)] bg-[rgba(0,122,255,0.08)] border-blue-100 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] overflow-hidden relative group">
                                     <div className="absolute -right-4 -top-4 text-blue-100 opacity-50 group-hover:scale-110 transition-transform duration-700">
                                         <Activity className="h-24 w-24" />
                                     </div>
@@ -279,7 +274,7 @@ export default function VoiceCalculatorPage() {
                                     </CardContent>
                                 </Card>
 
-                                <Card className="border-slate-200 bg-purple-50 border-purple-100 shadow-sm overflow-hidden relative group">
+                                <Card className="border-[var(--separator)] bg-[rgba(175,82,222,0.08)] border-purple-100 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] overflow-hidden relative group">
                                     <div className="absolute -right-4 -top-4 text-purple-100 opacity-50 group-hover:scale-110 transition-transform duration-700">
                                         <Phone className="h-24 w-24" />
                                     </div>
@@ -290,57 +285,57 @@ export default function VoiceCalculatorPage() {
                                 </Card>
                             </div>
 
-                            <Card className="border-slate-200 shadow-sm bg-white overflow-hidden">
-                                <CardHeader className="bg-slate-50 border-b border-slate-100">
+                            <Card className="border-[var(--separator)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] bg-[var(--glass-fill)] overflow-hidden">
+                                <CardHeader className="bg-[var(--fill-quaternary)] border-b border-[var(--separator)]">
                                     <CardTitle className="text-sm flex items-center justify-between">
                                         <span className="flex items-center gap-2">
-                                            <Activity className="h-4 w-4 text-slate-400" />
+                                            <Activity className="h-4 w-4 text-[var(--label-tertiary)]" />
                                             Detailed Metrics
                                         </span>
-                                        <Badge variant="outline" className="bg-white text-slate-500 font-medium border-slate-200">
+                                        <Badge variant="outline" className="bg-[var(--glass-fill)] text-[var(--label-secondary)] font-medium border-[var(--separator)]">
                                             Calculated at {format(results.calculatedAt, 'p')}
                                         </Badge>
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="p-0">
-                                    <div className="divide-y divide-slate-100">
-                                        <div className="flex items-center justify-between p-4 hover:bg-slate-50/50 transition-colors">
+                                    <div className="divide-y divide-[var(--separator)]">
+                                        <div className="flex items-center justify-between p-4 hover:bg-[var(--bg-app)]/50 transition-colors">
                                             <div className="flex items-center gap-3">
-                                                <div className="p-2 rounded-lg bg-slate-100 text-slate-500">
+                                                <div className="p-2 rounded-lg bg-[var(--fill-quaternary)] text-[var(--label-secondary)]">
                                                     <Phone className="h-4 w-4" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-bold text-slate-900">Total Calls Processed</p>
-                                                    <p className="text-[10px] text-slate-500 uppercase tracking-wider">Successfully Fetched</p>
+                                                    <p className="text-sm font-bold text-[var(--label-primary)]">Total Calls Processed</p>
+                                                    <p className="text-[10px] text-[var(--label-secondary)] uppercase tracking-wider">Successfully Fetched</p>
                                                 </div>
                                             </div>
-                                            <p className="text-lg font-black text-slate-900">{results.callCount}</p>
+                                            <p className="text-lg font-black text-[var(--label-primary)]">{results.callCount}</p>
                                         </div>
 
-                                        <div className="flex items-center justify-between p-4 hover:bg-slate-50/50 transition-colors">
+                                        <div className="flex items-center justify-between p-4 hover:bg-[var(--bg-app)]/50 transition-colors">
                                             <div className="flex items-center gap-3">
-                                                <div className="p-2 rounded-lg bg-slate-100 text-slate-500">
+                                                <div className="p-2 rounded-lg bg-[var(--fill-quaternary)] text-[var(--label-secondary)]">
                                                     <Activity className="h-4 w-4" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-bold text-slate-900">Total Talk Time</p>
-                                                    <p className="text-[10px] text-slate-500 uppercase tracking-wider">Cumulative Duration</p>
+                                                    <p className="text-sm font-bold text-[var(--label-primary)]">Total Talk Time</p>
+                                                    <p className="text-[10px] text-[var(--label-secondary)] uppercase tracking-wider">Cumulative Duration</p>
                                                 </div>
                                             </div>
-                                            <p className="text-lg font-black text-slate-900">{formatDuration(results.totalDuration)}</p>
+                                            <p className="text-lg font-black text-[var(--label-primary)]">{formatDuration(results.totalDuration)}</p>
                                         </div>
 
-                                        <div className="flex items-center justify-between p-4 hover:bg-slate-50/50 transition-colors">
+                                        <div className="flex items-center justify-between p-4 hover:bg-[var(--bg-app)]/50 transition-colors">
                                             <div className="flex items-center gap-3">
-                                                <div className="p-2 rounded-lg bg-slate-100 text-slate-500">
+                                                <div className="p-2 rounded-lg bg-[var(--fill-quaternary)] text-[var(--label-secondary)]">
                                                     <Crown className="h-4 w-4" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-bold text-slate-900">Average Cost Per Call</p>
-                                                    <p className="text-[10px] text-slate-500 uppercase tracking-wider">Estimated Average</p>
+                                                    <p className="text-sm font-bold text-[var(--label-primary)]">Average Cost Per Call</p>
+                                                    <p className="text-[10px] text-[var(--label-secondary)] uppercase tracking-wider">Estimated Average</p>
                                                 </div>
                                             </div>
-                                            <p className="text-lg font-black text-slate-900">
+                                            <p className="text-lg font-black text-[var(--label-primary)]">
                                                 ${(results.callCount > 0 ? results.totalCost / results.callCount : 0).toFixed(3)}
                                             </p>
                                         </div>
@@ -349,7 +344,7 @@ export default function VoiceCalculatorPage() {
                             </Card>
 
                             <div className="flex justify-center pt-4">
-                                <div className="flex items-center gap-2 text-[11px] text-slate-400 bg-slate-100 px-4 py-2 rounded-full font-medium">
+                                <div className="flex items-center gap-2 text-[11px] text-[var(--label-tertiary)] bg-[var(--fill-quaternary)] px-4 py-2 rounded-full font-medium">
                                     <Info className="h-3 w-3" />
                                     Prices include per-minute rounding and special backup rates for UAE destinations.
                                 </div>

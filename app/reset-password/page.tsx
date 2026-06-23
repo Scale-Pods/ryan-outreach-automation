@@ -39,18 +39,18 @@ export default function ResetPasswordPage() {
     }, [state, router]);
 
     return (
-        <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
+        <div className="min-h-screen bg-[var(--bg-app)] text-[var(--label-primary)] flex items-center justify-center p-6">
             {/* Background glow */}
             <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-96 h-64 bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none" />
 
-            <div className="relative w-full max-w-md bg-zinc-950 border border-white/10 rounded-3xl shadow-2xl overflow-hidden">
+            <div className="relative w-full max-w-md bg-[var(--glass-fill)] border border-[var(--glass-border)] rounded-3xl shadow-2xl overflow-hidden">
                 <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
 
                 <div className="p-8 pt-12 space-y-8">
                     {/* Logo */}
                     <div className="flex justify-center">
                         <div className="relative w-40 h-10">
-                            <Image src="/logo.png" alt="Ryan's Automation" fill className="object-contain" priority />
+                            <Image src="https://www.napleshomes.com/inc/skins/custom/img/nh-final-white.png" alt="Naples Homes" fill className="object-contain" priority />
                         </div>
                     </div>
 
@@ -63,8 +63,8 @@ export default function ResetPasswordPage() {
                                 </div>
                             </div>
                             <div>
-                                <h1 className="text-2xl font-bold text-white mb-2">Link Invalid</h1>
-                                <p className="text-zinc-400 text-sm">{hashError}</p>
+                                <h1 className="text-2xl font-bold text-[var(--label-primary)] mb-2">Link Invalid</h1>
+                                <p className="text-[var(--label-secondary)] text-sm">{hashError}</p>
                             </div>
                             <Button
                                 onClick={() => router.push('/')}
@@ -85,10 +85,10 @@ export default function ResetPasswordPage() {
                                 </div>
                             </div>
                             <div>
-                                <h1 className="text-2xl font-bold text-white mb-2">Password Updated</h1>
-                                <p className="text-zinc-400 text-sm">{state.message}</p>
+                                <h1 className="text-2xl font-bold text-[var(--label-primary)] mb-2">Password Updated</h1>
+                                <p className="text-[var(--label-secondary)] text-sm">{state.message}</p>
                             </div>
-                            <div className="flex items-center justify-center gap-1.5 text-zinc-500 text-xs">
+                            <div className="flex items-center justify-center gap-1.5 text-[var(--label-secondary)] text-xs">
                                 <Loader2 className="h-3 w-3 animate-spin" />
                                 Redirecting to login…
                             </div>
@@ -99,8 +99,8 @@ export default function ResetPasswordPage() {
                     {!hashError && !state?.success && (
                         <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
                             <div className="space-y-2 text-center">
-                                <h1 className="text-3xl font-bold tracking-tighter text-white">Set New Password</h1>
-                                <p className="text-zinc-400 text-sm">Choose a strong password for your account</p>
+                                <h1 className="text-3xl font-bold tracking-tighter text-[var(--label-primary)]">Set New Password</h1>
+                                <p className="text-[var(--label-secondary)] text-sm">Choose a strong password for your account</p>
                             </div>
 
                             {state?.error && (
@@ -113,11 +113,11 @@ export default function ResetPasswordPage() {
                                 <input type="hidden" name="accessToken" value={accessToken ?? ''} />
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="password" className="text-zinc-300 text-xs font-bold uppercase tracking-wider">
+                                    <Label htmlFor="password" className="text-[var(--label-secondary)] text-xs font-bold uppercase tracking-wider">
                                         New Password
                                     </Label>
                                     <div className="relative group">
-                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 group-focus-within:text-emerald-400 transition-colors" />
+                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--label-secondary)] group-focus-within:text-emerald-400 transition-colors" />
                                         <Input
                                             id="password"
                                             name="password"
@@ -126,24 +126,24 @@ export default function ResetPasswordPage() {
                                             required
                                             minLength={8}
                                             autoFocus
-                                            className="pl-10 h-11 bg-white/5 border-white/10 text-white placeholder:text-zinc-600 focus:border-emerald-500/50 focus:ring-emerald-500/20 rounded-xl transition-all"
+                                            className="pl-10 h-11 bg-[var(--fill-quaternary)] border-[var(--separator)] text-[var(--label-primary)] placeholder:text-[var(--label-tertiary)] focus:border-emerald-500/50 focus:ring-emerald-500/20 rounded-xl transition-all"
                                         />
                                     </div>
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="confirmPassword" className="text-zinc-300 text-xs font-bold uppercase tracking-wider">
+                                    <Label htmlFor="confirmPassword" className="text-[var(--label-secondary)] text-xs font-bold uppercase tracking-wider">
                                         Confirm Password
                                     </Label>
                                     <div className="relative group">
-                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 group-focus-within:text-emerald-400 transition-colors" />
+                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--label-secondary)] group-focus-within:text-emerald-400 transition-colors" />
                                         <Input
                                             id="confirmPassword"
                                             name="confirmPassword"
                                             type="password"
                                             placeholder="••••••••"
                                             required
-                                            className="pl-10 h-11 bg-white/5 border-white/10 text-white placeholder:text-zinc-600 focus:border-emerald-500/50 focus:ring-emerald-500/20 rounded-xl transition-all"
+                                            className="pl-10 h-11 bg-[var(--fill-quaternary)] border-[var(--separator)] text-[var(--label-primary)] placeholder:text-[var(--label-tertiary)] focus:border-emerald-500/50 focus:ring-emerald-500/20 rounded-xl transition-all"
                                         />
                                     </div>
                                 </div>
@@ -151,7 +151,7 @@ export default function ResetPasswordPage() {
                                 <Button
                                     type="submit"
                                     disabled={isPending || !accessToken}
-                                    className="w-full h-11 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 transition-all gap-2 group"
+                                    className="w-full h-11 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-bold rounded-xl shadow-[var(--glass-shadow-hover)] transition-all gap-2 group"
                                 >
                                     {isPending ? (
                                         <Loader2 className="h-4 w-4 animate-spin" />

@@ -13,7 +13,7 @@ export default function VoiceSetupPage() {
         <div className="space-y-8 max-w-[800px] mx-auto pb-10">
             <div>
                 <h1 className="text-2xl font-bold">Agent Configuration</h1>
-                <p className="text-slate-500">Configure your AI voice assistant's personality and tools</p>
+                <p className="text-[var(--label-secondary)]">Configure your AI voice assistant's personality and tools</p>
             </div>
 
             <Tabs defaultValue="personality" className="w-full">
@@ -24,7 +24,7 @@ export default function VoiceSetupPage() {
                 </TabsList>
 
                 <TabsContent value="personality" className="space-y-4 mt-6">
-                    <Card className="border-slate-200">
+                    <Card className="border-[var(--separator)]">
                         <CardHeader>
                             <CardTitle>Agent Persona</CardTitle>
                             <CardDescription>Define how your agent introduces itself</CardDescription>
@@ -47,7 +47,7 @@ export default function VoiceSetupPage() {
                 </TabsContent>
 
                 <TabsContent value="voice" className="space-y-4 mt-6">
-                    <Card className="border-slate-200">
+                    <Card className="border-[var(--separator)]">
                         <CardHeader>
                             <CardTitle>Voice Settings</CardTitle>
                         </CardHeader>
@@ -67,7 +67,7 @@ export default function VoiceSetupPage() {
                             </div>
                             <div className="grid gap-2">
                                 <Label>Speed</Label>
-                                <div className="h-10 border border-slate-200 rounded-md flex items-center px-4 bg-slate-50 text-slate-500">
+                                <div className="h-10 border border-[var(--separator)] rounded-md flex items-center px-4 bg-[var(--bg-app)] text-[var(--label-secondary)]">
                                     1.0x (Natural)
                                 </div>
                             </div>
@@ -79,8 +79,8 @@ export default function VoiceSetupPage() {
                 </TabsContent>
 
                 <TabsContent value="tools" className="mt-6">
-                    <Card className="border-slate-200">
-                        <CardContent className="p-6 text-center text-slate-500">
+                    <Card className="border-[var(--separator)]">
+                        <CardContent className="p-6 text-center text-[var(--label-secondary)]">
                             Configure Calendar and CRM integrations here.
                         </CardContent>
                     </Card>

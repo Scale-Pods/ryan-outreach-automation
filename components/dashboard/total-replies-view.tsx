@@ -161,7 +161,7 @@ export function TotalRepliesView({ leads = [], dateRange, onViewLead }: { leads?
             <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
                 <div className="flex flex-1 items-center gap-2 w-full md:max-w-sm">
                     <div className="relative flex-1">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-[var(--label-secondary)]" />
                         <Input
                             placeholder="Search contacts..."
                             className="pl-9"
@@ -185,10 +185,10 @@ export function TotalRepliesView({ leads = [], dateRange, onViewLead }: { leads?
             </div>
 
             {/* Table */}
-            <div className="rounded-md border bg-white overflow-hidden">
+            <div className="rounded-md border bg-[var(--glass-fill)] overflow-hidden">
                 <Table>
                     <TableHeader>
-                        <TableRow className="bg-slate-50">
+                        <TableRow className="bg-[var(--bg-app)]">
                             <TableHead>Contact</TableHead>
                             <TableHead>Mode</TableHead>
                             <TableHead>Date & Time</TableHead>
@@ -203,7 +203,7 @@ export function TotalRepliesView({ leads = [], dateRange, onViewLead }: { leads?
                                 <TableRow key={item.id}>
                                     <TableCell>
                                         <div className="font-medium">{item.contactName}</div>
-                                        <div className="text-xs text-slate-500">{item.contactInfo}</div>
+                                        <div className="text-xs text-[var(--label-secondary)]">{item.contactInfo}</div>
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex items-center gap-2">
@@ -215,7 +215,7 @@ export function TotalRepliesView({ leads = [], dateRange, onViewLead }: { leads?
                                     </TableCell>
                                     <TableCell>
                                         <div className="text-sm">{item.date}</div>
-                                        <div className="text-xs text-slate-500">{item.time}</div>
+                                        <div className="text-xs text-[var(--label-secondary)]">{item.time}</div>
                                     </TableCell>
                                     <TableCell className="max-w-[200px] truncate" title={item.preview}>
                                         {item.preview}
@@ -251,7 +251,7 @@ export function TotalRepliesView({ leads = [], dateRange, onViewLead }: { leads?
 
             {/* Pagination */}
             <div className="flex items-center justify-between">
-                <div className="text-sm text-slate-500">
+                <div className="text-sm text-[var(--label-secondary)]">
                     Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredData.length)} of {filteredData.length} entries
                 </div>
                 <div className="flex items-center gap-2">
