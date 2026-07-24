@@ -1,6 +1,6 @@
 'use server';
 
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 import { supabaseAdmin } from '@/lib/supabase';
 import { hashPassword, comparePassword } from '@/lib/auth-utils';
@@ -9,6 +9,26 @@ import crypto from 'crypto';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-fallback-secret-change-this';
 const secret = new TextEncoder().encode(JWT_SECRET);
+
+async function getAppUrl() {
+    try {
+        const headerList = await headers();
+        const host = headerList.get('host');
+        const proto = headerList.get('x-forwarded-proto') || 'https';
+        if (host) {
+            const protocol = host.includes('localhost') ? 'http' : proto;
+            return `${protocol}://${host}`.replace(/\/$/, '');
+        }
+    } catch {
+        // Fallback if headers fail
+    }
+
+    if (process.env.VERCEL_URL) {
+        return `https://${process.env.VERCEL_URL}`.replace(/\/$/, '');
+    }
+
+    return (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, '');
+}
 
 export async function login(prevState: any, formData: FormData) {
     const email = formData.get('email') as string;
@@ -92,15 +112,14 @@ export async function forgotPassword(prevState: any, formData: FormData) {
             .maybeSingle();
 
         if (user) {
-            // Ensure a shadow Supabase Auth user exists so resetPasswordForEmail works.
-            // createUser returns an error if the user already exists — that's fine, we ignore it.
+            // Ensure a shadow Supabase Auth user exists so resetPasswordForEmail works via built-in Supabase email service.
             await supabaseAdmin.auth.admin.createUser({
                 email,
                 email_confirm: true,
                 password: crypto.randomUUID(),
             });
 
-            const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, '');
+            const appUrl = await getAppUrl();
             const { error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
                 redirectTo: `${appUrl}/reset-password`,
             });
@@ -162,6 +181,9 @@ export async function resetPassword(prevState: any, formData: FormData) {
             console.error('Password update error:', updateError);
             return { error: 'Failed to update password. Please try again.' };
         }
+
+        // Synchronize Supabase Auth shadow user's password
+        await supabaseAdmin.auth.admin.updateUserById(user.id, { password });
 
         return { success: true, message: 'Password updated successfully. Redirecting to login…' };
     } catch (err) {

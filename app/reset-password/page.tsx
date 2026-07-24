@@ -17,16 +17,29 @@ export default function ResetPasswordPage() {
     const [state, action, isPending] = useActionState(resetPassword, null as any);
 
     useEffect(() => {
-        const hash = window.location.hash.substring(1);
-        const params = new URLSearchParams(hash);
-        const type = params.get('type');
-        const token = params.get('access_token');
+        let token: string | null = null;
+        let type: string | null = null;
 
-        if (!token || type !== 'recovery') {
+        // Try hash first (#access_token=...&type=recovery)
+        if (window.location.hash) {
+            const hash = window.location.hash.substring(1);
+            const params = new URLSearchParams(hash);
+            token = params.get('access_token');
+            type = params.get('type');
+        }
+
+        // Try search parameters fallback (?access_token=...&type=recovery)
+        if (!token && window.location.search) {
+            const params = new URLSearchParams(window.location.search);
+            token = params.get('access_token');
+            type = params.get('type');
+        }
+
+        if (!token || (type && type !== 'recovery')) {
             setHashError('Invalid or expired reset link. Please request a new one.');
         } else {
             setAccessToken(token);
-            // Remove the token from the URL bar
+            // Clean up the token from the URL bar for privacy/security
             window.history.replaceState(null, '', window.location.pathname);
         }
     }, []);
