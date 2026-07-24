@@ -112,12 +112,17 @@ export async function forgotPassword(prevState: any, formData: FormData) {
             .maybeSingle();
 
         if (user) {
-            // Ensure a shadow Supabase Auth user exists so resetPasswordForEmail works via built-in Supabase email service.
-            await supabaseAdmin.auth.admin.createUser({
-                email,
-                email_confirm: true,
-                password: crypto.randomUUID(),
-            });
+            // Check if shadow user already exists in Supabase Auth to avoid 422 (User already registered)
+            const { data: authData } = await supabaseAdmin.auth.admin.listUsers();
+            const existingAuthUser = authData?.users?.find(u => u.email?.toLowerCase() === email);
+
+            if (!existingAuthUser) {
+                await supabaseAdmin.auth.admin.createUser({
+                    email,
+                    email_confirm: true,
+                    password: crypto.randomUUID(),
+                });
+            }
 
             const appUrl = await getAppUrl();
             const { error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
@@ -126,7 +131,10 @@ export async function forgotPassword(prevState: any, formData: FormData) {
 
             if (resetError) {
                 console.error('Supabase resetPasswordForEmail error:', resetError);
-                return { error: 'Failed to send reset email. Please try again.' };
+                if (resetError.status === 429 || resetError.message?.toLowerCase().includes('rate limit') || resetError.message?.toLowerCase().includes('seconds')) {
+                    return { error: 'Email rate limit reached. Please wait 60 seconds before requesting another email.' };
+                }
+                return { error: resetError.message || 'Failed to send reset email. Please try again.' };
             }
         }
 
