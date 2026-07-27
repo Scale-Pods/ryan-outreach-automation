@@ -1,21 +1,20 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Mail, Send, Inbox, LayoutDashboard, RefreshCw, BarChart2, UserMinus, ChevronDown, ChevronUp } from "lucide-react";
+import { Mail, Send, Inbox, LayoutDashboard, RefreshCw, BarChart2, UserMinus, Database, CheckCircle2, TrendingUp, Layers } from "lucide-react";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
-import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { useRouter } from "next/navigation";
-import { format, subDays } from "date-fns";
+import { subDays } from "date-fns";
 import { useData } from "@/context/DataContext";
-
 import { LMLoader } from "@/components/ryan-loader";
 
 export default function EmailDashboardPage() {
     const router = useRouter();
-    const [selectedLoopMetric, setSelectedLoopMetric] = useState("intro");
+    const [selectedTableMetric, setSelectedTableMetric] = useState("naples");
     const [dateSubtitle, setDateSubtitle] = useState("all time");
 
     const { leads: allLeads, loadingLeads } = useData();
@@ -24,22 +23,19 @@ export default function EmailDashboardPage() {
         to: new Date(),
     });
     const loading = loadingLeads;
+
     const [data, setData] = useState({
         totalEmails: 0,
         firstEmail: 0,
-        responseRate: "0%",
         totalReplies: 0,
         totalUnsubscribed: 0,
-        introCounts: [0, 0, 0],       // Email 1-3
-        followUpCounts: [0, 0, 0],    // Email 4-6
-        nurtureCounts: [0, 0, 0, 0, 0, 0, 0, 0, 0], // Email 7-15
-        loopTotals: {
-            intro: 0,
-            followup: 0,
-            nurture: 0
+        tableStats: {
+            naples: { name: "Naples (naples_activity)", emails: 0, replies: 0, unsubscribed: 0 },
+            aspen: { name: "Aspen (aspen_activity)", emails: 0, replies: 0, unsubscribed: 0 },
+            old: { name: "Old Leads (old_activity)", emails: 0, replies: 0, unsubscribed: 0 },
+            fello: { name: "Fello (fello_activity)", emails: 0, replies: 0, unsubscribed: 0 },
         }
     });
-
 
     const parseMsg = (raw: any): { date: Date | null, content: string } => {
         if (!raw || !String(raw).trim()) return { date: null, content: "" };
@@ -64,6 +60,15 @@ export default function EmailDashboardPage() {
         return { date: null, content: content };
     };
 
+    const getLeadSourceTable = (lead: any): 'naples' | 'aspen' | 'old' | 'fello' => {
+        const src = String(lead._source_table || lead.source_table || lead.sourceTable || lead.source_loop || lead.source || '').toLowerCase();
+        if (src.includes('naples')) return 'naples';
+        if (src.includes('aspen')) return 'aspen';
+        if (src.includes('old') || src.includes('master')) return 'old';
+        if (src.includes('fello')) return 'fello';
+        return 'naples';
+    };
+
     useEffect(() => {
         const calculateStats = async () => {
             if (loadingLeads) return;
@@ -81,17 +86,21 @@ export default function EmailDashboardPage() {
                 };
 
                 let totalEmails = 0;
+                let firstEmailCount = 0;
                 let replyCount = 0;
                 let unsubscribedCount = 0;
 
-                const intro = [0, 0, 0];
-                const followUp = [0, 0, 0];
-                const nurture = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+                const tableStats = {
+                    naples: { name: "Naples (naples_activity)", emails: 0, replies: 0, unsubscribed: 0 },
+                    aspen: { name: "Aspen (aspen_activity)", emails: 0, replies: 0, unsubscribed: 0 },
+                    old: { name: "Old Leads (old_activity)", emails: 0, replies: 0, unsubscribed: 0 },
+                    fello: { name: "Fello (fello_activity)", emails: 0, replies: 0, unsubscribed: 0 },
+                };
 
                 allLeads.forEach((lead: any) => {
                     const stageData = lead.stage_data || {};
                     const stages = lead.stages_passed || [];
-                    const loop = (lead.source_loop || "").toLowerCase();
+                    const tableKey = getLeadSourceTable(lead);
 
                     // --- REPLIES ---
                     const emailReply = lead.email_replied;
@@ -100,6 +109,7 @@ export default function EmailDashboardPage() {
                         const rDate = parsed.date || new Date(lead.updated_at || lead.created_at);
                         if (checkEmailDate(rDate)) {
                             replyCount++;
+                            tableStats[tableKey].replies++;
                         }
                     }
 
@@ -107,6 +117,7 @@ export default function EmailDashboardPage() {
                     if (lead.unsubscribed && String(lead.unsubscribed).toLowerCase().includes("yes")) {
                         if (checkEmailDate(new Date(lead.updated_at || lead.created_at))) {
                             unsubscribedCount++;
+                            tableStats[tableKey].unsubscribed++;
                         }
                     }
 
@@ -120,45 +131,18 @@ export default function EmailDashboardPage() {
 
                         if (checkEmailDate(emailDate)) {
                             totalEmails++;
-
-                            if (loop === "intro") {
-                                if (s === "email_1") intro[0]++;
-                                else if (s === "email_2") intro[1]++;
-                                else if (s === "email_3") intro[2]++;
-                            } else if (loop.includes("follow")) {
-                                if (s === "email_1") followUp[0]++;
-                                else if (s === "email_2") followUp[1]++;
-                                else if (s === "email_3") followUp[2]++;
-                            } else if (loop.includes("nurture")) {
-                                if (s === "email_1") nurture[0]++;
-                                else if (s === "email_2") nurture[1]++;
-                                else if (s === "email_3") nurture[2]++;
-                                else if (s === "email_4") nurture[3]++;
-                                else if (s === "email_5") nurture[4]++;
-                                else if (s === "email_6") nurture[5]++;
-                                else if (s === "email_7") nurture[6]++;
-                                else if (s === "email_8") nurture[7]++;
-                                else if (s === "email_9") nurture[8]++;
-                            }
+                            tableStats[tableKey].emails++;
+                            if (s === "email_1") firstEmailCount++;
                         }
                     });
                 });
 
-
                 setData({
                     totalEmails: totalEmails,
-                    firstEmail: intro[0],
-                    responseRate: allLeads.length > 0 ? ((replyCount / allLeads.length) * 100).toFixed(1) + "%" : "0%",
+                    firstEmail: firstEmailCount,
                     totalReplies: replyCount,
                     totalUnsubscribed: unsubscribedCount,
-                    introCounts: intro,
-                    followUpCounts: followUp,
-                    nurtureCounts: nurture,
-                    loopTotals: {
-                        intro: intro.reduce((a, b) => a + b, 0),
-                        followup: followUp.reduce((a, b) => a + b, 0),
-                        nurture: nurture.reduce((a, b) => a + b, 0)
-                    }
+                    tableStats
                 });
 
             } catch (e) {
@@ -167,7 +151,7 @@ export default function EmailDashboardPage() {
         };
 
         calculateStats();
-    }, [dateRange, allLeads, loadingLeads]); // Recalculate when dateRange or context changes
+    }, [dateRange, allLeads, loadingLeads]);
 
     const handleDateUpdate = (range: any) => {
         setDateRange(range.range);
@@ -179,12 +163,13 @@ export default function EmailDashboardPage() {
     };
 
     // Derived Data for Metric Card
-    const loopMetricData = {
-        intro: { value: data.loopTotals.intro, label: "Intro Loop Emails", iconColor: "text-blue-600", bgColor: "bg-[rgba(0,122,255,0.08)]" },
-        followup: { value: data.loopTotals.followup, label: "Follow Up Loop Emails", iconColor: "text-amber-600", bgColor: "bg-amber-50" },
-        nurture: { value: data.loopTotals.nurture, label: "Nurture Loop Emails", iconColor: "text-purple-600", bgColor: "bg-purple-50" },
+    const tableMetricData = {
+        naples: { value: data.tableStats.naples.emails, label: "Naples Emails Sent", iconColor: "text-emerald-400", bgColor: "bg-emerald-500/10 border-emerald-500/20" },
+        aspen: { value: data.tableStats.aspen.emails, label: "Aspen Emails Sent", iconColor: "text-amber-400", bgColor: "bg-amber-500/10 border-amber-500/20" },
+        old: { value: data.tableStats.old.emails, label: "Old Leads Emails Sent", iconColor: "text-purple-400", bgColor: "bg-purple-500/10 border-purple-500/20" },
+        fello: { value: data.tableStats.fello.emails, label: "Fello Emails Sent", iconColor: "text-blue-400", bgColor: "bg-blue-500/10 border-blue-500/20" },
     };
-    const currentMetric = loopMetricData[selectedLoopMetric as keyof typeof loopMetricData];
+    const currentMetric = tableMetricData[selectedTableMetric as keyof typeof tableMetricData] || tableMetricData.naples;
 
     return (
         <div className="space-y-8 pb-10 relative min-h-[500px]">
@@ -192,7 +177,7 @@ export default function EmailDashboardPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold">Email Marketing Center</h1>
-                    <p className="text-[var(--label-secondary)]">Monitor your campaigns and inbox health</p>
+                    <p className="text-[var(--label-secondary)]">Monitor your campaigns and inbox health across Naples, Aspen, Old Leads, and Fello</p>
                 </div>
                 <DateRangePicker onUpdate={handleDateUpdate} />
             </div>
@@ -203,34 +188,35 @@ export default function EmailDashboardPage() {
                     title="Total Emails"
                     subtitle={dateSubtitle}
                     value={data.totalEmails}
-                    icon={<Mail className="h-6 w-6 text-indigo-600" />}
-                    bg="bg-indigo-50"
+                    icon={<Mail className="h-6 w-6 text-indigo-400" />}
+                    bg="bg-indigo-500/10 border-indigo-500/20"
                     onClick={() => router.push('/dashboard/email/sent')}
                 />
                 <MetricCard
-                    title="First Email (Intro)"
+                    title="Initial Reachout"
                     subtitle={dateSubtitle}
                     value={data.firstEmail}
-                    icon={<Send className="h-6 w-6 text-blue-600" />}
-                    bg="bg-[rgba(0,122,255,0.08)]"
+                    icon={<Send className="h-6 w-6 text-blue-400" />}
+                    bg="bg-blue-500/10 border-blue-500/20"
                 />
 
-                {/* Dynamic Loop Card */}
+                {/* Dynamic Table Card */}
                 <Card className="border-[var(--separator)] hover:shadow-[var(--glass-shadow)] transition-all cursor-pointer bg-[var(--glass-fill)]">
                     <CardContent className="p-6 flex flex-col justify-between h-full">
                         <div className="flex items-center justify-between mb-2">
-                            <Select value={selectedLoopMetric} onValueChange={setSelectedLoopMetric}>
+                            <Select value={selectedTableMetric} onValueChange={setSelectedTableMetric}>
                                 <SelectTrigger className="w-[140px] h-8 text-xs font-medium border-[var(--separator)]">
-                                    <SelectValue placeholder="Select Loop" />
+                                    <SelectValue placeholder="Select Table" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="intro">Intro Loop</SelectItem>
-                                    <SelectItem value="followup">Follow Up Loop</SelectItem>
-                                    <SelectItem value="nurture">Nurture Loop</SelectItem>
+                                    <SelectItem value="naples">Naples</SelectItem>
+                                    <SelectItem value="aspen">Aspen</SelectItem>
+                                    <SelectItem value="old">Old Leads</SelectItem>
+                                    <SelectItem value="fello">Fello</SelectItem>
                                 </SelectContent>
                             </Select>
-                            <div className={`p-2 rounded-xl ${currentMetric.bgColor}`}>
-                                <LayoutDashboard className={`h-5 w-5 ${currentMetric.iconColor}`} />
+                            <div className={`p-2 rounded-xl border ${currentMetric.bgColor}`}>
+                                <Database className={`h-5 w-5 ${currentMetric.iconColor}`} />
                             </div>
                         </div>
                         <div>
@@ -244,8 +230,8 @@ export default function EmailDashboardPage() {
                     title="Total Replies"
                     subtitle="All time"
                     value={data.totalReplies}
-                    icon={<Inbox className="h-6 w-6 text-sky-600" />}
-                    bg="bg-sky-50"
+                    icon={<Inbox className="h-6 w-6 text-sky-400" />}
+                    bg="bg-sky-500/10 border-sky-500/20"
                     onClick={() => router.push('/dashboard/email/received')}
                 />
 
@@ -253,73 +239,101 @@ export default function EmailDashboardPage() {
                     title="Unsubscribed"
                     subtitle="All time"
                     value={data.totalUnsubscribed}
-                    icon={<UserMinus className="h-6 w-6 text-rose-600" />}
-                    bg="bg-rose-50"
+                    icon={<UserMinus className="h-6 w-6 text-rose-400" />}
+                    bg="bg-rose-500/10 border-rose-500/20"
                     onClick={() => router.push('/dashboard/email/unsubscribed')}
                 />
             </div>
 
-            {/* Campaign Breakdown with Tabs */}
+            {/* Database Table Performance Cards */}
             <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-bold text-[var(--label-primary)] uppercase tracking-wider">Campaign Performance</h2>
+                    <div>
+                        <h2 className="text-lg font-bold text-[var(--label-primary)] uppercase tracking-wider">Database Table Performance</h2>
+                        <p className="text-xs text-[var(--label-secondary)]">Email reachout and engagement metrics across database streams</p>
+                    </div>
                 </div>
 
-                <Tabs defaultValue="intro" className="w-full">
-                    <div className="flex justify-start mb-6">
-                        <TabsList className="bg-[var(--fill-quaternary)] p-1 rounded-lg">
-                            <TabsTrigger value="intro" className="data-[state=active]:bg-[var(--glass-fill)] data-[state=active]:shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] px-4">Intro Loop</TabsTrigger>
-                            <TabsTrigger value="followup" className="data-[state=active]:bg-[var(--glass-fill)] data-[state=active]:shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] px-4">Follow Up Loop</TabsTrigger>
-                            <TabsTrigger value="nurture" className="data-[state=active]:bg-[var(--glass-fill)] data-[state=active]:shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] px-4">Nurture Loop</TabsTrigger>
-                        </TabsList>
-                    </div>
-
-                    <TabsContent value="intro" className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {["Email_1", "Email_2", "Email_3"].map((name, i) => (
-                                <BreakdownCard
-                                    key={name}
-                                    title={name}
-                                    count={data.introCounts[i]}
-                                    total={data.totalEmails}
-                                    color="#3b82f6"
-                                    trackColor="#eff6ff"
-                                />
-                            ))}
-                        </div>
-                    </TabsContent>
-
-                    <TabsContent value="followup" className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {["Email_1", "Email_2", "Email_3"].map((name, i) => (
-                                <BreakdownCard
-                                    key={name}
-                                    title={name}
-                                    count={data.followUpCounts[i]}
-                                    total={data.totalEmails}
-                                    color="#f59e0b"
-                                    trackColor="#fffbeb"
-                                />
-                            ))}
-                        </div>
-                    </TabsContent>
-
-                    <TabsContent value="nurture" className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {Array.from({ length: 9 }).map((_, i) => (
-                                <BreakdownCard
-                                    key={`nurture-${i}`}
-                                    title={`Email_${i + 1}`}
-                                    count={data.nurtureCounts[i]}
-                                    total={data.totalEmails}
-                                    color="#8b5cf6"
-                                    trackColor="#f3e8ff"
-                                />
-                            ))}
-                        </div>
-                    </TabsContent>
-                </Tabs>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <TablePerformanceCard
+                        tableName="Naples"
+                        tableKey="naples_activity"
+                        stats={data.tableStats.naples}
+                        badgeColor="bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                        accentColor="#34c759"
+                    />
+                    <TablePerformanceCard
+                        tableName="Aspen"
+                        tableKey="aspen_activity"
+                        stats={data.tableStats.aspen}
+                        badgeColor="bg-amber-500/15 text-amber-400 border-amber-500/30"
+                        accentColor="#f59e0b"
+                    />
+                    <TablePerformanceCard
+                        tableName="Old Leads"
+                        tableKey="old_activity"
+                        stats={data.tableStats.old}
+                        badgeColor="bg-purple-500/15 text-purple-400 border-purple-500/30"
+                        accentColor="#8b5cf6"
+                    />
+                    <TablePerformanceCard
+                        tableName="Fello"
+                        tableKey="fello_activity"
+                        stats={data.tableStats.fello}
+                        badgeColor="bg-blue-500/15 text-blue-400 border-blue-500/30"
+                        accentColor="#3b82f6"
+                    />
+                </div>
             </div>
+
+            {/* Detailed Table Performance Summary */}
+            <Card className="border-[var(--separator)] bg-[var(--glass-fill)]">
+                <CardHeader>
+                    <CardTitle className="text-base font-bold flex items-center gap-2">
+                        <Layers className="h-4 w-4 text-blue-400" />
+                        <span>Database Stream Breakdown</span>
+                    </CardTitle>
+                    <CardDescription>Live summary of email campaign volume and response rates per database table</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="border-[var(--separator)]">
+                                <TableHead>Database Table</TableHead>
+                                <TableHead>Emails Sent</TableHead>
+                                <TableHead>Replies Received</TableHead>
+                                <TableHead>Reply Rate</TableHead>
+                                <TableHead>Unsubscribed</TableHead>
+                                <TableHead>Status</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {Object.entries(data.tableStats).map(([key, item]) => {
+                                const rate = item.emails > 0 ? ((item.replies / item.emails) * 100).toFixed(1) : "0.0";
+                                return (
+                                    <TableRow key={key} className="border-[var(--separator)] hover:bg-[rgba(255,255,255,0.04)] transition-colors">
+                                        <TableCell className="font-semibold text-[var(--label-primary)]">
+                                            <div className="flex items-center gap-2">
+                                                <Database className="h-4 w-4 text-[var(--label-tertiary)]" />
+                                                <span>{item.name}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="font-medium text-[var(--label-primary)]">{item.emails}</TableCell>
+                                        <TableCell className="font-medium text-emerald-400">{item.replies}</TableCell>
+                                        <TableCell className="font-medium">{rate}%</TableCell>
+                                        <TableCell className="font-medium text-rose-400">{item.unsubscribed}</TableCell>
+                                        <TableCell>
+                                            <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30 text-[10px] uppercase font-bold px-2 py-0.5">
+                                                Active Stream
+                                            </Badge>
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
         </div>
     );
 }
@@ -334,7 +348,6 @@ function MetricCard({ title, subtitle, value, icon, bg, onClick }: any) {
                 <div className="flex-1">
                     <div className="flex items-center">
                         <h3 className="text-2xl font-bold text-[var(--label-primary)]">{value}</h3>
-                        {arguments[0].extra}
                     </div>
                     <p className="text-sm font-bold text-[var(--label-primary)]">{title}</p>
                     <p className="text-xs text-[var(--label-secondary)]">{subtitle}</p>
@@ -347,40 +360,49 @@ function MetricCard({ title, subtitle, value, icon, bg, onClick }: any) {
     );
 }
 
-function BreakdownCard({ title, count, total, color, trackColor }: any) {
-    const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : "0.0";
-    const chartData = [{ value: parseFloat(percentage) }, { value: 100 - parseFloat(percentage) }];
+function TablePerformanceCard({ tableName, tableKey, stats, badgeColor, accentColor }: any) {
+    const rate = stats.emails > 0 ? ((stats.replies / stats.emails) * 100).toFixed(1) : "0.0";
 
     return (
-        <Card className="border-[var(--separator)] bg-[var(--glass-fill)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] hover:shadow-[var(--glass-shadow)] transition-all">
-            <CardContent className="p-6 flex flex-col items-center text-center">
-                <div className="h-32 w-full mb-2 relative">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                            <Pie
-                                data={chartData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={35}
-                                outerRadius={50}
-                                startAngle={90}
-                                endAngle={-270}
-                                dataKey="value"
-                                stroke="none"
-                            >
-                                <Cell key="cell-0" fill={color} />
-                                <Cell key="cell-1" fill={trackColor} />
-                            </Pie>
-                        </PieChart>
-                    </ResponsiveContainer>
-                    <div className="absolute inset-0 flex items-center justify-center flex-col">
-                        <span className="text-lg font-bold text-[var(--label-primary)]">{percentage}%</span>
+        <Card className="border-[var(--separator)] bg-[var(--glass-fill)] hover:shadow-[var(--glass-shadow)] transition-all">
+            <CardContent className="p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h3 className="text-lg font-bold text-[var(--label-primary)]">{tableName}</h3>
+                        <p className="text-xs font-mono text-[var(--label-tertiary)]">{tableKey}</p>
+                    </div>
+                    <Badge className={`border text-[10px] uppercase font-bold px-2 py-0.5 ${badgeColor}`}>
+                        {rate}% Reply
+                    </Badge>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 py-2 border-y border-[var(--separator)] text-center">
+                    <div>
+                        <span className="text-xs text-[var(--label-tertiary)] block">Sent</span>
+                        <span className="text-base font-bold text-[var(--label-primary)]">{stats.emails}</span>
+                    </div>
+                    <div>
+                        <span className="text-xs text-[var(--label-tertiary)] block">Replies</span>
+                        <span className="text-base font-bold text-emerald-400">{stats.replies}</span>
+                    </div>
+                    <div>
+                        <span className="text-xs text-[var(--label-tertiary)] block">Unsub</span>
+                        <span className="text-base font-bold text-rose-400">{stats.unsubscribed}</span>
                     </div>
                 </div>
 
-                <h3 className="text-2xl font-bold text-[var(--label-primary)] mb-1">{count}</h3>
-                <p className="text-sm font-medium text-[var(--label-secondary)] uppercase tracking-wide">{title}</p>
-                <p className="text-xs text-[var(--label-tertiary)] mt-1">Emails Sent</p>
+                <div className="space-y-1">
+                    <div className="flex justify-between text-xs text-[var(--label-secondary)]">
+                        <span>Engagement</span>
+                        <span className="font-bold">{rate}%</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-[var(--fill-tertiary)] rounded-full overflow-hidden">
+                        <div
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{ width: `${Math.min(100, parseFloat(rate) * 5)}%`, backgroundColor: accentColor }}
+                        />
+                    </div>
+                </div>
             </CardContent>
         </Card>
     );

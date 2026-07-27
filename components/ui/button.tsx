@@ -4,25 +4,25 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[10px] text-[15px] font-medium tracking-[-0.01em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 active:scale-[0.97]",
+    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[12px] text-[14px] font-semibold tracking-wide transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 active:scale-[0.98]",
     {
         variants: {
             variant: {
                 default:
-                    "bg-[var(--blue)] text-white shadow-sm hover:opacity-90",
+                    "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/20 hover:from-blue-500 hover:to-indigo-500 hover:-translate-y-0.5",
                 destructive:
-                    "bg-[rgba(255,59,48,0.15)] text-[var(--red)] hover:bg-[rgba(255,59,48,0.22)]",
+                    "bg-rose-500/15 text-rose-300 border border-rose-500/30 hover:bg-rose-500/25 hover:-translate-y-0.5",
                 outline:
-                    "border border-[var(--separator)] bg-transparent hover:bg-[var(--fill-tertiary)] text-[var(--label-primary)]",
+                    "border border-white/20 bg-white/[0.06] backdrop-blur-xl text-white hover:bg-white/[0.12] hover:border-white/30 hover:-translate-y-0.5 shadow-sm",
                 secondary:
-                    "bg-[var(--fill-tertiary)] backdrop-blur-xl text-[var(--label-primary)] border border-[var(--glass-border)] hover:bg-[var(--fill-secondary)]",
-                ghost: "hover:bg-[var(--fill-tertiary)] text-[var(--label-primary)]",
-                link: "text-[var(--blue)] underline-offset-4 hover:underline",
+                    "bg-white/10 backdrop-blur-xl text-white border border-white/20 hover:bg-white/15 hover:-translate-y-0.5",
+                ghost: "hover:bg-white/10 text-slate-200 hover:text-white hover:-translate-y-0.5",
+                link: "text-blue-400 underline-offset-4 hover:underline",
             },
             size: {
                 default: "h-10 px-5 py-2",
                 sm: "h-8 rounded-lg px-3 text-[13px]",
-                lg: "h-11 rounded-[12px] px-8 text-base",
+                lg: "h-11 rounded-[14px] px-8 text-base",
                 icon: "h-9 w-9 rounded-lg",
             },
         },

@@ -138,11 +138,11 @@ export default function WhatsappLayout({
                                 key={index}
                                 href={item.href}
                                 className={`group flex items-center gap-4 rounded-full px-4 py-3 text-sm font-medium transition-all duration-300 ${isActive
-                                    ? "bg-[rgba(59,130,246,0.25)] text-white border border-[rgba(147,197,253,0.3)] shadow-[0_4px_16px_rgba(59,130,246,0.2),inset_0_0_12px_rgba(147,197,253,0.15)]"
-                                    : "text-[var(--label-secondary)] hover:text-[var(--label-primary)] hover:bg-[rgba(255,255,255,0.06)]"
+                                    ? "active-liquid-pill"
+                                    : "text-slate-300 hover:text-white nav-item-glass"
                                     }`}
                             >
-                                <item.icon className={`h-5 w-5 ${isActive ? "text-blue-300" : "text-[var(--label-tertiary)] group-hover:text-[var(--label-secondary)] transition-colors"}`} />
+                                <item.icon className={`h-5 w-5 ${isActive ? "text-blue-300" : "text-slate-400 group-hover:text-slate-200 transition-colors"}`} />
                                 {item.title}
                             </Link>
                         );

@@ -292,11 +292,11 @@ function DashboardContent({
                                     key={index}
                                     href={item.href}
                                     className={`group flex items-center gap-4 rounded-full px-4 py-3 text-sm font-medium transition-all duration-300 ${isActive
-                                        ? "bg-[rgba(59,130,246,0.25)] text-white border border-[rgba(147,197,253,0.3)] shadow-[0_4px_16px_rgba(59,130,246,0.2),inset_0_0_12px_rgba(147,197,253,0.15)]"
-                                        : "text-[var(--label-secondary)] hover:text-[var(--label-primary)] hover:bg-[rgba(255,255,255,0.06)]"
+                                        ? "active-liquid-pill"
+                                        : "text-slate-300 hover:text-white nav-item-glass"
                                         }`}
                                 >
-                                    <item.icon className={`h-5 w-5 ${isActive ? "text-blue-300" : "text-[var(--label-tertiary)] group-hover:text-[var(--label-secondary)] transition-colors"}`} />
+                                    <item.icon className={`h-5 w-5 ${isActive ? "text-blue-300" : "text-slate-400 group-hover:text-slate-200 transition-colors"}`} />
                                     {item.title}
                                 </Link>
                             );
@@ -305,7 +305,7 @@ function DashboardContent({
                     <div className="mt-auto p-4 mb-4 space-y-3">
                         <Button
                             variant="ghost"
-                            className="w-full justify-start gap-2 text-[var(--label-secondary)] hover:text-[var(--label-primary)] hover:bg-[rgba(255,255,255,0.06)]"
+                            className="w-full justify-start gap-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-full transition-all duration-300"
                             onClick={async () => {
                                 await logout();
                                 router.push('/');
@@ -320,12 +320,15 @@ function DashboardContent({
 
                 {/* Main Content */}
                 <div className="flex flex-1 flex-col overflow-hidden z-10">
-                    <header className="flex h-14 items-center gap-4 border-b border-[rgba(255,255,255,0.1)] bg-[rgba(18,24,41,0.45)] backdrop-blur-[20px] saturate-[180%] px-6 lg:h-[60px]">
+                    <header className="flex h-14 items-center gap-4 border-b border-white/10 bg-[#0b0f19]/60 backdrop-blur-[20px] saturate-[180%] px-6 lg:h-[60px]">
                         <div className="flex flex-1 items-center justify-between">
-                            <h1 className="text-lg font-semibold text-[var(--label-primary)] flex items-center">
+                            <h1 className="text-lg font-semibold text-white flex items-center">
                                 {pathname === "/dashboard" ? "" : (activeConfig.items.find((item: any) => item.href === pathname)?.title || activeConfig.label)}
                                 {currentContext === "master" && (
-                                    <span style={{ fontSize: 10, background: "rgba(59, 130, 246, 0.15)", color: "#93c5fd", border: "1px solid rgba(147, 197, 253, 0.25)", padding: "2px 10px", borderRadius: 9999, fontWeight: 600, marginLeft: 10 }}>Powered by ScalePods</span>
+                                    <span className="glass-pill-tag text-blue-300 ml-3">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
+                                        Powered by ScalePods
+                                    </span>
                                 )}
                             </h1>
 
@@ -334,13 +337,14 @@ function DashboardContent({
                                     {/* Vapi Balance Button */}
                                     <Button
                                         variant="outline"
-                                        className="h-9 px-4 rounded-full border border-[rgba(255,255,255,0.2)] bg-[rgba(255,255,255,0.06)] backdrop-blur-[16px] saturate-[180%] hover:bg-[rgba(255,255,255,0.12)] hover:-translate-y-[2px] text-blue-400 gap-2 flex items-center shadow-[0_4px_16px_rgba(0,0,0,0.25)] transition-all duration-300 active:scale-[0.98]"
+                                        className="h-9 px-4 rounded-full border border-white/20 bg-white/[0.06] backdrop-blur-[16px] saturate-[180%] hover:bg-white/[0.12] hover:-translate-y-1 text-blue-300 gap-2.5 flex items-center shadow-lg shadow-black/30 transition-all duration-300 active:scale-[0.98]"
                                         onClick={() => setWalletModal({ isOpen: true, type: 'vapi' })}
                                     >
+                                        <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
                                         <Mic className="h-3.5 w-3.5" />
                                         <div className="flex flex-col items-start leading-[1.1]">
                                             <span className="text-[9px] font-bold uppercase opacity-75">Vapi Used</span>
-                                            <span className="text-xs font-bold">
+                                            <span className="text-xs font-bold text-white">
                                                 {loadingCalls ? "..." : `$${vapiAgentUsed.toFixed(2)}`}
                                             </span>
                                         </div>
@@ -349,13 +353,14 @@ function DashboardContent({
                                     {/* Twilio Button */}
                                     <Button
                                         variant="outline"
-                                        className="h-9 px-4 rounded-full border border-[rgba(255,255,255,0.2)] bg-[rgba(255,255,255,0.06)] backdrop-blur-[16px] saturate-[180%] hover:bg-[rgba(255,255,255,0.12)] hover:-translate-y-[2px] text-rose-400 gap-2 flex items-center shadow-[0_4px_16px_rgba(0,0,0,0.25)] transition-all duration-300 active:scale-[0.98]"
+                                        className="h-9 px-4 rounded-full border border-white/20 bg-white/[0.06] backdrop-blur-[16px] saturate-[180%] hover:bg-white/[0.12] hover:-translate-y-1 text-rose-300 gap-2.5 flex items-center shadow-lg shadow-black/30 transition-all duration-300 active:scale-[0.98]"
                                         onClick={() => setWalletModal({ isOpen: true, type: 'twilio' })}
                                     >
+                                        <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse shadow-[0_0_8px_rgba(244,63,94,0.8)]" />
                                         <Smartphone className="h-3.5 w-3.5" />
                                         <div className="flex flex-col items-start leading-[1.1]">
                                             <span className="text-[9px] font-bold uppercase opacity-75">Twilio</span>
-                                            <span className="text-xs font-bold">
+                                            <span className="text-xs font-bold text-white">
                                                 {loadingBalances ? "..." : (twilioBalance?.balance !== undefined ? `$${twilioBalance.balance.toFixed(2)}` : "N/A")}
                                             </span>
                                         </div>

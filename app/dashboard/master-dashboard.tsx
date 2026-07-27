@@ -359,7 +359,7 @@ function MetricCard({ title, value, change, isUp, icon, color, bg, border, onCli
 }) {
     return (
         <Card
-            className={`bg-[var(--glass-fill)] border ${border} shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] overflow-hidden relative group hover:shadow-[var(--glass-shadow-hover)] transition-all duration-300 ${onClick ? 'cursor-pointer' : ''}`}
+            className={`bg-white/[0.04] backdrop-blur-[20px] saturate-[180%] border border-white/10 border-t-white/20 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] overflow-hidden relative group hover:bg-white/[0.08] hover:border-white/20 hover:shadow-[0_16px_40px_-10px_rgba(59,130,246,0.25)] hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 ${onClick ? 'cursor-pointer' : ''}`}
             onClick={onClick}
         >
             <CardContent className="p-6">
@@ -367,14 +367,14 @@ function MetricCard({ title, value, change, isUp, icon, color, bg, border, onCli
                     <div className="flex-1">
                         <div className="flex items-center justify-between mr-2">
                             <div className="flex items-center gap-1.5">
-                                <p className="text-sm font-semibold text-[var(--label-secondary)] mb-1">{title}</p>
+                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">{title}</p>
                                 {info && (
                                     <UITooltipProvider>
                                         <UITooltip>
                                             <UITooltipTrigger asChild>
-                                                <Info className="h-7 w-7 text-red-500 mb-1 cursor-help hover:text-red-600 transition-colors" />
+                                                <Info className="h-4 w-4 text-slate-400 mb-1 cursor-help hover:text-white transition-colors" />
                                             </UITooltipTrigger>
-                                            <UITooltipContent className="max-w-[250px] bg-slate-900 text-white border-none p-3 shadow-xl">
+                                            <UITooltipContent className="max-w-[250px] bg-slate-900/90 backdrop-blur-xl text-white border border-white/10 p-3 shadow-2xl rounded-xl">
                                                 <p className="text-[11px] leading-relaxed">{info}</p>
                                             </UITooltipContent>
                                         </UITooltip>
@@ -383,12 +383,15 @@ function MetricCard({ title, value, change, isUp, icon, color, bg, border, onCli
                             </div>
                             {action && <div className="z-20">{action}</div>}
                         </div>
-                        <h3 className="text-3xl font-bold text-[var(--label-primary)]">{value}</h3>
-                        <div className={`flex items-center gap-1 mt-2 text-xs font-bold ${isUp ? 'text-emerald-600' : 'text-rose-600'}`}>
-                            {change}
+                        <h3 className="text-3xl font-bold text-white my-1">{value}</h3>
+                        <div className="mt-2 flex items-center gap-1.5">
+                            <span className="glass-pill-tag text-emerald-400">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                                {change}
+                            </span>
                         </div>
                     </div>
-                    <div className={`p-4 rounded-2xl ${bg} ${color} shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)]`}>
+                    <div className={`p-3.5 rounded-2xl ${bg} ${color} shadow-lg backdrop-blur-md border border-white/10`}>
                         {icon}
                     </div>
                 </div>
