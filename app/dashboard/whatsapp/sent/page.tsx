@@ -66,7 +66,7 @@ export default function WhatsappSentPage() {
                                 id: `${lead.id}-${stage}-${Math.random()}`,
                                 recipient: lead.phone || lead.name || "Unknown",
                                 message: template ? template.body : `WhatsApp Message: ${stage}`,
-                                status: hasReplied ? "Read" : "Delivered",
+                                status: lead.status || (hasReplied ? "Read" : "Delivered"),
                                 time: lead.created_at ? new Date(lead.created_at).toLocaleTimeString() : "Unknown",
                                 rawDate: lead.created_at
                             });

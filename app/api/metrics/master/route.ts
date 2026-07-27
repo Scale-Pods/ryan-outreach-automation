@@ -3,6 +3,8 @@ import { supabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
+const ACTIVITY_TABLES = ['fello_activity', 'aspen_activity', 'naples_activity', 'old_activity'] as const;
+
 export interface MasterMetrics {
     totalLeads: number;
     oldestLeadDate: string | null;
@@ -45,8 +47,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             return NextResponse.json(rpcData, { headers: { 'Cache-Control': 'no-store' } });
         }
 
-        // Fallback: direct queries
-        const [leadsCount, oldestLead, voiceCalls, ownerVoiceCalls, normalCost, ownerCost, leadsDaily] = await Promise.all([
+        // Fallback: direct queries across all activity tables
+        const [leadsCount, oldestLead, leadsDaily] = await Promise.all([
             supabaseAdmin.from('master_leads')
                 .select('id', { count: 'exact', head: true }),
             supabaseAdmin.from('master_leads')
@@ -54,29 +56,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
                 .order('created_at', { ascending: true })
                 .limit(1)
                 .maybeSingle(),
-            supabaseAdmin.from('fello_activity')
-                .select('id', { count: 'exact', head: true })
-                .eq('channel', 'voice')
-                .gte('created_at', fromDate)
-                .lte('created_at', toDate),
-            supabaseAdmin.from('fello_activity')
-                .select('id', { count: 'exact', head: true })
-                .eq('channel', 'voice')
-                .eq('vapi_account', 'owners')
-                .gte('created_at', fromDate)
-                .lte('created_at', toDate),
-            supabaseAdmin.from('fello_activity')
-                .select('cost_usd')
-                .eq('channel', 'voice')
-                .or('vapi_account.is.null,vapi_account.neq.owners')
-                .gte('created_at', fromDate)
-                .lte('created_at', toDate),
-            supabaseAdmin.from('fello_activity')
-                .select('cost_usd')
-                .eq('channel', 'voice')
-                .eq('vapi_account', 'owners')
-                .gte('created_at', fromDate)
-                .lte('created_at', toDate),
             supabaseAdmin.from('master_leads')
                 .select('created_at')
                 .gte('created_at', fromDate)
@@ -84,10 +63,43 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
                 .order('created_at', { ascending: true }),
         ]);
 
-        const totalVoiceCallsCount = voiceCalls.count || 0;
-        const ownerVoiceCallsCount = ownerVoiceCalls.count || 0;
-        const normalCostSum = (normalCost.data || []).reduce((s, r) => s + (r.cost_usd || 0), 0);
-        const ownerCostSum = (ownerCost.data || []).reduce((s, r) => s + (r.cost_usd || 0), 0);
+        let totalVoiceCallsCount = 0;
+        let ownerVoiceCallsCount = 0;
+        let normalCostSum = 0;
+        let ownerCostSum = 0;
+
+        for (const table of ACTIVITY_TABLES) {
+            const [vc, ovc, nc, oc] = await Promise.all([
+                supabaseAdmin.from(table)
+                    .select('id', { count: 'exact', head: true })
+                    .eq('channel', 'voice')
+                    .gte('created_at', fromDate)
+                    .lte('created_at', toDate),
+                supabaseAdmin.from(table)
+                    .select('id', { count: 'exact', head: true })
+                    .eq('channel', 'voice')
+                    .eq('vapi_account', 'owners')
+                    .gte('created_at', fromDate)
+                    .lte('created_at', toDate),
+                supabaseAdmin.from(table)
+                    .select('cost_usd')
+                    .eq('channel', 'voice')
+                    .or('vapi_account.is.null,vapi_account.neq.owners')
+                    .gte('created_at', fromDate)
+                    .lte('created_at', toDate),
+                supabaseAdmin.from(table)
+                    .select('cost_usd')
+                    .eq('channel', 'voice')
+                    .eq('vapi_account', 'owners')
+                    .gte('created_at', fromDate)
+                    .lte('created_at', toDate),
+            ]);
+
+            totalVoiceCallsCount += vc.count || 0;
+            ownerVoiceCallsCount += ovc.count || 0;
+            normalCostSum += (nc.data || []).reduce((s, r) => s + (r.cost_usd || 0), 0);
+            ownerCostSum += (oc.data || []).reduce((s, r) => s + (r.cost_usd || 0), 0);
+        }
 
         // Daily leads
         const dailyMap = new Map<string, number>();

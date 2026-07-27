@@ -224,7 +224,7 @@ const getOwnerLatestActivity = (o: any) => {
 };
 
 // Fetch WA-specific data from the dedicated endpoint (filters by WA TS columns, not Created At)
-async function fetchWALeadsData(from: Date, to: Date): Promise<{ nr_wf: any[]; followup: any[]; nurture: any[]; owners: any[] }> {
+async function fetchWALeadsData(from: Date, to: Date): Promise<{ nr_wf: any[]; followup: any[]; nurture: any[]; owners: any[]; wa_activity: any[] }> {
     const { startOfDay, endOfDay } = await import("date-fns");
     const fromISO = startOfDay(from).toISOString();
     const toISO = endOfDay(to).toISOString();
@@ -287,7 +287,7 @@ export default function WhatsappChatPage() {
     };
 
     const [dateRange, setDateRange] = useState<any>({
-        from: subDays(new Date(), 7),
+        from: subDays(new Date(), 90),
         to: new Date(),
     });
 
@@ -302,7 +302,15 @@ export default function WhatsappChatPage() {
                 const nr_wf = (data.nr_wf || []).map((l: any) => ({ ...l, source_loop: "Intro" }));
                 const followup = (data.followup || []).map((l: any) => ({ ...l, source_loop: "Follow Up" }));
                 const nurture = (data.nurture || []).map((l: any) => ({ ...l, source_loop: "Nurture" }));
-                setLeads([...nr_wf, ...followup, ...nurture]);
+                const waActivity = (data.wa_activity || []).map((a: any) => ({
+                    ...a,
+                    source_loop: "Activity",
+                    "Name": a.lead_name || a.name || "",
+                    "Phone": a.lead_phone || a.phone || "",
+                    "WP_Replied_track": a.replied_at ? "Replied" : "",
+                    wp1_parsed_date: a.created_at,
+                }));
+                setLeads([...nr_wf, ...followup, ...nurture, ...waActivity]);
                 setWaOwners(data.owners || []);
             })
             .catch(err => console.error("[WA chat]", err))
@@ -378,6 +386,11 @@ export default function WhatsappChatPage() {
         const from = dateRange?.from ? startOfDay(new Date(dateRange.from)).getTime() : null;
         const to = endOfDay(new Date(dateRange?.to || dateRange?.from || new Date())).getTime();
         return leads.filter(lead => {
+            if (lead.source_loop === "Activity") {
+                if (!lead.created_at && !lead.wp1_parsed_date) return true;
+                const t = new Date(lead.created_at || lead.wp1_parsed_date).getTime();
+                return !from || (t >= from && t <= to);
+            }
             if (!lead["W.P_1"]) return false;
             if (!lead.wp1_parsed_date) return true; // no date info — include
             const t = new Date(lead.wp1_parsed_date).getTime();
@@ -406,10 +419,10 @@ export default function WhatsappChatPage() {
 
             const matchesLoop = activeFilters.loops.length === 0 ||
                 activeFilters.loops.some(loop => {
-                    const lName = (lead.source_loop || "").toLowerCase();
                     const target = loop.toLowerCase();
-                    if (target === "follow up") return lName.includes("follow up") || lName.includes("followup");
-                    return lName.includes(target);
+                    const src = (lead.source_loop || "").toLowerCase();
+                    const tbl = (lead._source_table || "").toLowerCase();
+                    return src.includes(target) || tbl.includes(target);
                 });
 
             const matchesMessageStatus = activeFilters.messageStatus.length === 0 ||
@@ -529,16 +542,31 @@ export default function WhatsappChatPage() {
                 const lead = l as any;
 
                 // Messages Sent: all filled WP slots on this lead
-                for (let i = 1; i <= 12; i++) {
-                    if (lead[`W.P_${i}`]) {
-                        sentCount++;
-                        const ts = lead[`W.P_${i} TS`];
-                        if (ts && String(ts).toLowerCase().includes("failed")) failedCount++;
+                if (lead.source_loop === "Activity") {
+                    if (lead.content) {
+                        const lines = String(lead.content).split('\n');
+                        for (const line of lines) {
+                            const trimmed = line.trim();
+                            if (trimmed.startsWith('Template:') || trimmed.startsWith('User:') || trimmed.startsWith('Agent:') || trimmed.startsWith('Agent :')) {
+                                sentCount++;
+                            }
+                        }
                     }
-                }
-                if (lead["W.P_FollowUp"]) sentCount++;
-                for (let i = 1; i <= 10; i++) {
-                    if (lead[`W.P_FollowUp_${i}`] || lead[`W.P_FollowUp ${i}`]) sentCount++;
+                } else {
+                    for (let i = 1; i <= 12; i++) {
+                        if (lead[`W.P_${i}`]) {
+                            sentCount++;
+                            const ts = lead[`W.P_${i} TS`];
+                            if (ts && String(ts).toLowerCase().includes("failed")) failedCount++;
+                        }
+                    }
+                    if (lead["W.P_FollowUp"]) sentCount++;
+                    for (let i = 1; i <= 10; i++) {
+                        if (lead[`W.P_FollowUp_${i}`] || lead[`W.P_FollowUp ${i}`]) sentCount++;
+                    }
+                    for (let i = 1; i <= 10; i++) {
+                        if (lead[`W.P_Replied_${i}`] || lead[`W.P_Replied ${i}`]) sentCount++;
+                    }
                 }
 
                 // Replied
@@ -692,10 +720,11 @@ export default function WhatsappChatPage() {
                             </FilterSection>
 
                             {activeTab === "leads" && (
-                                <FilterSection title="Loop">
-                                    <FilterOption label="Intro" checked={pendingFilters.loops.includes("Intro")} onCheckedChange={() => toggleFilter('loops', "Intro")} />
-                                    <FilterOption label="Follow Up" checked={pendingFilters.loops.includes("Follow Up")} onCheckedChange={() => toggleFilter('loops', "Follow Up")} />
-                                    <FilterOption label="Nurture" checked={pendingFilters.loops.includes("Nurture")} onCheckedChange={() => toggleFilter('loops', "Nurture")} />
+                                <FilterSection title="Source">
+                                    <FilterOption label="fello" checked={pendingFilters.loops.includes("fello")} onCheckedChange={() => toggleFilter('loops', "fello")} />
+                                    <FilterOption label="naples" checked={pendingFilters.loops.includes("naples")} onCheckedChange={() => toggleFilter('loops', "naples")} />
+                                    <FilterOption label="old" checked={pendingFilters.loops.includes("old")} onCheckedChange={() => toggleFilter('loops', "old")} />
+                                    <FilterOption label="aspen" checked={pendingFilters.loops.includes("aspen")} onCheckedChange={() => toggleFilter('loops', "aspen")} />
                                 </FilterSection>
                             )}
 
@@ -776,10 +805,9 @@ export default function WhatsappChatPage() {
                                     <thead className="bg-[var(--bg-app)] text-[var(--label-secondary)] font-bold border-b border-[var(--separator)]">
                                         <tr>
                                             <th className="px-4 py-3">Lead</th>
-                                            <th className="px-4 py-3 text-center">Loop</th>
                                             <th className="px-4 py-3 text-center">Messages Sent</th>
                                             <th className="px-4 py-3 text-center">Status</th>
-                                            <th className="px-4 py-3 text-center">Message Status</th>
+                                            <th className="px-4 py-3 text-center">Temperature</th>
                                             <th className="px-4 py-3 text-right">Last Contacted</th>
                                         </tr>
                                     </thead>
@@ -788,7 +816,6 @@ export default function WhatsappChatPage() {
                                             const leadId = lead["Lead ID"] || lead.id || String(idx);
                                             return (
                                                 <CustomerRow key={`${leadId}-${idx}`} lead={lead} onClick={() => {
-                                                    // Normalize DB-column-cased keys to the shape WhatsAppChatDetail expects
                                                     setSelectedLeadObj({
                                                         ...lead,
                                                         id: leadId,
@@ -895,32 +922,76 @@ function FilterOption({ id, label, checked, onCheckedChange }: any) {
     );
 }
 
+function getTemperatureBadge(tempRaw?: string) {
+    if (!tempRaw || !String(tempRaw).trim()) {
+        return <span className="text-[var(--label-tertiary)] text-xs">—</span>;
+    }
+    const t = String(tempRaw).trim().toLowerCase();
+    if (t === 'hot' || t === 'fire') {
+        return <Badge className="bg-rose-100 text-rose-700 hover:bg-rose-100 border-none text-[10px] font-bold uppercase">HOT 🔥</Badge>;
+    }
+    if (t === 'warm') {
+        return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none text-[10px] font-bold uppercase">WARM ☀️</Badge>;
+    }
+    if (t === 'cold') {
+        return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none text-[10px] font-bold uppercase">COLD ❄️</Badge>;
+    }
+    return <Badge variant="outline" className="text-[10px] text-[var(--label-secondary)] border-[var(--separator)] uppercase font-bold">{tempRaw}</Badge>;
+}
+
+function getStatusBadge(statusRaw?: string) {
+    if (!statusRaw || !String(statusRaw).trim()) {
+        return <span className="text-[var(--label-tertiary)] text-xs">—</span>;
+    }
+    const s = String(statusRaw).trim().toLowerCase();
+    if (s === 'read') {
+        return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none text-[10px] font-bold uppercase">READ</Badge>;
+    }
+    if (s === 'delivered') {
+        return <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none text-[10px] font-bold uppercase">DELIVERED</Badge>;
+    }
+    if (s === 'sent') {
+        return <Badge variant="outline" className="text-[10px] text-sky-600 border-sky-200 bg-sky-50 font-bold uppercase">SENT</Badge>;
+    }
+    if (s === 'replied') {
+        return <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none text-[10px] font-bold uppercase">REPLIED</Badge>;
+    }
+    if (s === 'failed' || s === 'error') {
+        return <Badge className="bg-rose-100 text-rose-700 hover:bg-rose-100 border-none text-[10px] font-bold uppercase">FAILED</Badge>;
+    }
+    if (s === 'completed') {
+        return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 border-none text-[10px] font-bold uppercase">COMPLETED</Badge>;
+    }
+    return <Badge variant="outline" className="text-[10px] text-[var(--label-secondary)] border-[var(--separator)] uppercase font-bold">{s}</Badge>;
+}
+
 function CustomerRow({ lead: leadRaw, onClick }: { lead: any; onClick: () => void }) {
     const lead = leadRaw as any;
-    // latest_wp_date = most recent WP message date that falls within the selected range
-    // (computed by the RPC in migration 006). Falls back to wp1_parsed_date then Created At.
     const latestWpRaw = lead.latest_wp_date || lead.wp1_parsed_date;
     const createdRaw = lead["Created At"] || lead.created_at;
     const latestDate = latestWpRaw ? new Date(latestWpRaw) : (createdRaw ? new Date(createdRaw) : new Date(0));
-    // WA endpoint returns "Name"/"Phone" (DB column case); fallback to lowercase for consolidated leads
     const displayName = lead["Name"] || lead.name || "—";
     const displayPhone = lead["Phone"] || lead.phone || "—";
 
     let sentCount = 0;
-    for (let i = 1; i <= 12; i++) { if (lead[`W.P_${i}`]) sentCount++; }
-    // "W.P_FollowUp" aliased from "W.P_FollowUp 1" by the RPC
-    if (lead["W.P_FollowUp"]) sentCount++;
-    for (let i = 1; i <= 10; i++) { if (lead[`W.P_FollowUp ${i}`] || lead[`W.P_FollowUp_${i}`]) sentCount++; }
 
-    // Collect all available statuses
-    const allStatuses = [];
-    for (let i = 1; i <= 12; i++) {
-        if (lead[`W.P_${i} TS`]) {
-            allStatuses.push({ index: i, status: lead[`W.P_${i} TS`] });
+    if (lead.source_loop === "Activity") {
+        if (lead.content) {
+            const lines = String(lead.content).split('\n');
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (trimmed.startsWith('Template:') || trimmed.startsWith('User:') || trimmed.startsWith('Agent:') || trimmed.startsWith('Agent :')) {
+                    sentCount++;
+                }
+            }
         }
+        if (lead.WP_Replied_track && String(lead.WP_Replied_track).trim().toLowerCase() !== "no") sentCount++;
+    } else {
+        for (let i = 1; i <= 12; i++) { if (lead[`W.P_${i}`]) sentCount++; }
+        if (lead["W.P_FollowUp"]) sentCount++;
+        for (let i = 1; i <= 10; i++) { if (lead[`W.P_FollowUp ${i}`] || lead[`W.P_FollowUp_${i}`]) sentCount++; }
+        for (let i = 1; i <= 10; i++) { if (lead[`W.P_Replied_${i}`] || lead[`W.P_Replied ${i}`]) sentCount++; }
     }
-    // Just show the last 2 to keep UI clean, in chronological order
-    const displayStatuses = allStatuses.slice(-2);
 
     const wtRepliedTrack = lead["WP_Replied_track"] || lead.WP_Replied_track;
     let hasReplied = false;
@@ -938,6 +1009,9 @@ function CustomerRow({ lead: leadRaw, onClick }: { lead: any; onClick: () => voi
         return d.toLocaleString([], { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' });
     };
 
+    const statusValue = lead.status || lead["status"] || (hasReplied ? "replied" : "sent");
+    const tempValue = lead.lead_temp || lead["lead_temp"] || lead.lead_temperature || lead["Lead Temperature"] || lead.sentiment || "";
+
     return (
         <tr className="hover:bg-[var(--bg-app)] transition-colors cursor-pointer group" onClick={onClick}>
             <td className="px-4 py-3">
@@ -946,20 +1020,13 @@ function CustomerRow({ lead: leadRaw, onClick }: { lead: any; onClick: () => voi
                     <div className="text-xs text-[var(--label-secondary)]">{displayPhone}</div>
                 </div>
             </td>
-            <td className="px-4 py-3 text-center">
-                <Badge variant="outline" className="text-[10px] uppercase font-bold border-blue-100 text-blue-600 bg-[rgba(0,122,255,0.08)]">{lead.source_loop}</Badge>
-            </td>
             <td className="px-4 py-3 text-center font-bold text-[var(--label-primary)]">{sentCount}</td>
             <td className="px-4 py-3 text-center">
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <div>
-                                {hasReplied ? (
-                                    <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none text-[10px] font-bold">REPLIED</Badge>
-                                ) : (
-                                    <Badge variant="outline" className="text-[10px] text-[var(--label-tertiary)] border-[var(--separator)]">SENT</Badge>
-                                )}
+                                {getStatusBadge(statusValue)}
                             </div>
                         </TooltipTrigger>
                         {hasReplied && (
@@ -971,55 +1038,11 @@ function CustomerRow({ lead: leadRaw, onClick }: { lead: any; onClick: () => voi
                 </TooltipProvider>
             </td>
             <td className="px-4 py-3 text-center">
-                <div className="flex flex-col items-center gap-1.5">
-                    {displayStatuses.map((s) => (
-                        <MessageStatusBadge key={s.index} index={s.index} status={s.status} />
-                    ))}
-                    {displayStatuses.length === 0 && <span className="text-[var(--label-tertiary)] text-[10px]">—</span>}
-                </div>
+                {getTemperatureBadge(tempValue)}
             </td>
             <td className="px-4 py-3 text-right text-[var(--label-secondary)] text-xs text-nowrap">
                 {latestDate.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' })}
             </td>
         </tr>
-    );
-}
-
-function MessageStatusBadge({ index, status }: { index: number, status: string }) {
-    if (!status) return null;
-    const parts = status.split(' - ');
-    const statusText = parts[0].trim();
-    // If there's no " - ", the entire status string might be the timestamp
-    const rawTimestamp = parts.length > 1 ? parts[1].trim() : status.trim();
-
-    const formatTooltipDate = (dateStr: string) => {
-        const d = new Date(dateStr.replace(/(\d{1,2})\/(\d{1,2})\/(\d{4})/, '$3-$2-$1'));
-        const finalDate = isNaN(d.getTime()) ? new Date(dateStr) : d;
-        if (isNaN(finalDate.getTime())) return dateStr;
-        const now = new Date();
-        if (finalDate.toDateString() === now.toDateString()) return finalDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        return finalDate.toLocaleString([], { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' });
-    };
-
-    const formatted = statusText.charAt(0).toUpperCase() + statusText.slice(1).toLowerCase();
-    let badgeClass = "bg-[var(--fill-quaternary)] text-[var(--label-secondary)] border-[var(--separator)]";
-    if (formatted.includes("Delivered")) badgeClass = "bg-[rgba(52,199,89,0.08)] text-emerald-700 border-emerald-100";
-    if (formatted.includes("Read")) badgeClass = "bg-[rgba(0,122,255,0.08)] text-blue-700 border-blue-100";
-    if (formatted.includes("Failed")) badgeClass = "bg-red-50 text-red-700 border-red-100";
-
-    return (
-        <TooltipProvider>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <div className="flex items-center gap-1.5 w-full justify-center cursor-help">
-                        <span className="text-[9px] text-[var(--label-tertiary)] font-mono select-none">{index}</span>
-                        <Badge variant="outline" className={`h-5 px-1.5 text-[9px] font-bold uppercase tracking-wider ${badgeClass}`}>{formatted}</Badge>
-                    </div>
-                </TooltipTrigger>
-                {rawTimestamp && (
-                    <TooltipContent side="top" className="bg-slate-800/40 backdrop-blur-md text-white text-[10px] border-none px-2 py-1 shadow-xl">{formatTooltipDate(rawTimestamp)}</TooltipContent>
-                )}
-            </Tooltip>
-        </TooltipProvider>
     );
 }

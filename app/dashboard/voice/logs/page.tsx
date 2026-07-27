@@ -16,12 +16,30 @@ import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { format, subDays } from "date-fns";
 import { formatDuration } from "@/lib/utils";
 import { useData } from "@/context/DataContext";
+import { useSearchParams } from "next/navigation";
 
 const DynamicRowCells = ({ call, telephonyCost }: { call: any, telephonyCost?: number }) => {
     const guestName = call.name || "Guest";
     const guestNum = call.phone || "Unknown";
     const realType = call.type || (call.isInbound ? "Inbound" : "Outbound");
     const isInboundState = call.isInbound;
+
+    const sourceTable = String(call._source_table || call.sourceTable || "").toLowerCase();
+    const getSourceBadge = () => {
+        if (sourceTable.includes("naples")) {
+            return <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none text-[9px] font-bold uppercase">NAPLES</Badge>;
+        }
+        if (sourceTable.includes("aspen")) {
+            return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none text-[9px] font-bold uppercase">ASPEN</Badge>;
+        }
+        if (sourceTable.includes("old")) {
+            return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 border-none text-[9px] font-bold uppercase">OLD LEADS</Badge>;
+        }
+        if (sourceTable.includes("fello")) {
+            return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none text-[9px] font-bold uppercase">FELLO</Badge>;
+        }
+        return null;
+    };
 
     return (
         <>
@@ -34,16 +52,19 @@ const DynamicRowCells = ({ call, telephonyCost }: { call: any, telephonyCost?: n
             <TableCell className="font-medium text-[var(--label-primary)]">{guestNum}</TableCell>
             <TableCell>
                 <div className="flex flex-col gap-1">
-                    <Badge 
-                        variant="outline" 
-                        className={`text-[10px] uppercase font-bold tracking-wider w-fit px-2 py-0.5 ${
-                            isInboundState 
-                                ? 'bg-[rgba(0,122,255,0.08)] text-blue-600 border-[var(--separator)]' 
-                                : 'bg-[rgba(0,122,255,0.08)] text-blue-700 border-blue-100'
-                        }`}
-                    >
-                        {realType}
-                    </Badge>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                        <Badge 
+                            variant="outline" 
+                            className={`text-[10px] uppercase font-bold tracking-wider w-fit px-2 py-0.5 ${
+                                isInboundState 
+                                    ? 'bg-[rgba(0,122,255,0.08)] text-blue-600 border-[var(--separator)]' 
+                                    : 'bg-[rgba(0,122,255,0.08)] text-blue-700 border-blue-100'
+                            }`}
+                        >
+                            {realType}
+                        </Badge>
+                        {getSourceBadge()}
+                    </div>
                     {call.assistantId === '560ca61b-8cd3-4b5f-996b-2966abfa37fd' && (
                         <Badge className="bg-[rgba(175,82,222,0.08)] text-purple-700 hover:bg-[rgba(175,82,222,0.08)] border-purple-200 text-[8px] px-1.5 py-0 h-3.5 font-bold uppercase tracking-wider w-fit">
                             secondary leads reachout
@@ -368,12 +389,15 @@ export default function VoiceLogsPage() {
                     </div>
 
                     <Select value={accountFilter} onValueChange={setAccountFilter}>
-                        <SelectTrigger className="w-[200px] h-9">
-                            <SelectValue placeholder="Account / Provider" />
+                        <SelectTrigger className="w-[220px] h-9">
+                            <SelectValue placeholder="Database Table / Routing" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="vapi">All Vapi Calls</SelectItem>
-                            <SelectItem value="vapi-normal">Normal Calls</SelectItem>
+                            <SelectItem value="vapi">All Database Tables</SelectItem>
+                            <SelectItem value="naples">Naples (naples_activity)</SelectItem>
+                            <SelectItem value="aspen">Aspen (aspen_activity)</SelectItem>
+                            <SelectItem value="old">Old Leads (old_activity)</SelectItem>
+                            <SelectItem value="fello">Fello (fello_activity)</SelectItem>
                         </SelectContent>
                     </Select>
 

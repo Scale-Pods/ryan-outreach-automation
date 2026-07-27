@@ -3,6 +3,8 @@ import { supabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
+const ACTIVITY_TABLES = ['fello_activity', 'aspen_activity', 'naples_activity', 'old_activity'] as const;
+
 const EMPTY = {
     totalCalls: 0, totalDuration: 0, avgDuration: 0, totalCost: 0, avgCost: 0,
     completedCalls: 0, answeredCalls: 0, successRate: 0,
@@ -34,23 +36,31 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             return NextResponse.json(rpcData, { headers: { 'Cache-Control': 'no-store' } });
         }
 
-        // Fallback: direct computation
-        const { data: rows } = await supabaseAdmin
-            .from('fello_activity')
-            .select('created_at, duration_seconds, cost_usd, status, vapi_account, sentiment')
-            .eq('channel', 'voice')
-            .gte('created_at', fromDate)
-            .lte('created_at', toDate);
+        // Fallback: direct computation across all activity tables
+        const allRows: any[] = [];
+        const allAllTimeRows: any[] = [];
 
-        const calls = rows || [];
+        for (const table of ACTIVITY_TABLES) {
+            const { data: rows } = await supabaseAdmin
+                .from(table)
+                .select('created_at, duration_seconds, cost_usd, status, vapi_account, sentiment')
+                .eq('channel', 'voice')
+                .gte('created_at', fromDate)
+                .lte('created_at', toDate);
 
-        // All-time counts
-        const { data: allTimeRows } = await supabaseAdmin
-            .from('fello_activity')
-            .select('vapi_account')
-            .eq('channel', 'voice');
+            if (rows) allRows.push(...rows);
 
-        const allTime = allTimeRows || [];
+            const { data: allTimeRows } = await supabaseAdmin
+                .from(table)
+                .select('vapi_account')
+                .eq('channel', 'voice');
+
+            if (allTimeRows) allAllTimeRows.push(...allTimeRows);
+        }
+
+        const calls = allRows;
+        const allTime = allAllTimeRows;
+
         const allTimeNormalCalls = allTime.filter(r => r.vapi_account !== 'owners').length;
         const allTimeOwnerCalls = allTime.filter(r => r.vapi_account === 'owners').length;
 
@@ -126,6 +136,38 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             }).length,
         }));
 
+        // Per-table breakdown for naples, aspen, old, fello
+        const tableStats: Record<string, any> = {};
+        for (const table of ACTIVITY_TABLES) {
+            const key = table.replace('_activity', '');
+            const { data: rows } = await supabaseAdmin
+                .from(table)
+                .select('created_at, duration_seconds, cost_usd, status, sentiment')
+                .eq('channel', 'voice')
+                .gte('created_at', fromDate)
+                .lte('created_at', toDate);
+
+            const tableRows = rows || [];
+            const count = tableRows.length;
+            const connected = tableRows.filter(r => (r.duration_seconds || 0) > 18).length;
+            const completed = tableRows.filter(r => completedStatuses.includes(r.status)).length;
+            const positive = tableRows.filter(r => {
+                const s = (r.sentiment || '').toLowerCase();
+                return s === 'positive' || s === 'hesitant';
+            }).length;
+
+            tableStats[key] = {
+                tableName: table,
+                totalCalls: count,
+                connected,
+                completed,
+                positive,
+                pickupRate: pct(connected, count),
+                completionRate: pct(completed, count),
+                positiveRate: pct(positive, count),
+            };
+        }
+
         return NextResponse.json({
             totalCalls,
             totalDuration,
@@ -151,6 +193,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             ownerPositiveRate: pct(ownerPositiveCount, ownerRows.length),
             allTimeNormalCalls,
             allTimeOwnerCalls,
+            tableStats,
             dailyVolume,
             hourlyDistribution,
             durationBuckets,

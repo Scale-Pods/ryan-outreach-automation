@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Calculator, Activity, Crown, Search, Info, RefreshCw, Phone, User, MapPin } from "lucide-react";
 import { useData } from "@/context/DataContext";
@@ -20,7 +19,6 @@ export default function VoiceCalculatorPage() {
         from: subDays(new Date(), 7),
         to: new Date(),
     });
-    const [accountFilter, setAccountFilter] = useState("vapi");
     const [calculating, setCalculating] = useState(false);
     const [results, setResults] = useState<{
         totalCost: number;
@@ -43,38 +41,21 @@ export default function VoiceCalculatorPage() {
                 provider: 'vapi',
                 force: true
             });
-
-            // Note: DataContext 'calls' will be updated after refreshCalls finishes.
-            // But we need to wait for the state update or use the return value if it had one.
-            // Since refreshCalls doesn't return data, we'll use an effect or a slight delay
-            // to ensure we process the latest data. 
-            // In this app's pattern, we'll just process rawCalls in a follow-up step.
         } catch (err) {
             console.error("Calculation error:", err);
         } finally {
-            // We set calculating false in a small timeout to let the DataContext update
             setTimeout(() => setCalculating(false), 800);
         }
     };
 
-    // Use an effect to process the results once calls are loaded/updated after a calculation trigger
     React.useEffect(() => {
         if (!calculating && results === null && rawCalls.length > 0 && !loadingCalls) {
-            // This might trigger on mount, which is fine if rawCalls exist.
-            // But the user said "dont calculate by default". 
-            // So we'll check if results is null AND we just finished a manual calculation.
         }
     }, [rawCalls, loadingCalls, calculating]);
 
     // Manual trigger for processing
     const processResults = async () => {
-        // Apply the same filtering logic as the logs page
-        const filteredCalls = rawCalls.filter((call: any) => {
-            if (accountFilter === 'vapi') return call.source === 'vapi';
-            if (accountFilter === 'vapi-normal') return call.source === 'vapi' && call.vapiAccount === 'normal';
-            if (accountFilter === 'open-house') return call.assistantId === '1ef6ea66-0a75-45f5-b025-1743e048dc90';
-            return true;
-        });
+        const filteredCalls = rawCalls;
 
         if (filteredCalls.length === 0) {
             setResults({
@@ -144,7 +125,6 @@ export default function VoiceCalculatorPage() {
         }
     };
 
-    // We chain the process after handleCalculate by watching loadingCalls transition from true -> false
     const prevLoadingRef = React.useRef(loadingCalls);
     React.useEffect(() => {
         if (prevLoadingRef.current === true && loadingCalls === false && calculating) {
@@ -163,7 +143,7 @@ export default function VoiceCalculatorPage() {
                     <h1 className="text-3xl font-bold text-[var(--label-primary)]">Cost Calculator</h1>
                 </div>
                 <p className="text-[var(--label-secondary)] max-w-2xl">
-                    Select a date range and account to calculate detailed telephony and agent costs. 
+                    Select a date range to calculate detailed telephony and agent costs. 
                     This tool uses real-time rate matching and provider APIs for maximum accuracy.
                 </p>
             </div>
@@ -182,20 +162,6 @@ export default function VoiceCalculatorPage() {
                         <div className="space-y-2">
                             <label className="text-xs font-bold text-[var(--label-tertiary)] uppercase tracking-wider">Date Range</label>
                             <DateRangePicker onUpdate={(values) => setDateRange(values.range)} />
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-[var(--label-tertiary)] uppercase tracking-wider">Account / Provider</label>
-                            <Select value={accountFilter} onValueChange={setAccountFilter}>
-                                <SelectTrigger className="w-full bg-[var(--bg-app)] border-[var(--separator)] h-11">
-                                    <SelectValue placeholder="Select Account" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="vapi">All Vapi Calls</SelectItem>
-                                    <SelectItem value="vapi-normal">Normal Calls</SelectItem>
-                                    <SelectItem value="open-house">🏠 Open House Event</SelectItem>
-                                </SelectContent>
-                            </Select>
                         </div>
 
                         <Button 

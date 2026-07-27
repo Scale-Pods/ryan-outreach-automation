@@ -17,6 +17,88 @@ import {
 import { ConsolidatedLead } from "@/lib/leads-utils";
 import { useData } from "@/context/DataContext";
 
+function parseActivityContent(content: string, summary?: string): any[] {
+    if (!content) return [];
+    const messages: any[] = [];
+    const lines = content.split('\n');
+    let seq = 0;
+    let lastMessageKey = '';
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+
+        // Template message — first message
+        if (line.startsWith('Template: ')) {
+            const text = line.substring('Template: '.length).trim();
+            const msg = {
+                type: 'bot' as const,
+                content: text,
+                label: 'Agent',
+                date: null as string | null,
+                sequence: ++seq,
+            };
+            messages.push(msg);
+            lastMessageKey = 'bot';
+            continue;
+        }
+
+        // User message
+        if (line.startsWith('User: ')) {
+            const text = line.substring('User: '.length).trim();
+            const key = `user:${text}`;
+            // Skip duplicate consecutive user messages
+            if (key === lastMessageKey) continue;
+            const msg = {
+                type: 'user' as const,
+                content: text,
+                label: 'User',
+                date: null as string | null,
+                sequence: ++seq,
+            };
+            messages.push(msg);
+            lastMessageKey = key;
+            continue;
+        }
+
+        // Agent message
+        if (line.startsWith('Agent : ') || line.startsWith('Agent: ')) {
+            const text = line.replace(/^Agent\s*:\s*/, '').trim();
+            const msg = {
+                type: 'bot' as const,
+                content: text,
+                label: 'Agent',
+                date: null as string | null,
+                sequence: ++seq,
+            };
+            messages.push(msg);
+            lastMessageKey = `bot:${text}`;
+            continue;
+        }
+
+        // Timestamp line — attach to previous message
+        const tsMatch = line.match(/^(\d{1,2}\/\d{1,2}\/\d{4}),\s*(\d{1,2}:\d{2}:\d{2}\s*(?:AM|PM))/i);
+        if (tsMatch) {
+            const dateStr = `${tsMatch[1]} ${tsMatch[2]}`;
+            // Convert "07/07/2026 01:04:49 PM" to ISO
+            const [m, d, y] = dateStr.split(/[\/\s,]+/);
+            const timeStr = dateStr.match(/\d{1,2}:\d{2}:\d{2}\s*(?:AM|PM)/i)?.[0] || '';
+            const parsed = new Date(`${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}T${timeStr}`);
+            if (!isNaN(parsed.getTime()) && messages.length > 0) {
+                messages[messages.length - 1].date = parsed.toISOString();
+            }
+            continue;
+        }
+
+        // Continuation of previous message content
+        if (messages.length > 0) {
+            messages[messages.length - 1].content += '\n' + line;
+        }
+    }
+
+    return messages;
+}
+
 interface WhatsAppChatDetailProps {
     customerId: string;
     onClose?: () => void;
@@ -139,94 +221,99 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
                 source_loop: (found as any).source_loop || "—",
             } as any;
             setLead(normalized);
-            const timeline: any[] = [];
+            const f = found as any;
+            let timeline: any[] = [];
 
-            const parseMsg = (raw: any, label: string, type: 'bot' | 'user', sequence: number) => {
-                if (!raw || !String(raw).trim()) return null;
-                const content = String(raw).trim();
+            // If this is an activity lead with content, parse from content column
+            if (f.content) {
+                timeline = parseActivityContent(f.content, f.summary);
+            } else {
+                const parseMsg = (raw: any, label: string, type: 'bot' | 'user', sequence: number) => {
+                    if (!raw || !String(raw).trim()) return null;
+                    const content = String(raw).trim();
 
-                // Match ISO timestamp after one or two newlines at end of message
-                const isoRegex = /\n{1,2}(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.+)$/;
-                const isoMatch = content.match(isoRegex);
-                if (isoMatch) {
-                    return {
-                        type,
-                        content: content.replace(isoRegex, '').trim(),
-                        label,
-                        date: isoMatch[1],
-                        sequence
-                    };
-                }
-
-                // Match "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DD HH:MM:SS.mmm" on the last line
-                const lines = content.split('\n');
-                const lastLine = lines[lines.length - 1].trim();
-                const spaceDateRegex = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}/;
-                if (lines.length > 1 && spaceDateRegex.test(lastLine)) {
-                    const d = new Date(lastLine.replace(' ', 'T'));
-                    if (!isNaN(d.getTime())) {
+                    // Match ISO timestamp after one or two newlines at end of message
+                    const isoRegex = /\n{1,2}(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.+)$/;
+                    const isoMatch = content.match(isoRegex);
+                    if (isoMatch) {
                         return {
                             type,
-                            content: lines.slice(0, -1).join('\n').trim() || 'Message Received',
+                            content: content.replace(isoRegex, '').trim(),
                             label,
-                            date: d.toISOString(),
+                            date: isoMatch[1],
                             sequence
                         };
                     }
+
+                    // Match "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DD HH:MM:SS.mmm" on the last line
+                    const lines = content.split('\n');
+                    const lastLine = lines[lines.length - 1].trim();
+                    const spaceDateRegex = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}/;
+                    if (lines.length > 1 && spaceDateRegex.test(lastLine)) {
+                        const d = new Date(lastLine.replace(' ', 'T'));
+                        if (!isNaN(d.getTime())) {
+                            return {
+                                type,
+                                content: lines.slice(0, -1).join('\n').trim() || 'Message Received',
+                                label,
+                                date: d.toISOString(),
+                                sequence
+                            };
+                        }
+                    }
+
+                    return { type, content, label, date: null, sequence };
+                };
+
+                // Helper: extract date from a TS field — date is always after the LAST " - "
+                // Handles "read - 12/3/2026, 9:53 am" and "failed - error text - 24/4/2026, 1:30 pm"
+                const parseTsDate = (tsRaw: string | null): string | null => {
+                    if (!tsRaw) return null;
+                    const lastDash = tsRaw.lastIndexOf(' - ');
+                    if (lastDash === -1) return null;
+                    const datePart = tsRaw.slice(lastDash + 3).trim();
+                    const d = new Date(datePart.replace(/(^\d{1,2})\/(\d{1,2})\/(\d{4}),?\s*/, '$3-$2-$1 ').trim());
+                    return isNaN(d.getTime()) ? null : d.toISOString();
+                };
+
+                let seq = 1;
+
+                // Drip sequence W.P_1 → W.P_12  (skip missing slots, no duplicates)
+                for (let i = 1; i <= 12; i++) {
+                    const raw = f[`W.P_${i}`] || f.stage_data?.[`WhatsApp ${i}`];
+                    if (!raw) continue;
+                    const tsRaw: string | null = f[`W.P_${i} TS`] || null;
+                    const msg = parseMsg(raw, `W.P_${i}`, 'bot', seq++);
+                    if (msg) {
+                        (msg as any).tsStatus = tsRaw;
+                        if (!msg.date) msg.date = parseTsDate(tsRaw);
+                        timeline.push(msg);
+                    }
                 }
 
-                return { type, content, label, date: null, sequence };
-            };
+                // Paired reply / follow-up rounds (up to 10)
+                // DB columns use spaces: "W.P_Replied 1", "W.P_FollowUp 1"
+                // RPC aliases them with underscores: "W.P_Replied_1", "W.P_FollowUp_1"
+                // Try both forms so this works before and after migration 007.
+                for (let i = 1; i <= 10; i++) {
+                    const rRaw = f[`W.P_Replied_${i}`] || f[`W.P_Replied ${i}`];
+                    const rMsg = parseMsg(rRaw, `W.P_Replied ${i}`, 'user', seq++);
+                    if (rMsg) timeline.push(rMsg);
 
-            // Helper: extract date from a TS field — date is always after the LAST " - "
-            // Handles "read - 12/3/2026, 9:53 am" and "failed - error text - 24/4/2026, 1:30 pm"
-            const parseTsDate = (tsRaw: string | null): string | null => {
-                if (!tsRaw) return null;
-                const lastDash = tsRaw.lastIndexOf(' - ');
-                if (lastDash === -1) return null;
-                const datePart = tsRaw.slice(lastDash + 3).trim();
-                const d = new Date(datePart.replace(/(^\d{1,2})\/(\d{1,2})\/(\d{4}),?\s*/, '$3-$2-$1 ').trim());
-                return isNaN(d.getTime()) ? null : d.toISOString();
-            };
-
-            const f = found as any;
-            let seq = 1;
-
-            // Drip sequence W.P_1 → W.P_12  (skip missing slots, no duplicates)
-            for (let i = 1; i <= 12; i++) {
-                const raw = f[`W.P_${i}`] || f.stage_data?.[`WhatsApp ${i}`];
-                if (!raw) continue;
-                const tsRaw: string | null = f[`W.P_${i} TS`] || null;
-                const msg = parseMsg(raw, `W.P_${i}`, 'bot', seq++);
-                if (msg) {
-                    (msg as any).tsStatus = tsRaw;
-                    if (!msg.date) msg.date = parseTsDate(tsRaw);
-                    timeline.push(msg);
+                    const fRaw = f[`W.P_FollowUp_${i}`] || f[`W.P_FollowUp ${i}`];
+                    const fTsRaw: string | null = f[`W.P_FollowUp_TS${i}`] || null;
+                    const fMsg = parseMsg(fRaw, `W.P_FollowUp ${i}`, 'bot', seq++);
+                    if (fMsg) {
+                        (fMsg as any).tsStatus = fTsRaw;
+                        if (!fMsg.date) fMsg.date = parseTsDate(fTsRaw);
+                        timeline.push(fMsg);
+                    }
                 }
+
+                // No date sorting — insertion sequence IS the correct conversation order:
+                // W.P_1 → W.P_N drips, then WhatsApp Replied, then W.P_FollowUp,
+                // then paired W.P_Replied_i / W.P_FollowUp_i rounds.
             }
-
-            // Paired reply / follow-up rounds (up to 10)
-            // DB columns use spaces: "W.P_Replied 1", "W.P_FollowUp 1"
-            // RPC aliases them with underscores: "W.P_Replied_1", "W.P_FollowUp_1"
-            // Try both forms so this works before and after migration 007.
-            for (let i = 1; i <= 10; i++) {
-                const rRaw = f[`W.P_Replied_${i}`] || f[`W.P_Replied ${i}`];
-                const rMsg = parseMsg(rRaw, `W.P_Replied ${i}`, 'user', seq++);
-                if (rMsg) timeline.push(rMsg);
-
-                const fRaw = f[`W.P_FollowUp_${i}`] || f[`W.P_FollowUp ${i}`];
-                const fTsRaw: string | null = f[`W.P_FollowUp_TS${i}`] || null;
-                const fMsg = parseMsg(fRaw, `W.P_FollowUp ${i}`, 'bot', seq++);
-                if (fMsg) {
-                    (fMsg as any).tsStatus = fTsRaw;
-                    if (!fMsg.date) fMsg.date = parseTsDate(fTsRaw);
-                    timeline.push(fMsg);
-                }
-            }
-
-            // No date sorting — insertion sequence IS the correct conversation order:
-            // W.P_1 → W.P_N drips, then WhatsApp Replied, then W.P_FollowUp,
-            // then paired W.P_Replied_i / W.P_FollowUp_i rounds.
 
             setMessages(timeline);
         } else {
@@ -235,6 +322,28 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
         }
         setLoading(false);
     }, [customerId, allLeads, loadingLeads, initialLead]);
+
+    // Fill missing timestamps by scanning neighbors and falling back to lead created_at
+    const messagesWithDates = React.useMemo(() => {
+        if (messages.length === 0) return messages;
+        let lastDate: string | null = null;
+        const fallbackDate = lead?.created_at || null;
+        return messages.map((msg, idx) => {
+            if (msg.date) {
+                lastDate = msg.date;
+                return msg;
+            }
+            let nextDate: string | null = null;
+            for (let j = idx + 1; j < messages.length; j++) {
+                if (messages[j].date) {
+                    nextDate = messages[j].date;
+                    break;
+                }
+            }
+            const resolved = lastDate || nextDate || fallbackDate;
+            return { ...msg, date: resolved };
+        });
+    }, [messages, lead]);
 
     if (loading) {
         return (
@@ -260,8 +369,15 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
             {/* Header */}
             <div className="flex items-center justify-between shrink-0">
                 <div>
-                    <h2 className="text-xl font-bold text-[var(--label-primary)]">{lead.name}</h2>
-                    <div className="flex items-center gap-2 text-xs text-[var(--label-secondary)]">
+                    <div className="flex items-center gap-2">
+                        <h2 className="text-xl font-bold text-[var(--label-primary)]">{lead.name}</h2>
+                        {((lead as any).status || (lead as any).curr_lead_status) && (
+                            <Badge className="bg-blue-100 text-blue-700 border-none text-[10px] font-bold uppercase">
+                                {String((lead as any).status || (lead as any).curr_lead_status)}
+                            </Badge>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-[var(--label-secondary)] mt-0.5">
                         <span>{lead.phone}</span>
                         <span>•</span>
                         <span>{lead.source_loop}</span>
@@ -300,13 +416,13 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-4 space-y-6">
-                        {messages.length === 0 ? (
+                        {messagesWithDates.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center text-[var(--label-tertiary)] space-y-2">
                                 <MessageSquare className="h-10 w-10 opacity-20" />
                                 <p className="text-sm">No WhatsApp messages found in database.</p>
                             </div>
                         ) : (
-                            messages.map((msg, idx) => {
+                            messagesWithDates.map((msg, idx) => {
                                 // Build delivery-status pill for outgoing messages
                                 let tsPill: React.ReactNode = null;
                                 if (msg.type === 'bot' && (msg as any).tsStatus) {
@@ -376,12 +492,49 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
                                         {lead.source_loop}
                                     </Badge>
                                 </div>
-                                <div>
-                                    <span className="text-[10px] font-bold text-[var(--label-tertiary)] uppercase">Source Table</span>
-                                    <p className="font-bold text-blue-600 mt-1 text-xs">
-                                        {String(lead.id || lead.source_loop || '').startsWith('intro') || String(lead.source_loop || '').toLowerCase() === 'intro' ? 'nr_wf' : (String(lead.id || lead.source_loop || '').startsWith('followup') || String(lead.source_loop || '').toLowerCase().includes('follow') ? 'followup' : 'nurture')}
-                                    </p>
-                                </div>
+                                {((lead as any).status || (lead as any).curr_lead_status) && (
+                                    <div>
+                                        <span className="text-[10px] font-bold text-[var(--label-tertiary)] uppercase">Status</span>
+                                        <Badge className="mt-1 bg-blue-100 text-blue-700 border-none text-[10px] font-bold uppercase block w-fit">
+                                            {String((lead as any).status || (lead as any).curr_lead_status)}
+                                        </Badge>
+                                    </div>
+                                )}
+                                {((lead as any).lead_temp || (lead as any).lead_temperature || (lead as any)["Lead Temperature"] || (lead as any).sentiment) && (
+                                    <div>
+                                        <span className="text-[10px] font-bold text-[var(--label-tertiary)] uppercase">Lead Temperature</span>
+                                        <Badge className="mt-1 bg-amber-100 text-amber-800 border-none text-[10px] font-bold uppercase block w-fit">
+                                            {String((lead as any).lead_temp || (lead as any).lead_temperature || (lead as any)["Lead Temperature"] || (lead as any).sentiment)}
+                                        </Badge>
+                                    </div>
+                                )}
+                                {(lead as any)._source_table ? (
+                                    <div>
+                                        <span className="text-[10px] font-bold text-[var(--label-tertiary)] uppercase">Source Table</span>
+                                        <p className="font-bold text-blue-600 mt-1 text-xs">
+                                            {(lead as any)._source_table}
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <span className="text-[10px] font-bold text-[var(--label-tertiary)] uppercase">Source Table</span>
+                                        <p className="font-bold text-blue-600 mt-1 text-xs">
+                                            {String(lead.id || lead.source_loop || '').startsWith('intro') || String(lead.source_loop || '').toLowerCase() === 'intro' ? 'nr_wf' : (String(lead.id || lead.source_loop || '').startsWith('followup') || String(lead.source_loop || '').toLowerCase().includes('follow') ? 'followup' : 'nurture')}
+                                        </p>
+                                    </div>
+                                )}
+                                {(lead as any).summary ? (
+                                    <div>
+                                        <span className="text-[10px] font-bold text-[var(--label-tertiary)] uppercase">Summary</span>
+                                        <p className="text-xs text-[var(--label-secondary)] mt-1 leading-relaxed">{(lead as any).summary}</p>
+                                    </div>
+                                ) : null}
+                                {(lead as any).action_type ? (
+                                    <div>
+                                        <span className="text-[10px] font-bold text-[var(--label-tertiary)] uppercase">Action Type</span>
+                                        <p className="font-bold text-purple-600 mt-1 text-xs capitalize">{(lead as any).action_type}</p>
+                                    </div>
+                                ) : null}
                             </div>
                         </CardContent>
                     </Card>

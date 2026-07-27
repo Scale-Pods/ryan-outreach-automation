@@ -45,6 +45,7 @@ interface WALead {
     "Senders email"?: string;
     source_loop?: string;
     wp1_parsed_date?: string;
+    status?: string;
     [key: string]: any;
 }
 
@@ -54,6 +55,49 @@ function getLeadDate(lead: WALead): Date | null {
     const parsed = lead["wp1_parsed_date"];
     if (parsed) { const d = new Date(parsed); if (!isNaN(d.getTime())) return d; }
     return null;
+}
+
+function getStatusBadge(statusRaw?: string) {
+    if (!statusRaw || !String(statusRaw).trim()) {
+        return <span className="text-[var(--label-tertiary)] text-xs">—</span>;
+    }
+    const s = String(statusRaw).trim().toLowerCase();
+    if (s === 'read') {
+        return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none text-[10px] font-bold uppercase">READ</Badge>;
+    }
+    if (s === 'delivered') {
+        return <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none text-[10px] font-bold uppercase">DELIVERED</Badge>;
+    }
+    if (s === 'sent') {
+        return <Badge variant="outline" className="text-[10px] text-sky-600 border-sky-200 bg-sky-50 font-bold uppercase">SENT</Badge>;
+    }
+    if (s === 'replied') {
+        return <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none text-[10px] font-bold uppercase">REPLIED</Badge>;
+    }
+    if (s === 'failed' || s === 'error') {
+        return <Badge className="bg-rose-100 text-rose-700 hover:bg-rose-100 border-none text-[10px] font-bold uppercase">FAILED</Badge>;
+    }
+    if (s === 'completed') {
+        return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 border-none text-[10px] font-bold uppercase">COMPLETED</Badge>;
+    }
+    return <Badge variant="outline" className="text-[10px] text-[var(--label-secondary)] border-[var(--separator)] uppercase font-bold">{s}</Badge>;
+}
+
+function getTemperatureBadge(tempRaw?: string) {
+    if (!tempRaw || !String(tempRaw).trim()) {
+        return <span className="text-[var(--label-tertiary)] text-xs">—</span>;
+    }
+    const t = String(tempRaw).trim().toLowerCase();
+    if (t === 'hot' || t === 'fire') {
+        return <Badge className="bg-rose-100 text-rose-700 hover:bg-rose-100 border-none text-[10px] font-bold uppercase">HOT 🔥</Badge>;
+    }
+    if (t === 'warm') {
+        return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none text-[10px] font-bold uppercase">WARM ☀️</Badge>;
+    }
+    if (t === 'cold') {
+        return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none text-[10px] font-bold uppercase">COLD ❄️</Badge>;
+    }
+    return <Badge variant="outline" className="text-[10px] text-[var(--label-secondary)] border-[var(--separator)] uppercase font-bold">{tempRaw}</Badge>;
 }
 
 export default function WhatsappLeadsPage() {
@@ -67,7 +111,7 @@ export default function WhatsappLeadsPage() {
     const leadsPerPage = 10;
 
     const [dateRange, setDateRange] = useState<any>({
-        from: subDays(new Date(), 7),
+        from: subDays(new Date(), 90),
         to: new Date(),
     });
 
@@ -100,10 +144,28 @@ export default function WhatsappLeadsPage() {
             const res = await fetch(`/api/whatsapp-leads?from=${encodeURIComponent(fromISO)}&to=${encodeURIComponent(toISO)}`);
             if (!res.ok) throw new Error(await res.text());
             const data = await res.json();
-            const nr_wf: WALead[] = (data.nr_wf || []).map((l: any) => ({ ...l, source_loop: "Intro" }));
-            const followup: WALead[] = (data.followup || []).map((l: any) => ({ ...l, source_loop: "Follow Up" }));
-            const nurture: WALead[] = (data.nurture || []).map((l: any) => ({ ...l, source_loop: "Nurture" }));
-            setWaLeads([...nr_wf, ...followup, ...nurture]);
+            const nr_wf: WALead[] = (data.nr_wf || []).map((l: any) => ({ ...l, source_loop: "Intro", status: l.status || l.curr_lead_status || l.workflow_status || "", lead_temp: l.lead_temp || l.lead_temperature || l["Lead Temperature"] || l.sentiment || "" }));
+            const followup: WALead[] = (data.followup || []).map((l: any) => ({ ...l, source_loop: "Follow Up", status: l.status || l.curr_lead_status || l.workflow_status || "", lead_temp: l.lead_temp || l.lead_temperature || l["Lead Temperature"] || l.sentiment || "" }));
+            const nurture: WALead[] = (data.nurture || []).map((l: any) => ({ ...l, source_loop: "Nurture", status: l.status || l.curr_lead_status || l.workflow_status || "", lead_temp: l.lead_temp || l.lead_temperature || l["Lead Temperature"] || l.sentiment || "" }));
+            const waActivity: WALead[] = (data.wa_activity || []).map((a: any) => ({
+                "Lead ID": String(a.id || a.lead_id || ""),
+                "Name": a.lead_name || a.name || "",
+                "Phone": a.lead_phone || a.phone || "",
+                "Email": a.lead_email || a.email || "",
+                "Created At": a.created_at,
+                wp1_parsed_date: a.created_at,
+                "WP_Replied_track": a.replied_at ? "Replied" : "",
+                _source_table: a._source_table || "",
+                source_loop: "Activity",
+                action_type: a.action_type || "",
+                note: a.note || "",
+                summary: a.summary || "",
+                content: a.content || "",
+                replied_at: a.replied_at || null,
+                status: a.status || (a.replied_at ? "replied" : "sent"),
+                lead_temp: a.lead_temp || a.sentiment || "",
+            }));
+            setWaLeads([...nr_wf, ...followup, ...nurture, ...waActivity]);
         } catch (err) {
             console.error("[WA leads]", err);
         } finally {
@@ -272,23 +334,25 @@ export default function WhatsappLeadsPage() {
                                     </th>
                                     <th className="px-4 py-4">Name</th>
                                     <th className="px-4 py-4">Phone</th>
-                                    <th className="px-4 py-4">Loop</th>
+                                    <th className="px-4 py-4 text-center">Temperature</th>
+                                    <th className="px-4 py-4">Action</th>
+                                    <th className="px-4 py-4 text-center">Status</th>
                                     <th className="px-4 py-4 text-center">Reply Status</th>
-                                    <th className="px-4 py-4">WhatsApp Date</th>
+                                    <th className="px-4 py-4">Date</th>
                                     <th className="px-4 py-4 text-right"></th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-[var(--separator)]">
                                 {loading ? (
                                     <tr>
-                                        <td colSpan={7} className="px-4 py-20 text-center text-[var(--label-tertiary)]">
+                                        <td colSpan={9} className="px-4 py-20 text-center text-[var(--label-tertiary)]">
                                             <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2 text-emerald-500" />
                                             Loading WhatsApp leads...
                                         </td>
                                     </tr>
                                 ) : filteredLeads.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className="px-4 py-20 text-center text-[var(--label-tertiary)]">
+                                        <td colSpan={9} className="px-4 py-20 text-center text-[var(--label-tertiary)]">
                                             No leads found for this date range.
                                         </td>
                                     </tr>
@@ -312,10 +376,16 @@ export default function WhatsappLeadsPage() {
                                                 </td>
                                                 <td className="px-4 py-4 font-bold text-[var(--label-primary)] group-hover:text-emerald-700">{lead["Name"] || "—"}</td>
                                                 <td className="px-4 py-4 text-[var(--label-secondary)] font-mono text-xs">{lead["Phone"] || "—"}</td>
-                                                <td className="px-4 py-4">
-                                                    <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-100 text-[10px] uppercase font-bold">
-                                                        {lead.source_loop || "—"}
-                                                    </Badge>
+                                                <td className="px-4 py-4 text-center">
+                                                    {getTemperatureBadge(lead.lead_temp || lead["lead_temp"] || lead.lead_temperature || lead["Lead Temperature"] || lead.sentiment)}
+                                                </td>
+                                                <td className="px-4 py-4 text-[var(--label-secondary)] text-xs">
+                                                    {lead.source_loop === "Activity" ? (
+                                                        <span className="text-[10px] font-medium capitalize">{lead.action_type || "—"}</span>
+                                                    ) : "—"}
+                                                </td>
+                                                <td className="px-4 py-4 text-center">
+                                                    {getStatusBadge(lead.status)}
                                                 </td>
                                                 <td className="px-4 py-4 text-center">
                                                     {hasReplied

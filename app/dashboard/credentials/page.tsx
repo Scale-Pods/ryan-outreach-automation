@@ -100,19 +100,9 @@ export default function CredentialsPage() {
                     iconColor="text-cyan-600"
                     iconBg="bg-[rgba(0,122,255,0.08)]"
                 >
-                    <div className="grid gap-8 md:grid-cols-2">
-                        {/* UK Section */}
-                        <div className="space-y-4 bg-[var(--bg-app)]/50 p-4 rounded-xl border border-[var(--separator)]">
-                            <ReadOnlyField label="Twilio (UK)" value="+1 (970) 236 7780" />
-                            <ReadOnlyField label="Agent ID" value="918c25eb-9882-452e-86df-b4851d464852" />
-                        </div>
-
-                        {/* US Section */}
-                        <div className="space-y-4 bg-[var(--bg-app)]/50 p-4 rounded-xl border border-[var(--separator)]">
-                            <ReadOnlyField label="Twilio (US)" value="+1 (239) 306 7557" />
-                            <ReadOnlyField label="Agent ID" value="b35e3032-7865-4913-ba22-a913b5d4117b" />
-                        </div>
-
+                    <div className="grid gap-6 md:grid-cols-2">
+                        <ReadOnlyField label="Twilio Telephony Line" value={process.env.NEXT_PUBLIC_TWILIO_PHONE_NUMBER || '+1 (970) 236-7780'} />
+                        <ReadOnlyField label="Active Voice Agent ID" value={process.env.NEXT_PUBLIC_VAPI_US_BOT || 'e128bcaf-4af3-4a59-abc3-f79b2e269d48'} />
                     </div>
                 </CredentialSection>
 

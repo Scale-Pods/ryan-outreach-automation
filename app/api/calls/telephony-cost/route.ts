@@ -35,18 +35,6 @@ function calculateTelephonyCost(durationSecs: number, customerPhone: string, bot
     if (!durationSecs || durationSecs <= 0) return 0;
 
     const cClean = cleanPhoneNumber(customerPhone);
-    const bClean = cleanPhoneNumber(botPhone);
-
-    // Special backup rates: US to UAE and UK to UAE
-    const botIsUS = bClean.startsWith('1');
-    const botIsUK = bClean.startsWith('44');
-    const customerIsUAE = cClean.startsWith('971');
-
-    if ((botIsUS || botIsUK) && customerIsUAE) {
-        return Math.ceil(durationSecs / 60) * 0.2995;
-    }
-
-    // Default to rates.json matching
     const rateInfo = getRateInfo(cClean);
     if (!rateInfo) return 0;
     
@@ -65,21 +53,9 @@ export async function POST(req: Request) {
 
         await Promise.all(calls.map(async (call: any) => {
             const { id, phoneNumber: assistantNum, phone, durationSeconds, isInbound, startedAt } = call;
-            const pClean = cleanPhoneNumber(assistantNum);
-            const cClean = cleanPhoneNumber(phone);
-            
-            const botIsUS = pClean.startsWith('1');
-            const botIsUK = pClean.startsWith('44');
-            const customerIsUAE = cClean.startsWith('971');
 
-            // 1. Special case: US/UK to UAE (Direct Backup Rate) - Only for Outbound
-            if ((botIsUS || botIsUK) && customerIsUAE && !isInbound) {
-                results[id] = durationSeconds > 0 ? Math.ceil(durationSeconds / 60) * 0.2995 : 0;
-                return;
-            }
-
-            // 2. US/UK to ANY OTHER Country (Twilio API)
-            if ((botIsUS || botIsUK) && twilioSid && twilioToken && startedAt) {
+            // 1. Fetch exact cost from Twilio API if credentials and call date exist
+            if (twilioSid && twilioToken && startedAt) {
                 try {
                     const callDate = new Date(startedAt);
                     const dateStr = callDate.toISOString().split('T')[0];
@@ -133,7 +109,7 @@ export async function POST(req: Request) {
                 }
             }
             
-            // 3. Fallback/UAE source/Inbound: Use rates.json or fixed logic
+            // 2. Fallback: Use rates.json matching logic
             results[id] = calculateTelephonyCost(durationSeconds, phone, assistantNum, isInbound);
         }));
 

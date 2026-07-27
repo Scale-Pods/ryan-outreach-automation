@@ -124,7 +124,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             });
 
             const response = await fetch(`/api/leads?${query.toString()}`);
-            if (!response.ok) throw new Error('Failed to fetch leads');
+            if (!response.ok) {
+                console.error(`Failed to fetch leads: ${response.status} ${response.statusText}`);
+                throw new Error(`Failed to fetch leads (${response.status})`);
+            }
             const data = await response.json();
             const consolidated = consolidateLeads(data);
             setLeads(consolidated);

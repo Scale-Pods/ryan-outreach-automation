@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Mail, MessageCircle, Mic, LogOut, ChevronDown, Wallet, BarChart2, Users, Send, Key, ExternalLink, Smartphone } from "lucide-react";
+import { LayoutDashboard, Mail, MessageCircle, Mic, LogOut, ChevronDown, Wallet, BarChart2, Users, Send, Key, ExternalLink, Smartphone, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import {
@@ -38,6 +38,11 @@ const sidebarItems = [
         title: "Voice Agent",
         href: "/dashboard/voice",
         icon: Mic,
+    },
+    {
+        title: "Activity",
+        href: "/dashboard/activity",
+        icon: Activity,
     },
 ];
 
@@ -160,6 +165,7 @@ function DashboardContent({
                 { title: "Email Marketing", href: "/dashboard/email", icon: Mail },
                 { title: "WhatsApp CRM", href: "/dashboard/whatsapp", icon: MessageCircle },
                 { title: "Voice Agent", href: "/dashboard/voice", icon: Mic },
+                { title: "Activity", href: "/dashboard/activity", icon: Activity },
                 { title: "Credentials", href: "/dashboard/credentials", icon: Key },
             ]
         },
