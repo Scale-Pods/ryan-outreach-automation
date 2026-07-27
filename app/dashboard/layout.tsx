@@ -39,11 +39,6 @@ const sidebarItems = [
         href: "/dashboard/voice",
         icon: Mic,
     },
-    {
-        title: "Activity",
-        href: "/dashboard/activity",
-        icon: Activity,
-    },
 ];
 
 function WalletModal({ isOpen, onClose, type, details, calls }: { isOpen: boolean, onClose: () => void, type: 'vapi' | 'twilio', details?: any, calls?: any[] }) {
@@ -165,7 +160,6 @@ function DashboardContent({
                 { title: "Email Marketing", href: "/dashboard/email", icon: Mail },
                 { title: "WhatsApp CRM", href: "/dashboard/whatsapp", icon: MessageCircle },
                 { title: "Voice Agent", href: "/dashboard/voice", icon: Mic },
-                { title: "Activity", href: "/dashboard/activity", icon: Activity },
                 { title: "Credentials", href: "/dashboard/credentials", icon: Key },
             ]
         },
@@ -233,9 +227,14 @@ function DashboardContent({
         }
 
         return (
-            <div className="flex h-screen overflow-hidden bg-[var(--bg-app)] text-[var(--label-primary)]">
+            <div className="flex h-screen overflow-hidden bg-[#0a0d14] text-[var(--label-primary)] relative">
+                {/* Ambient Light Orbs */}
+                <div className="fixed -top-40 -left-40 w-96 h-96 rounded-full bg-indigo-600/20 blur-[120px] pointer-events-none z-0" />
+                <div className="fixed -bottom-40 -right-40 w-[500px] h-[500px] rounded-full bg-blue-600/15 blur-[120px] pointer-events-none z-0" />
+                <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-violet-600/10 blur-[140px] pointer-events-none z-0" />
+
                 {/* Sidebar */}
-                <aside className="hidden w-64 flex-col bg-[var(--glass-fill)] backdrop-blur-[48px] shadow-[var(--glass-shadow)] border-r border-[var(--separator)] md:flex font-sans">
+                <aside className="hidden w-64 flex-col bg-[rgba(18,24,41,0.55)] backdrop-blur-[25px] saturate-[180%] border-r border-[rgba(255,255,255,0.1)] md:flex font-sans z-10">
                     {/* Logo Section */}
                     <div className="p-6 pb-4 flex justify-center">
                         <Link href="/" className="relative w-48 h-16 block">
@@ -255,10 +254,10 @@ function DashboardContent({
                                 <Button
                                     suppressHydrationWarning
                                     variant="outline"
-                                    className="w-full justify-between bg-[var(--glass-fill)] backdrop-blur-[48px] border-[var(--separator)] text-[var(--label-primary)] hover:bg-[var(--glass-fill-hover)] h-10 shadow-[var(--glass-shadow)]"
+                                    className="w-full justify-between bg-[rgba(255,255,255,0.05)] backdrop-blur-[20px] border border-[rgba(255,255,255,0.15)] text-[var(--label-primary)] hover:bg-[rgba(255,255,255,0.1)] h-10 shadow-sm rounded-xl"
                                 >
                                     <span className="flex items-center gap-2">
-                                        <activeConfig.icon className="h-4 w-4 text-blue-600" />
+                                        <activeConfig.icon className="h-4 w-4 text-blue-400" />
                                         <span className="truncate">{activeConfig.label}</span>
                                     </span>
                                     <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0" />
@@ -282,7 +281,7 @@ function DashboardContent({
                     </div>
 
                     <div className="px-4 py-2">
-                        <div className="h-[1px] w-full bg-[var(--separator)]"></div>
+                        <div className="h-[1px] w-full bg-[rgba(255,255,255,0.1)]"></div>
                     </div>
 
                     <nav className="flex-1 overflow-auto px-4 space-y-2">
@@ -292,12 +291,12 @@ function DashboardContent({
                                 <Link
                                     key={index}
                                     href={item.href}
-                                    className={`group flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-medium transition-all ${isActive
-                                        ? "bg-[var(--blue)] text-white shadow-[var(--glass-shadow)]"
-                                        : "text-[var(--label-secondary)] hover:text-[var(--label-primary)] hover:bg-[var(--glass-fill-hover)]"
+                                    className={`group flex items-center gap-4 rounded-full px-4 py-3 text-sm font-medium transition-all duration-300 ${isActive
+                                        ? "bg-[rgba(59,130,246,0.25)] text-white border border-[rgba(147,197,253,0.3)] shadow-[0_4px_16px_rgba(59,130,246,0.2),inset_0_0_12px_rgba(147,197,253,0.15)]"
+                                        : "text-[var(--label-secondary)] hover:text-[var(--label-primary)] hover:bg-[rgba(255,255,255,0.06)]"
                                         }`}
                                 >
-                                    <item.icon className={`h-5 w-5 ${isActive ? "text-white" : "text-[var(--label-tertiary)] group-hover:text-[var(--label-secondary)] transition-colors"}`} />
+                                    <item.icon className={`h-5 w-5 ${isActive ? "text-blue-300" : "text-[var(--label-tertiary)] group-hover:text-[var(--label-secondary)] transition-colors"}`} />
                                     {item.title}
                                 </Link>
                             );
@@ -306,7 +305,7 @@ function DashboardContent({
                     <div className="mt-auto p-4 mb-4 space-y-3">
                         <Button
                             variant="ghost"
-                            className="w-full justify-start gap-2 text-[var(--label-secondary)] hover:text-[var(--label-primary)] hover:bg-[var(--glass-fill-hover)]"
+                            className="w-full justify-start gap-2 text-[var(--label-secondary)] hover:text-[var(--label-primary)] hover:bg-[rgba(255,255,255,0.06)]"
                             onClick={async () => {
                                 await logout();
                                 router.push('/');
@@ -320,27 +319,27 @@ function DashboardContent({
                 </aside>
 
                 {/* Main Content */}
-                <div className="flex flex-1 flex-col overflow-hidden">
-                    <header className="flex h-14 items-center gap-4 border-b border-[var(--separator)] bg-[var(--bg-layer1)]/80 backdrop-blur-[40px] px-6 lg:h-[60px]">
+                <div className="flex flex-1 flex-col overflow-hidden z-10">
+                    <header className="flex h-14 items-center gap-4 border-b border-[rgba(255,255,255,0.1)] bg-[rgba(18,24,41,0.45)] backdrop-blur-[20px] saturate-[180%] px-6 lg:h-[60px]">
                         <div className="flex flex-1 items-center justify-between">
                             <h1 className="text-lg font-semibold text-[var(--label-primary)] flex items-center">
                                 {pathname === "/dashboard" ? "" : (activeConfig.items.find((item: any) => item.href === pathname)?.title || activeConfig.label)}
                                 {currentContext === "master" && (
-                                    <span style={{ fontSize: 10, background: "rgba(0, 122, 255, 0.08)", color: "var(--blue)", border: "1px solid rgba(0, 122, 255, 0.15)", padding: "2px 8px", borderRadius: 12, fontWeight: 600, marginLeft: 8 }}>Powered by ScalePods</span>
+                                    <span style={{ fontSize: 10, background: "rgba(59, 130, 246, 0.15)", color: "#93c5fd", border: "1px solid rgba(147, 197, 253, 0.25)", padding: "2px 10px", borderRadius: 9999, fontWeight: 600, marginLeft: 10 }}>Powered by ScalePods</span>
                                 )}
                             </h1>
 
                             {currentContext === "master" && (
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-3">
                                     {/* Vapi Balance Button */}
                                     <Button
                                         variant="outline"
-                                        className="h-10 px-3 border-blue-200 bg-[var(--glass-fill)] backdrop-blur-[48px] hover:bg-[var(--glass-fill-hover)] text-blue-700 gap-2 flex items-center shadow-[var(--glass-shadow)]"
+                                        className="h-9 px-4 rounded-full border border-[rgba(255,255,255,0.2)] bg-[rgba(255,255,255,0.06)] backdrop-blur-[16px] saturate-[180%] hover:bg-[rgba(255,255,255,0.12)] hover:-translate-y-[2px] text-blue-400 gap-2 flex items-center shadow-[0_4px_16px_rgba(0,0,0,0.25)] transition-all duration-300 active:scale-[0.98]"
                                         onClick={() => setWalletModal({ isOpen: true, type: 'vapi' })}
                                     >
                                         <Mic className="h-3.5 w-3.5" />
                                         <div className="flex flex-col items-start leading-[1.1]">
-                                            <span className="text-[9px] font-bold uppercase opacity-70">Vapi Used</span>
+                                            <span className="text-[9px] font-bold uppercase opacity-75">Vapi Used</span>
                                             <span className="text-xs font-bold">
                                                 {loadingCalls ? "..." : `$${vapiAgentUsed.toFixed(2)}`}
                                             </span>
@@ -350,12 +349,12 @@ function DashboardContent({
                                     {/* Twilio Button */}
                                     <Button
                                         variant="outline"
-                                        className="h-10 px-3 border-rose-200 bg-[var(--glass-fill)] backdrop-blur-[48px] hover:bg-[var(--glass-fill-hover)] text-rose-700 gap-2 flex items-center shadow-[var(--glass-shadow)]"
+                                        className="h-9 px-4 rounded-full border border-[rgba(255,255,255,0.2)] bg-[rgba(255,255,255,0.06)] backdrop-blur-[16px] saturate-[180%] hover:bg-[rgba(255,255,255,0.12)] hover:-translate-y-[2px] text-rose-400 gap-2 flex items-center shadow-[0_4px_16px_rgba(0,0,0,0.25)] transition-all duration-300 active:scale-[0.98]"
                                         onClick={() => setWalletModal({ isOpen: true, type: 'twilio' })}
                                     >
                                         <Smartphone className="h-3.5 w-3.5" />
                                         <div className="flex flex-col items-start leading-[1.1]">
-                                            <span className="text-[9px] font-bold uppercase opacity-70">Twilio</span>
+                                            <span className="text-[9px] font-bold uppercase opacity-75">Twilio</span>
                                             <span className="text-xs font-bold">
                                                 {loadingBalances ? "..." : (twilioBalance?.balance !== undefined ? `$${twilioBalance.balance.toFixed(2)}` : "N/A")}
                                             </span>
