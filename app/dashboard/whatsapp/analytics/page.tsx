@@ -260,7 +260,7 @@ export default function WhatsappAnalyticsPage() {
             }
             tableMap[tbl].reachouts++;
             if (a.replied_at || a.status === "completed" || a.status === "replied") {
-                tableMap[tbl].replies++;
+                tableMap[tbl].replied++;
             }
         });
 
@@ -283,7 +283,7 @@ export default function WhatsappAnalyticsPage() {
             tableMap[tbl].reachouts++;
             const v = l["WP_Replied_track"];
             if (v && String(v).trim() !== "" && String(v).trim().toLowerCase() !== "no") {
-                tableMap[tbl].replies++;
+                tableMap[tbl].replied++;
             }
         });
 

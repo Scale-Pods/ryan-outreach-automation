@@ -58,6 +58,16 @@ export interface VoiceMetrics {
     hourlyDistribution: { hour: number; calls: number }[];
     durationBuckets: { label: string; calls: number }[];
     costByDay: { date: string; calls: number; cost: number }[];
+    tableStats?: Record<string, {
+        tableName?: string;
+        totalCalls?: number;
+        connected?: number;
+        completed?: number;
+        positive?: number;
+        pickupRate?: number;
+        completionRate?: number;
+        positiveRate?: number;
+    }>;
 }
 
 interface DataContextType {
