@@ -14,7 +14,6 @@ import { LMLoader } from "@/components/ryan-loader";
 
 export default function EmailDashboardPage() {
     const router = useRouter();
-    const [selectedTableMetric, setSelectedTableMetric] = useState("naples");
     const [dateSubtitle, setDateSubtitle] = useState("all time");
 
     const { leads: allLeads, loadingLeads } = useData();
@@ -162,14 +161,7 @@ export default function EmailDashboardPage() {
         }
     };
 
-    // Derived Data for Metric Card
-    const tableMetricData = {
-        naples: { value: data.tableStats.naples.emails, label: "Naples Emails Sent", iconColor: "text-emerald-400", bgColor: "bg-emerald-500/10 border-emerald-500/20" },
-        aspen: { value: data.tableStats.aspen.emails, label: "Aspen Emails Sent", iconColor: "text-amber-400", bgColor: "bg-amber-500/10 border-amber-500/20" },
-        old: { value: data.tableStats.old.emails, label: "Old Leads Emails Sent", iconColor: "text-purple-400", bgColor: "bg-purple-500/10 border-purple-500/20" },
-        fello: { value: data.tableStats.fello.emails, label: "Fello Emails Sent", iconColor: "text-blue-400", bgColor: "bg-blue-500/10 border-blue-500/20" },
-    };
-    const currentMetric = tableMetricData[selectedTableMetric as keyof typeof tableMetricData] || tableMetricData.naples;
+
 
     return (
         <div className="space-y-8 pb-10 relative min-h-[500px]">
@@ -183,7 +175,7 @@ export default function EmailDashboardPage() {
             </div>
 
             {/* Top Metrics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <MetricCard
                     title="Total Emails"
                     subtitle={dateSubtitle}
@@ -192,39 +184,6 @@ export default function EmailDashboardPage() {
                     bg="bg-indigo-500/10 border-indigo-500/20"
                     onClick={() => router.push('/dashboard/email/sent')}
                 />
-                <MetricCard
-                    title="Initial Reachout"
-                    subtitle={dateSubtitle}
-                    value={data.firstEmail}
-                    icon={<Send className="h-6 w-6 text-blue-400" />}
-                    bg="bg-blue-500/10 border-blue-500/20"
-                />
-
-                {/* Dynamic Table Card */}
-                <Card className="border-[var(--separator)] hover:shadow-[var(--glass-shadow)] transition-all cursor-pointer bg-[var(--glass-fill)]">
-                    <CardContent className="p-6 flex flex-col justify-between h-full">
-                        <div className="flex items-center justify-between mb-2">
-                            <Select value={selectedTableMetric} onValueChange={setSelectedTableMetric}>
-                                <SelectTrigger className="w-[140px] h-8 text-xs font-medium border-[var(--separator)]">
-                                    <SelectValue placeholder="Select Table" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="naples">Naples</SelectItem>
-                                    <SelectItem value="aspen">Aspen</SelectItem>
-                                    <SelectItem value="old">Old Leads</SelectItem>
-                                    <SelectItem value="fello">Fello</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <div className={`p-2 rounded-xl border ${currentMetric.bgColor}`}>
-                                <Database className={`h-5 w-5 ${currentMetric.iconColor}`} />
-                            </div>
-                        </div>
-                        <div>
-                            <h3 className="text-2xl font-bold text-[var(--label-primary)]">{currentMetric.value}</h3>
-                            <p className="text-xs text-[var(--label-secondary)]">{currentMetric.label}</p>
-                        </div>
-                    </CardContent>
-                </Card>
 
                 <MetricCard
                     title="Total Replies"

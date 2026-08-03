@@ -18,6 +18,12 @@ export interface MasterMetrics {
     leadsDaily: { date: string; leads: number }[];
     ownerWaReachouts: number;
     ownerWaReplies: number;
+    activityEmailCount?: number;
+    activityWaCount?: number;
+    activityVoiceCount?: number;
+    activitySmsCount?: number;
+    activityRepliesCount?: number;
+    activityTotalCount?: number;
 }
 
 export interface WhatsappMetrics {

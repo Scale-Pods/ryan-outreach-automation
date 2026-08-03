@@ -17,6 +17,12 @@ export interface MasterMetrics {
     leadsDaily: { date: string; leads: number }[];
     ownerWaReachouts: number;
     ownerWaReplies: number;
+    activityEmailCount?: number;
+    activityWaCount?: number;
+    activityVoiceCount?: number;
+    activitySmsCount?: number;
+    activityRepliesCount?: number;
+    activityTotalCount?: number;
 }
 
 const EMPTY: MasterMetrics = {
@@ -26,6 +32,9 @@ const EMPTY: MasterMetrics = {
     normalVapiCost: 0, ownerVapiCost: 0,
     leadsDaily: [],
     ownerWaReachouts: 0, ownerWaReplies: 0,
+    activityEmailCount: 0, activityWaCount: 0,
+    activityVoiceCount: 0, activitySmsCount: 0,
+    activityRepliesCount: 0, activityTotalCount: 0,
 };
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
@@ -37,6 +46,47 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         const fromDate = from || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
         const toDate = to || new Date().toISOString();
 
+        // 1. Aggregate activity metrics across all 4 activity tables
+        let activityEmailCount = 0;
+        let activityWaCount = 0;
+        let activityVoiceCount = 0;
+        let activitySmsCount = 0;
+        let activityRepliesCount = 0;
+        let activityTotalCount = 0;
+
+        try {
+            const activityPromises = ACTIVITY_TABLES.flatMap(table => [
+                supabaseAdmin.from(table).select('id', { count: 'exact', head: true }).ilike('channel', 'email').gte('created_at', fromDate).lte('created_at', toDate),
+                supabaseAdmin.from(table).select('id', { count: 'exact', head: true }).ilike('channel', 'whatsapp').gte('created_at', fromDate).lte('created_at', toDate),
+                supabaseAdmin.from(table).select('id', { count: 'exact', head: true }).ilike('channel', 'voice').gte('created_at', fromDate).lte('created_at', toDate),
+                supabaseAdmin.from(table).select('id', { count: 'exact', head: true }).ilike('channel', 'sms').gte('created_at', fromDate).lte('created_at', toDate),
+                supabaseAdmin.from(table).select('id', { count: 'exact', head: true }).or('action_type.ilike.reply,status.ilike.replied,replied_at.not.is.null').gte('created_at', fromDate).lte('created_at', toDate),
+                supabaseAdmin.from(table).select('id', { count: 'exact', head: true }).gte('created_at', fromDate).lte('created_at', toDate),
+            ]);
+
+            const activityResults = await Promise.all(activityPromises);
+
+            ACTIVITY_TABLES.forEach((_, i) => {
+                activityEmailCount += activityResults[i * 6]?.count || 0;
+                activityWaCount += activityResults[i * 6 + 1]?.count || 0;
+                activityVoiceCount += activityResults[i * 6 + 2]?.count || 0;
+                activitySmsCount += activityResults[i * 6 + 3]?.count || 0;
+                activityRepliesCount += activityResults[i * 6 + 4]?.count || 0;
+                activityTotalCount += activityResults[i * 6 + 5]?.count || 0;
+            });
+        } catch (actErr) {
+            console.error('Error fetching activity table metrics:', actErr);
+        }
+
+        const activityMetrics = {
+            activityEmailCount,
+            activityWaCount,
+            activityVoiceCount,
+            activitySmsCount,
+            activityRepliesCount,
+            activityTotalCount,
+        };
+
         // Try RPC first
         const { data: rpcData, error: rpcError } = await supabaseAdmin.rpc('get_master_metrics', {
             p_from: fromDate,
@@ -44,12 +94,17 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         });
 
         if (!rpcError && rpcData) {
-            return NextResponse.json(rpcData, { headers: { 'Cache-Control': 'no-store' } });
+            return NextResponse.json({
+                ...rpcData,
+                ...activityMetrics,
+            }, { headers: { 'Cache-Control': 'no-store' } });
         }
 
         // Fallback: direct queries across all activity tables
-        const [leadsCount, oldestLead, leadsDaily] = await Promise.all([
+        const [leadsCount, felloLeadsCount, oldestLead, leadsDaily] = await Promise.all([
             supabaseAdmin.from('master_leads')
+                .select('id', { count: 'exact', head: true }),
+            supabaseAdmin.from('fello_leads')
                 .select('id', { count: 'exact', head: true }),
             supabaseAdmin.from('master_leads')
                 .select('created_at')
@@ -112,18 +167,21 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             .map(([date, leads]) => ({ date, leads }))
             .sort((a, b) => a.date.localeCompare(b.date));
 
+        const totalLeadsCombined = (leadsCount.count || 0) + (felloLeadsCount.count || 0);
+
         return NextResponse.json({
-            totalLeads: leadsCount.count || 0,
+            totalLeads: totalLeadsCombined,
             oldestLeadDate: oldestLead.data?.created_at || null,
-            totalWaReachouts: 0,
-            totalWaReplies: 0,
-            totalVoiceCalls: totalVoiceCallsCount,
+            totalWaReachouts: activityWaCount,
+            totalWaReplies: activityRepliesCount,
+            totalVoiceCalls: Math.max(totalVoiceCallsCount, activityVoiceCount),
             ownerVoiceCalls: ownerVoiceCallsCount,
             normalVapiCost: Math.round(normalCostSum * 1e6) / 1e6,
             ownerVapiCost: Math.round(ownerCostSum * 1e6) / 1e6,
             leadsDaily: leadsDailyArr,
             ownerWaReachouts: 0,
             ownerWaReplies: 0,
+            ...activityMetrics,
         }, { headers: { 'Cache-Control': 'no-store' } });
     } catch (error) {
         console.error('Error in master metrics route:', error);
