@@ -165,8 +165,8 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
         if (!lead) return;
         const baseUrl = window.location.origin;
         // Construct the URL using the ID as it's more stable for routing
-        const shareId = lead.id || lead.phone;
-        const shareUrl = `${baseUrl}/chat/${encodeURIComponent(shareId)}`;
+        const shareId = lead.id || lead["Lead ID"] || lead.phone || customerId;
+        const shareUrl = `${baseUrl}/share/whatsapp/${encodeURIComponent(shareId)}`;
         
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(shareUrl).then(() => {

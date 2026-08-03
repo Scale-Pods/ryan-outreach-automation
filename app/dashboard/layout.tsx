@@ -160,6 +160,7 @@ function DashboardContent({
                 { title: "Email Marketing", href: "/dashboard/email", icon: Mail },
                 { title: "WhatsApp CRM", href: "/dashboard/whatsapp", icon: MessageCircle },
                 { title: "Voice Agent", href: "/dashboard/voice", icon: Mic },
+                { title: "SMS Reachout", href: "/dashboard/sms", icon: Smartphone },
                 { title: "Credentials", href: "/dashboard/credentials", icon: Key },
             ]
         },
@@ -187,6 +188,15 @@ function DashboardContent({
                 { title: "Overview", href: "/dashboard/voice", icon: LayoutDashboard },
                 { title: "Call Logs", href: "/dashboard/voice/logs", icon: Mic },
             ]
+        },
+        sms: {
+            label: "SMS Reachout",
+            icon: Smartphone,
+            items: [
+                { title: "Overview", href: "/dashboard/sms", icon: LayoutDashboard },
+                { title: "Messages", href: "/dashboard/sms/sent", icon: Send },
+                { title: "Analytics", href: "/dashboard/sms/analytics", icon: BarChart2 },
+            ]
         }
     };
 
@@ -195,6 +205,7 @@ function DashboardContent({
     if (pathname.startsWith("/dashboard/email")) currentContext = "email";
     else if (pathname.startsWith("/dashboard/whatsapp")) currentContext = "whatsapp";
     else if (pathname.startsWith("/dashboard/voice")) currentContext = "voice";
+    else if (pathname.startsWith("/dashboard/sms")) currentContext = "sms";
 
     const activeConfig = (dashboardConfig as any)[currentContext];
 
@@ -222,7 +233,7 @@ function DashboardContent({
 
 
     const content = (() => {
-        if (pathname.startsWith("/dashboard/email") || pathname.startsWith("/dashboard/whatsapp") || pathname.startsWith("/dashboard/voice")) {
+        if (pathname.startsWith("/dashboard/email") || pathname.startsWith("/dashboard/whatsapp") || pathname.startsWith("/dashboard/voice") || pathname.startsWith("/dashboard/sms")) {
             return <>{children}</>;
         }
 
@@ -275,6 +286,9 @@ function DashboardContent({
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => router.push("/dashboard/voice")}>
                                     <Mic className="mr-2 h-4 w-4" /> Voice Agent
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => router.push("/dashboard/sms")}>
+                                    <Smartphone className="mr-2 h-4 w-4 text-amber-400" /> SMS Reachout
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>

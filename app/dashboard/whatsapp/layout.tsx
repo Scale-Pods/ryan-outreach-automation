@@ -13,7 +13,8 @@ import {
     Mail,
     Mic,
     ChevronDown,
-    MessageCircle
+    MessageCircle,
+    Smartphone
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -120,6 +121,11 @@ export default function WhatsappLayout({
                             <DropdownMenuItem asChild>
                                 <Link href="/dashboard/voice" className="cursor-pointer w-full flex items-center">
                                     <Mic className="mr-2 h-4 w-4" /> Voice Agent
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <Link href="/dashboard/sms" className="cursor-pointer w-full flex items-center">
+                                    <Smartphone className="mr-2 h-4 w-4" /> SMS Reachout
                                 </Link>
                             </DropdownMenuItem>
                         </DropdownMenuContent>

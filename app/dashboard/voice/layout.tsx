@@ -12,7 +12,8 @@ import {
     MessageCircle,
     Mic,
     ChevronDown,
-    Activity
+    Activity,
+    Smartphone
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,7 +25,7 @@ import {
 
 const voiceSidebarItems = [
     {
-        title: "Dashboard",
+        title: "Overview",
         href: "/dashboard/voice",
         icon: LayoutDashboard,
     },
@@ -37,11 +38,6 @@ const voiceSidebarItems = [
         title: "Analytics",
         href: "/dashboard/voice/analytics",
         icon: BarChart3,
-    },
-    {
-        title: "Cost Calculator",
-        href: "/dashboard/voice/calculator",
-        icon: Activity,
     },
 ];
 
@@ -60,6 +56,7 @@ export default function VoiceLayout({
 
             {/* Voice Sidebar */}
             <aside className="w-64 flex-col bg-[rgba(18,24,41,0.55)] backdrop-blur-[25px] saturate-[180%] border-r border-[rgba(255,255,255,0.1)] hidden md:flex font-sans z-10">
+                {/* Logo Section */}
                 <div className="p-6 pb-4 flex justify-center">
                     <div className="relative w-48 h-16">
                         <Image
@@ -105,6 +102,11 @@ export default function VoiceLayout({
                             <DropdownMenuItem asChild>
                                 <Link href="/dashboard/voice" className="cursor-pointer w-full flex items-center">
                                     <Mic className="mr-2 h-4 w-4" /> Voice Agent
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <Link href="/dashboard/sms" className="cursor-pointer w-full flex items-center">
+                                    <Smartphone className="mr-2 h-4 w-4" /> SMS Reachout
                                 </Link>
                             </DropdownMenuItem>
                         </DropdownMenuContent>

@@ -6,18 +6,15 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
     LayoutDashboard,
+    Users,
     Send,
-    Inbox,
-    AlertCircle,
-    Key,
-    ArrowLeft,
     BarChart3,
     MessageCircle,
+    Mail,
     Mic,
     ChevronDown,
-    Mail,
-    UserMinus,
-    Smartphone
+    Smartphone,
+    MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,42 +24,25 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const emailSidebarItems = [
+const smsSidebarItems = [
     {
-        title: "Dashboard",
-        href: "/dashboard/email",
+        title: "Overview",
+        href: "/dashboard/sms",
         icon: LayoutDashboard,
     },
-
     {
-        title: "Sent",
-        href: "/dashboard/email/sent",
+        title: "Messages",
+        href: "/dashboard/sms/sent",
         icon: Send,
     },
     {
-        title: "Received",
-        href: "/dashboard/email/received",
-        icon: Inbox,
-    },
-    {
-        title: "Bounces",
-        href: "/dashboard/email/bounces",
-        icon: AlertCircle,
-    },
-    {
-        title: "Unsubscribed",
-        href: "/dashboard/email/unsubscribed",
-        icon: UserMinus,
-    },
-    {
         title: "Analytics",
-        href: "/dashboard/email/analytics",
+        href: "/dashboard/sms/analytics",
         icon: BarChart3,
     },
-    
 ];
 
-export default function EmailLayout({
+export default function SmsLayout({
     children,
 }: {
     children: React.ReactNode;
@@ -80,8 +60,9 @@ export default function EmailLayout({
             <div className="fixed -top-40 -left-40 w-96 h-96 rounded-full bg-indigo-600/20 blur-[120px] pointer-events-none z-0" />
             <div className="fixed -bottom-40 -right-40 w-[500px] h-[500px] rounded-full bg-blue-600/15 blur-[120px] pointer-events-none z-0" />
 
-            {/* Email Sidebar */}
+            {/* SMS Sidebar */}
             <aside className="w-64 flex-col bg-[rgba(18,24,41,0.55)] backdrop-blur-[25px] saturate-[180%] border-r border-[rgba(255,255,255,0.1)] hidden md:flex font-sans z-10">
+                {/* Logo Section */}
                 <div className="p-6 pb-4 flex justify-center">
                     <div className="relative w-48 h-16">
                         <Image
@@ -103,8 +84,8 @@ export default function EmailLayout({
                                     className="w-full justify-between bg-[rgba(255,255,255,0.05)] backdrop-blur-[20px] border border-[rgba(255,255,255,0.15)] text-[var(--label-primary)] hover:bg-[rgba(255,255,255,0.1)] h-10 shadow-sm rounded-xl"
                                 >
                                     <span className="flex items-center gap-2">
-                                        <LayoutDashboard className="h-4 w-4 text-blue-400" />
-                                        <span>Switch Dashboard</span>
+                                        <Smartphone className="h-4 w-4 text-blue-400" />
+                                        <span>SMS Reachout</span>
                                     </span>
                                     <ChevronDown className="h-4 w-4 opacity-50" />
                                 </Button>
@@ -143,7 +124,7 @@ export default function EmailLayout({
                             className="w-full justify-between bg-[rgba(255,255,255,0.05)] backdrop-blur-[20px] border border-[rgba(255,255,255,0.15)] text-[var(--label-primary)] h-10 shadow-sm rounded-xl opacity-50"
                         >
                             <span className="flex items-center gap-2">
-                                <LayoutDashboard className="h-4 w-4" />
+                                <Smartphone className="h-4 w-4 text-blue-400" />
                                 <span>Loading...</span>
                             </span>
                             <ChevronDown className="h-4 w-4 opacity-50" />
@@ -156,7 +137,7 @@ export default function EmailLayout({
                 </div>
 
                 <nav className="flex-1 overflow-auto px-4 space-y-2">
-                    {emailSidebarItems.map((item, index) => {
+                    {smsSidebarItems.map((item, index) => {
                         const isActive = pathname === item.href;
                         return (
                             <Link
@@ -178,6 +159,7 @@ export default function EmailLayout({
                 </div>
             </aside>
 
+            {/* Main Content Area */}
             <main className="flex-1 overflow-auto bg-[#0a0d14] p-6 relative z-10">
                 {children}
             </main>

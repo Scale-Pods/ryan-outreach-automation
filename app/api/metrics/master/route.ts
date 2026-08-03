@@ -156,14 +156,44 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             ownerCostSum += (oc.data || []).reduce((s, r) => s + (r.cost_usd || 0), 0);
         }
 
-        // Daily leads
+        // Daily outreach activity and leads
         const dailyMap = new Map<string, number>();
+        let curr = new Date(fromDate);
+        const endD = new Date(toDate);
+        while (curr <= endD) {
+            const dStr = curr.toISOString().split('T')[0];
+            dailyMap.set(dStr, 0);
+            curr.setDate(curr.getDate() + 1);
+        }
+
         for (const r of leadsDaily.data || []) {
             const d = r.created_at ? new Date(r.created_at).toISOString().split('T')[0] : null;
-            if (!d) continue;
-            dailyMap.set(d, (dailyMap.get(d) || 0) + 1);
+            if (d && dailyMap.has(d)) {
+                dailyMap.set(d, (dailyMap.get(d) || 0) + 1);
+            }
         }
-        const leadsDailyArr = Array.from(dailyMap.entries())
+
+        try {
+            const dailyActPromises = ACTIVITY_TABLES.map(table =>
+                supabaseAdmin.from(table)
+                    .select('created_at')
+                    .gte('created_at', fromDate)
+                    .lte('created_at', toDate)
+            );
+            const dailyActResults = await Promise.all(dailyActPromises);
+            dailyActResults.forEach(res => {
+                (res.data || []).forEach(r => {
+                    const d = r.created_at ? new Date(r.created_at).toISOString().split('T')[0] : null;
+                    if (d && dailyMap.has(d)) {
+                        dailyMap.set(d, (dailyMap.get(d) || 0) + 1);
+                    }
+                });
+            });
+        } catch (dailyErr) {
+            console.error('Error fetching daily activity counts:', dailyErr);
+        }
+
+        const dailyAcquisitionArr = Array.from(dailyMap.entries())
             .map(([date, leads]) => ({ date, leads }))
             .sort((a, b) => a.date.localeCompare(b.date));
 
@@ -178,7 +208,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             ownerVoiceCalls: ownerVoiceCallsCount,
             normalVapiCost: Math.round(normalCostSum * 1e6) / 1e6,
             ownerVapiCost: Math.round(ownerCostSum * 1e6) / 1e6,
-            leadsDaily: leadsDailyArr,
+            dailyAcquisition: dailyAcquisitionArr,
+            leadsDaily: dailyAcquisitionArr,
             ownerWaReachouts: 0,
             ownerWaReplies: 0,
             ...activityMetrics,
