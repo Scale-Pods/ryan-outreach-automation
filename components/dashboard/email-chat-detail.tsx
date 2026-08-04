@@ -239,7 +239,9 @@ export function EmailChatDetail({ leadId, onClose, initialLead }: EmailChatDetai
     }, [leadId, initialLead]);
 
     const copyShareLink = () => {
-        const shareUrl = `${window.location.origin}/share/email/${encodeURIComponent(leadId)}`;
+        const rawEmail = lead?.["Email"] || lead?.email || lead?.lead_email || leadId;
+        const shareId = String(rawEmail).trim() || lead?.["Lead ID"] || lead?.id || leadId;
+        const shareUrl = `${window.location.origin}/share/email/${encodeURIComponent(shareId)}`;
         navigator.clipboard.writeText(shareUrl);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);

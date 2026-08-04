@@ -164,8 +164,10 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
     const handleCopyLink = () => {
         if (!lead) return;
         const baseUrl = window.location.origin;
-        // Construct the URL using the ID as it's more stable for routing
-        const shareId = lead.id || lead["Lead ID"] || lead.phone || customerId;
+        // Prioritize phone number for clean, recognizable share links
+        const rawPhone = lead.phone || (lead as any)["Phone"] || (lead as any).lead_phone || customerId;
+        const cleanPhone = String(rawPhone).replace(/[^\d+]/g, '') || String(rawPhone).trim();
+        const shareId = cleanPhone || lead.id || (lead as any)["Lead ID"] || customerId;
         const shareUrl = `${baseUrl}/share/whatsapp/${encodeURIComponent(shareId)}`;
         
         if (navigator.clipboard && navigator.clipboard.writeText) {
