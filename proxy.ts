@@ -11,6 +11,7 @@ export async function proxy(request: NextRequest) {
     if (
         pathname.startsWith('/_next') ||
         pathname.startsWith('/api') ||
+        pathname.startsWith('/share') ||
         pathname.startsWith('/favicon.ico') ||
         pathname.includes('.')
     ) {
