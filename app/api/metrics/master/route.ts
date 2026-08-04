@@ -15,6 +15,7 @@ export interface MasterMetrics {
     normalVapiCost: number;
     ownerVapiCost: number;
     leadsDaily: { date: string; leads: number }[];
+    dailyAcquisition?: { date: string; leads: number }[];
     ownerWaReachouts: number;
     ownerWaReplies: number;
     activityEmailCount?: number;
@@ -31,6 +32,7 @@ const EMPTY: MasterMetrics = {
     totalVoiceCalls: 0, ownerVoiceCalls: 0,
     normalVapiCost: 0, ownerVapiCost: 0,
     leadsDaily: [],
+    dailyAcquisition: [],
     ownerWaReachouts: 0, ownerWaReplies: 0,
     activityEmailCount: 0, activityWaCount: 0,
     activityVoiceCount: 0, activitySmsCount: 0,

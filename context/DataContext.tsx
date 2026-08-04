@@ -16,6 +16,7 @@ export interface MasterMetrics {
     normalVapiCost: number;
     ownerVapiCost: number;
     leadsDaily: { date: string; leads: number }[];
+    dailyAcquisition?: { date: string; leads: number }[];
     ownerWaReachouts: number;
     ownerWaReplies: number;
     activityEmailCount?: number;
