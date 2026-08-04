@@ -44,7 +44,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
                 }
 
                 if (search) {
-                    const filter = `lead_name.ilike.%${search}%,lead_phone.ilike.%${search}%,lead_email.ilike.%${search}%,action_type.ilike.%${search}%,note.ilike.%${search}%`;
+                    const filter = `lead_name.ilike.%${search}%,lead_phone.ilike.%${search}%,lead_email.ilike.%${search}%,lead_id.ilike.%${search}%,action_type.ilike.%${search}%,note.ilike.%${search}%,content.ilike.%${search}%`;
                     countQuery = countQuery.or(filter);
                     dataQuery = dataQuery.or(filter);
                 }

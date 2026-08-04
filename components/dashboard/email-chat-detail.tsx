@@ -150,6 +150,28 @@ export function EmailChatDetail({ leadId, onClose, initialLead }: EmailChatDetai
                 );
             }
 
+            if (!foundLead && leadId) {
+                try {
+                    const leadsRes = await fetch('/api/leads');
+                    if (leadsRes.ok) {
+                        const data = await leadsRes.json();
+                        const allFetched = [
+                            ...(data.master_leads || []),
+                            ...(data.nr_wf || []),
+                            ...(data.followup || []),
+                            ...(data.nurture || []),
+                            ...(data.activity_leads || []),
+                        ];
+                        foundLead = allFetched.find((l: any) =>
+                            String(l["Lead ID"] || l.id) === String(leadId) ||
+                            String(l.Email || l.email) === String(leadId)
+                        );
+                    }
+                } catch (e) {
+                    console.error("Error fetching fallback leads in EmailChatDetail:", e);
+                }
+            }
+
             const res = await fetch(`/api/activity?channel=email&search=${encodeURIComponent(leadId)}`);
             let actLogs: any[] = [];
             if (res.ok) {

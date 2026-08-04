@@ -246,6 +246,35 @@ export function SMSChatDetail({ customerId, onClose, initialLead }: SMSChatDetai
                 );
             }
 
+            if (!foundLead && customerId) {
+                try {
+                    const leadsRes = await fetch('/api/leads');
+                    if (leadsRes.ok) {
+                        const data = await leadsRes.json();
+                        const allFetched = [
+                            ...(data.master_leads || []),
+                            ...(data.nr_wf || []),
+                            ...(data.followup || []),
+                            ...(data.nurture || []),
+                            ...(data.activity_leads || []),
+                        ];
+                        const searchVal = String(customerId).toLowerCase().trim();
+                        foundLead = allFetched.find((l: any) => {
+                            if (String(l["Lead ID"] || l.id).toLowerCase() === searchVal) return true;
+                            const p = l.Phone || l.phone || l.lead_phone;
+                            if (p) {
+                                const pClean = String(p).replace(/\D/g, '');
+                                const searchClean = searchVal.replace(/\D/g, '');
+                                if (searchClean && pClean === searchClean) return true;
+                            }
+                            return false;
+                        });
+                    }
+                } catch (e) {
+                    console.error("Error fetching fallback leads in SMSChatDetail:", e);
+                }
+            }
+
             const res = await fetch(`/api/activity?channel=sms&search=${encodeURIComponent(customerId)}`);
             let actLogs: any[] = [];
             if (res.ok) {

@@ -193,134 +193,200 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
     };
 
     useEffect(() => {
-        if (!initialLead && loadingLeads) {
-            setLoading(true);
-            return;
-        }
+        let isMounted = true;
 
-        const searchVal = String(customerId).toLowerCase().trim();
-        const found = initialLead || allLeads.find((l: { id: any; phone: any; }) => {
-            if (String(l.id).toLowerCase() === searchVal) return true;
-            if (l.phone) {
-                const lPhoneReplaced = String(l.phone).replace(/\D/g, '');
-                const searchReplaced = searchVal.replace(/\D/g, '');
-                if (searchReplaced && lPhoneReplaced === searchReplaced) return true;
+        async function loadLeadData() {
+            if (!initialLead && loadingLeads) {
+                setLoading(true);
+                return;
             }
-            return false;
-        }) || null;
 
-        if (found) {
-            // Normalize raw API leads (have "Name", "Phone", "source_loop") into ConsolidatedLead shape
-            const rawName = (found as any).name || (found as any)["Name"] || "";
-            const isPhoneNumber = /^\+?\d[\d\s\-().]{4,}$/.test(rawName.trim());
-            const normalized = {
-                ...found,
-                name: rawName && !isPhoneNumber ? rawName : "Unknown",
-                phone: (found as any).phone || (found as any)["Phone"] || "",
-                email: (found as any).email || (found as any)["Email"] || "",
-                source_loop: (found as any).source_loop || "—",
-            } as any;
-            setLead(normalized);
-            const f = found as any;
-            let timeline: any[] = [];
+            setLoading(true);
+            const searchVal = String(customerId).toLowerCase().trim();
+            let found = initialLead || allLeads.find((l: { id: any; phone: any; }) => {
+                if (String(l.id).toLowerCase() === searchVal) return true;
+                if (l.phone) {
+                    const lPhoneReplaced = String(l.phone).replace(/\D/g, '');
+                    const searchReplaced = searchVal.replace(/\D/g, '');
+                    if (searchReplaced && lPhoneReplaced === searchReplaced) return true;
+                }
+                return false;
+            }) || null;
 
-            // If this is an activity lead with content, parse from content column
-            if (f.content) {
-                timeline = parseActivityContent(f.content, f.summary);
-            } else {
-                const parseMsg = (raw: any, label: string, type: 'bot' | 'user', sequence: number) => {
-                    if (!raw || !String(raw).trim()) return null;
-                    const content = String(raw).trim();
-
-                    // Match ISO timestamp after one or two newlines at end of message
-                    const isoRegex = /\n{1,2}(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.+)$/;
-                    const isoMatch = content.match(isoRegex);
-                    if (isoMatch) {
-                        return {
-                            type,
-                            content: content.replace(isoRegex, '').trim(),
-                            label,
-                            date: isoMatch[1],
-                            sequence
-                        };
+            // Fallback for public share links or leads not present in memory
+            if (!found) {
+                try {
+                    // Try fetching activity logs first
+                    const actRes = await fetch(`/api/activity?channel=WhatsApp&search=${encodeURIComponent(customerId)}`);
+                    let actLogs: any[] = [];
+                    if (actRes.ok) {
+                        const actData = await actRes.json();
+                        actLogs = actData.activities || [];
                     }
 
-                    // Match "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DD HH:MM:SS.mmm" on the last line
-                    const lines = content.split('\n');
-                    const lastLine = lines[lines.length - 1].trim();
-                    const spaceDateRegex = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}/;
-                    if (lines.length > 1 && spaceDateRegex.test(lastLine)) {
-                        const d = new Date(lastLine.replace(' ', 'T'));
-                        if (!isNaN(d.getTime())) {
+                    // Try fetching whatsapp leads list
+                    const leadsRes = await fetch(`/api/whatsapp-leads`);
+                    if (leadsRes.ok) {
+                        const data = await leadsRes.json();
+                        const nr_wf = data.nr_wf || [];
+                        const followup = data.followup || [];
+                        const nurture = data.nurture || [];
+                        const owners = data.owners || [];
+                        const wa_activity = data.wa_activity || [];
+                        const allFetched = [...nr_wf, ...followup, ...nurture, ...owners, ...wa_activity];
+
+                        found = allFetched.find((l: any) => {
+                            if (String(l.id || l["Lead ID"]).toLowerCase() === searchVal) return true;
+                            if (l.phone || l.Phone || l.lead_phone) {
+                                const lPhoneReplaced = String(l.phone || l.Phone || l.lead_phone).replace(/\D/g, '');
+                                const searchReplaced = searchVal.replace(/\D/g, '');
+                                if (searchReplaced && lPhoneReplaced === searchReplaced) return true;
+                            }
+                            return false;
+                        }) || null;
+                    }
+
+                    if (!found && actLogs.length > 0) {
+                        const first = actLogs[0];
+                        found = {
+                            id: first.lead_id || customerId,
+                            name: first.lead_name || "WhatsApp Contact",
+                            phone: first.lead_phone || customerId,
+                            email: first.lead_email || "",
+                            source_loop: first.campaign || first.source_loop || "WhatsApp",
+                            status: first.status || "delivered",
+                            content: first.content,
+                            summary: first.summary
+                        } as any;
+                    }
+
+                    if (!found) {
+                        found = {
+                            id: customerId,
+                            name: customerId,
+                            phone: customerId,
+                            source_loop: "WhatsApp"
+                        } as any;
+                    }
+                } catch (e) {
+                    console.error("Error fetching WhatsApp lead:", e);
+                }
+            }
+
+            if (!isMounted) return;
+
+            if (found) {
+                // Normalize raw API leads (have "Name", "Phone", "source_loop") into ConsolidatedLead shape
+                const rawName = (found as any).name || (found as any)["Name"] || "";
+                const isPhoneNumber = /^\+?\d[\d\s\-().]{4,}$/.test(rawName.trim());
+                const normalized = {
+                    ...found,
+                    name: rawName && !isPhoneNumber ? rawName : (customerId || "Unknown"),
+                    phone: (found as any).phone || (found as any)["Phone"] || (found as any).lead_phone || customerId || "",
+                    email: (found as any).email || (found as any)["Email"] || (found as any).lead_email || "",
+                    source_loop: (found as any).source_loop || (found as any).campaign || "—",
+                } as any;
+                setLead(normalized);
+                const f = found as any;
+                let timeline: any[] = [];
+
+                // If this is an activity lead with content, parse from content column
+                if (f.content) {
+                    timeline = parseActivityContent(f.content, f.summary);
+                } else {
+                    const parseMsg = (raw: any, label: string, type: 'bot' | 'user', sequence: number) => {
+                        if (!raw || !String(raw).trim()) return null;
+                        const content = String(raw).trim();
+
+                        // Match ISO timestamp after one or two newlines at end of message
+                        const isoRegex = /\n{1,2}(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.+)$/;
+                        const isoMatch = content.match(isoRegex);
+                        if (isoMatch) {
                             return {
                                 type,
-                                content: lines.slice(0, -1).join('\n').trim() || 'Message Received',
+                                content: content.replace(isoRegex, '').trim(),
                                 label,
-                                date: d.toISOString(),
+                                date: isoMatch[1],
                                 sequence
                             };
                         }
+
+                        // Match "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DD HH:MM:SS.mmm" on the last line
+                        const lines = content.split('\n');
+                        const lastLine = lines[lines.length - 1].trim();
+                        const spaceDateRegex = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}/;
+                        if (lines.length > 1 && spaceDateRegex.test(lastLine)) {
+                            const d = new Date(lastLine.replace(' ', 'T'));
+                            if (!isNaN(d.getTime())) {
+                                return {
+                                    type,
+                                    content: lines.slice(0, -1).join('\n').trim() || 'Message Received',
+                                    label,
+                                    date: d.toISOString(),
+                                    sequence
+                                };
+                            }
+                        }
+
+                        return { type, content, label, date: null, sequence };
+                    };
+
+                    // Helper: extract date from a TS field — date is always after the LAST " - "
+                    // Handles "read - 12/3/2026, 9:53 am" and "failed - error text - 24/4/2026, 1:30 pm"
+                    const parseTsDate = (tsRaw: string | null): string | null => {
+                        if (!tsRaw) return null;
+                        const lastDash = tsRaw.lastIndexOf(' - ');
+                        if (lastDash === -1) return null;
+                        const datePart = tsRaw.slice(lastDash + 3).trim();
+                        const d = new Date(datePart.replace(/(^\d{1,2})\/(\d{1,2})\/(\d{4}),?\s*/, '$3-$2-$1 ').trim());
+                        return isNaN(d.getTime()) ? null : d.toISOString();
+                    };
+
+                    let seq = 1;
+
+                    // Drip sequence W.P_1 → W.P_12  (skip missing slots, no duplicates)
+                    for (let i = 1; i <= 12; i++) {
+                        const raw = f[`W.P_${i}`] || f.stage_data?.[`WhatsApp ${i}`];
+                        if (!raw) continue;
+                        const tsRaw: string | null = f[`W.P_${i} TS`] || null;
+                        const msg = parseMsg(raw, `W.P_${i}`, 'bot', seq++);
+                        if (msg) {
+                            (msg as any).tsStatus = tsRaw;
+                            if (!msg.date) msg.date = parseTsDate(tsRaw);
+                            timeline.push(msg);
+                        }
                     }
 
-                    return { type, content, label, date: null, sequence };
-                };
+                    // Paired reply / follow-up rounds (up to 10)
+                    for (let i = 1; i <= 10; i++) {
+                        const rRaw = f[`W.P_Replied_${i}`] || f[`W.P_Replied ${i}`];
+                        const rMsg = parseMsg(rRaw, `W.P_Replied ${i}`, 'user', seq++);
+                        if (rMsg) timeline.push(rMsg);
 
-                // Helper: extract date from a TS field — date is always after the LAST " - "
-                // Handles "read - 12/3/2026, 9:53 am" and "failed - error text - 24/4/2026, 1:30 pm"
-                const parseTsDate = (tsRaw: string | null): string | null => {
-                    if (!tsRaw) return null;
-                    const lastDash = tsRaw.lastIndexOf(' - ');
-                    if (lastDash === -1) return null;
-                    const datePart = tsRaw.slice(lastDash + 3).trim();
-                    const d = new Date(datePart.replace(/(^\d{1,2})\/(\d{1,2})\/(\d{4}),?\s*/, '$3-$2-$1 ').trim());
-                    return isNaN(d.getTime()) ? null : d.toISOString();
-                };
-
-                let seq = 1;
-
-                // Drip sequence W.P_1 → W.P_12  (skip missing slots, no duplicates)
-                for (let i = 1; i <= 12; i++) {
-                    const raw = f[`W.P_${i}`] || f.stage_data?.[`WhatsApp ${i}`];
-                    if (!raw) continue;
-                    const tsRaw: string | null = f[`W.P_${i} TS`] || null;
-                    const msg = parseMsg(raw, `W.P_${i}`, 'bot', seq++);
-                    if (msg) {
-                        (msg as any).tsStatus = tsRaw;
-                        if (!msg.date) msg.date = parseTsDate(tsRaw);
-                        timeline.push(msg);
+                        const fRaw = f[`W.P_FollowUp_${i}`] || f[`W.P_FollowUp ${i}`];
+                        const fTsRaw: string | null = f[`W.P_FollowUp_TS${i}`] || null;
+                        const fMsg = parseMsg(fRaw, `W.P_FollowUp ${i}`, 'bot', seq++);
+                        if (fMsg) {
+                            (fMsg as any).tsStatus = fTsRaw;
+                            if (!fMsg.date) fMsg.date = parseTsDate(fTsRaw);
+                            timeline.push(fMsg);
+                        }
                     }
                 }
 
-                // Paired reply / follow-up rounds (up to 10)
-                // DB columns use spaces: "W.P_Replied 1", "W.P_FollowUp 1"
-                // RPC aliases them with underscores: "W.P_Replied_1", "W.P_FollowUp_1"
-                // Try both forms so this works before and after migration 007.
-                for (let i = 1; i <= 10; i++) {
-                    const rRaw = f[`W.P_Replied_${i}`] || f[`W.P_Replied ${i}`];
-                    const rMsg = parseMsg(rRaw, `W.P_Replied ${i}`, 'user', seq++);
-                    if (rMsg) timeline.push(rMsg);
-
-                    const fRaw = f[`W.P_FollowUp_${i}`] || f[`W.P_FollowUp ${i}`];
-                    const fTsRaw: string | null = f[`W.P_FollowUp_TS${i}`] || null;
-                    const fMsg = parseMsg(fRaw, `W.P_FollowUp ${i}`, 'bot', seq++);
-                    if (fMsg) {
-                        (fMsg as any).tsStatus = fTsRaw;
-                        if (!fMsg.date) fMsg.date = parseTsDate(fTsRaw);
-                        timeline.push(fMsg);
-                    }
-                }
-
-                // No date sorting — insertion sequence IS the correct conversation order:
-                // W.P_1 → W.P_N drips, then WhatsApp Replied, then W.P_FollowUp,
-                // then paired W.P_Replied_i / W.P_FollowUp_i rounds.
+                setMessages(timeline);
+            } else {
+                setLead(null);
+                setMessages(EMPTY_MESSAGES);
             }
-
-            setMessages(timeline);
-        } else {
-            setLead(null);
-            setMessages(EMPTY_MESSAGES);
+            setLoading(false);
         }
-        setLoading(false);
+
+        loadLeadData();
+
+        return () => {
+            isMounted = false;
+        };
     }, [customerId, allLeads, loadingLeads, initialLead]);
 
     // Fill missing timestamps by scanning neighbors and falling back to lead created_at
