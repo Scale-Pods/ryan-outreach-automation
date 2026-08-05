@@ -171,14 +171,14 @@ export default function PublicWhatsAppSharePage({ params }: { params: Promise<{ 
     const outgoing = messages.filter(m => m.type === 'bot').length;
 
     return (
-        <div className="min-h-screen bg-[#0a0d14] text-white flex flex-col items-center justify-center p-4 md:p-8 relative">
+        <div className="h-screen max-h-screen bg-[#0a0d14] text-white flex flex-col items-center justify-center p-3 md:p-6 relative overflow-hidden">
             <div className="fixed -top-40 -left-40 w-96 h-96 rounded-full bg-emerald-600/20 blur-[120px] pointer-events-none z-0" />
             <div className="fixed -bottom-40 -right-40 w-[500px] h-[500px] rounded-full bg-blue-600/15 blur-[120px] pointer-events-none z-0" />
 
-            <div className="w-full max-w-6xl min-h-[88vh] bg-[#0d121f]/90 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-2xl p-4 sm:p-6 flex flex-col relative z-10">
+            <div className="w-full max-w-6xl h-[85vh] max-h-[800px] bg-[#0d121f]/90 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-2xl p-4 sm:p-5 flex flex-col relative z-10 overflow-hidden">
 
                 {/* ── Top Bar ── */}
-                <div className="mb-4 flex items-center justify-between shrink-0 flex-wrap gap-2">
+                <div className="mb-3 flex items-center justify-between shrink-0 flex-wrap gap-2">
                     <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full font-semibold">
                         📱 WhatsApp Conversation • {decodedLeadId}
                     </span>
@@ -205,13 +205,13 @@ export default function PublicWhatsAppSharePage({ params }: { params: Promise<{ 
                 <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 overflow-hidden min-h-0">
 
                     {/* ── Chat Timeline (2/3 width) ── */}
-                    <div className="lg:col-span-2 flex flex-col overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] min-h-0">
+                    <div className="lg:col-span-2 flex flex-col overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] h-full min-h-0">
                         <div className="border-b border-white/10 p-3 px-4 flex justify-between items-center shrink-0">
                             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Conversation Timeline</h3>
                             <div className="text-[10px] text-slate-500 font-bold">{messages.length} Messages</div>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
                             {loading ? (
                                 <div className="h-64 flex flex-col items-center justify-center gap-3 text-slate-400">
                                     <RefreshCw className="h-8 w-8 animate-spin text-emerald-500" />

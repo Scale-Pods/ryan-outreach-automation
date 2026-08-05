@@ -20,6 +20,11 @@ import {
     ArrowRight,
     ArrowLeft,
     Reply,
+    User,
+    Bot,
+    ExternalLink,
+    MessageSquare,
+    Share2
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import {
@@ -31,12 +36,14 @@ import { format, subDays } from "date-fns";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { useData } from "@/context/DataContext";
 import { LMLoader } from "@/components/ryan-loader";
+import { EmailChatDetail } from "@/components/dashboard/email-chat-detail";
 
 const ITEMS_PER_PAGE = 7;
 
 export default function SentEmailsPage() {
     const { leads: allLeads, loadingLeads } = useData();
     const [page, setPage] = useState(1);
+    const [selectedLeadItem, setSelectedLeadItem] = useState<{ id: string; initialLead?: any } | null>(null);
     const [dateRange, setDateRange] = useState<any>({
         from: subDays(new Date(), 7),
         to: new Date(),
@@ -56,8 +63,55 @@ export default function SentEmailsPage() {
 
             try {
                 const emails: any[] = [];
+                const seenKeys = new Set<string>();
+
+                const addEmailIfUnique = (emailObj: any) => {
+                    const dbId = emailObj.rawLead?.id ? String(emailObj.rawLead.id) : null;
+                    const table = emailObj.rawLead?._source_table || '';
+                    const signature = `${table}|${emailObj.recipient?.toLowerCase()}|${emailObj.type?.toLowerCase()}|${emailObj.sentDate}`;
+
+                    if (dbId && seenKeys.has(`id-${table}-${dbId}`)) return;
+                    if (seenKeys.has(signature)) return;
+
+                    if (dbId) seenKeys.add(`id-${table}-${dbId}`);
+                    seenKeys.add(signature);
+
+                    emails.push(emailObj);
+                };
 
                 allLeads.forEach((lead: any, leadIndex: number) => {
+                    const channel = String(lead.channel || '').toLowerCase();
+                    const actionType = String(lead.action_type || '').toLowerCase();
+                    const status = String(lead.status || '').toLowerCase();
+
+                    // --- Activity Table Record Mapping ---
+                    if (lead._source_table || channel) {
+                        const isEmail = channel.includes('email') || actionType.includes('email') || !!lead.lead_email || !!lead.email;
+                        if (isEmail && channel !== 'voice' && channel !== 'whatsapp' && channel !== 'sms') {
+                            const eDate = lead.created_at || lead.updated_at ? new Date(lead.created_at || lead.updated_at) : new Date();
+                            let sentDate = "Unknown Date";
+                            try { sentDate = format(eDate, "MMM dd, yyyy • p"); } catch (_) {}
+
+                            addEmailIfUnique({
+                                id: lead.id ? `act-sent-${lead._source_table || 'tbl'}-${lead.id}` : `act-sent-${leadIndex}`,
+                                recipient: lead.lead_email || lead.email || lead.lead_name || lead.name || "Recipient",
+                                sender: lead.vapi_account || lead.source || lead.workflow_name || "Email Sender",
+                                type: lead.action_type || "Outbound Email",
+                                sentDate,
+                                subject: lead.content ? (lead.content.split('\n')[0] || "Outbound Email") : "Outbound Email",
+                                body: lead.content || lead.note || "Outbound email sent",
+                                content: lead.content || lead.note || "Outbound email sent",
+                                rawDate: eDate.toISOString(),
+                                campaign: lead._source_table || lead.workflow_name || lead.campaign || "Activity Stream",
+                                hasReplied: status.includes('reply') || !!lead.replied_at,
+                                replyContent: null,
+                                replyDate: null,
+                                rawLead: lead,
+                            });
+                        }
+                        return;
+                    }
+
                     const stages = lead.stages_passed || [];
 
                     // --- Build sender display string ---
@@ -94,10 +148,8 @@ export default function SentEmailsPage() {
                     );
 
                     // --- Iterate email stages in order ---
-                    // stages_passed only contains stages where the column had a value (see leads-utils.ts)
-                    // So simply iterating covers the "stop at last filled email" rule automatically.
                     stages.forEach((stage: string) => {
-                        if (!stage.startsWith("Email_")) return; // only Email_N underscore stages
+                        if (!stage.startsWith("Email_")) return;
 
                         const rawContent = lead.stage_data?.[stage];
 
@@ -113,7 +165,6 @@ export default function SentEmailsPage() {
                             const lastLineDate = new Date(lastLine);
 
                             if (!isNaN(fullDate.getTime()) && trimmed.length < 50) {
-                                // Entire column is a timestamp
                                 rawDateValue = fullDate.toISOString();
                                 sentDate = format(fullDate, "MMM dd, yyyy • p");
                                 emailBody = "Email sent";
@@ -122,7 +173,6 @@ export default function SentEmailsPage() {
                                 lastLine.includes("-") &&
                                 lastLine.includes(":")
                             ) {
-                                // Last line is a timestamp; rest is body
                                 rawDateValue = lastLineDate.toISOString();
                                 sentDate = format(lastLineDate, "MMM dd, yyyy • p");
                                 emailBody = lines.slice(0, -1).join("\n").trim() || "Email sent";
@@ -131,25 +181,60 @@ export default function SentEmailsPage() {
                             }
                         }
 
-                        // Stage name IS the column name — show it directly as the label
-                        const displayStageType = stage; // e.g. "Email_1", "Email_2"
+                        const displayStageType = stage;
 
-                        emails.push({
-                            id: `${lead.id || `lead-${leadIndex}`}-${stage.replace(/\s+/g, "-")}-${Math.random()
-                                .toString(36)
-                                .substr(2, 9)}`,
+                        addEmailIfUnique({
+                            id: `${lead.id || `lead-${leadIndex}`}-${stage.replace(/\s+/g, "-")}`,
                             recipient: lead.email || lead.name || `Lead ${leadIndex + 1}`,
                             sender: fullSender,
                             type: displayStageType,
                             sentDate,
                             subject: displayStageType,
                             content: emailBody,
+                            body: emailBody,
                             loop: lead.source_loop || "Intro",
                             rawDate: rawDateValue,
                             hasReplied,
+                            rawLead: lead,
                         });
                     });
                 });
+
+                // --- Fetch directly from /api/activity for full activity table coverage ---
+                try {
+                    const actRes = await fetch('/api/activity?channel=email&limit=500');
+                    if (actRes.ok) {
+                        const actData = await actRes.json();
+                        const actLogs = actData.activities || [];
+
+                        actLogs.forEach((act: any, idx: number) => {
+                            const eDate = act.created_at || act.updated_at ? new Date(act.created_at || act.updated_at) : new Date();
+                            let sentDate = "Unknown Date";
+                            try { sentDate = format(eDate, "MMM dd, yyyy • p"); } catch (_) {}
+
+                            const status = String(act.status || '').toLowerCase();
+
+                            addEmailIfUnique({
+                                id: `act-${act._source_table || 'tbl'}-${act.id || idx}`,
+                                recipient: act.lead_email || act.email || act.lead_name || act.customer_name || "Recipient",
+                                sender: act.vapi_account || act.source || act.workflow_name || "Email Sender",
+                                type: act.action_type || "Outbound Email",
+                                sentDate,
+                                subject: act.content ? (act.content.split('\n')[0] || "Outbound Email") : "Outbound Email",
+                                body: act.content || act.note || "Outbound email sent",
+                                content: act.content || act.note || "Outbound email sent",
+                                rawDate: eDate.toISOString(),
+                                campaign: act._source_table || act.workflow_name || act.source || "Activity Stream",
+                                hasReplied: status.includes('reply') || !!act.replied_at,
+                                replyContent: null,
+                                replyDate: null,
+                                rawLead: act,
+                            });
+                        });
+                    }
+                } catch (e) {
+                    console.error("Error fetching direct activity in SentEmailsPage:", e);
+                }
 
                 // Sort newest first
                 emails.sort(
@@ -164,8 +249,18 @@ export default function SentEmailsPage() {
         fetchData();
     }, [allLeads, loadingLeads]);
 
-    // Unique senders for filter dropdown
-    const uniqueSenders = Array.from(new Set(sentEmails.map((e) => e.sender))).sort();
+    // Dynamic filter options derived from actual database records
+    const uniqueCampaigns = Array.from(
+        new Set(sentEmails.map((e) => e.campaign).filter(Boolean))
+    ).sort();
+
+    const uniqueSenders = Array.from(
+        new Set(sentEmails.map((e) => e.sender).filter(Boolean))
+    ).sort();
+
+    const uniqueTypes = Array.from(
+        new Set(sentEmails.map((e) => e.type).filter(Boolean))
+    ).sort();
 
     const handleFilterChange = (key: string, value: string) => {
         setFilters((prev) => ({ ...prev, [key]: value }));
@@ -185,37 +280,30 @@ export default function SentEmailsPage() {
         }
 
         // Date range
-        if (dateRange?.from) {
-            const ed = email.rawDate ? new Date(email.rawDate) : null;
-            if (!ed || isNaN(ed.getTime())) return false;
-            const from = new Date(dateRange.from);
-            from.setHours(0, 0, 0, 0);
-            const to = dateRange.to ? new Date(dateRange.to) : new Date(from);
-            to.setHours(23, 59, 59, 999);
-            if (ed < from || ed > to) return false;
+        if (dateRange?.from && email.rawDate) {
+            const ed = new Date(email.rawDate);
+            if (!isNaN(ed.getTime())) {
+                const from = new Date(dateRange.from);
+                from.setHours(0, 0, 0, 0);
+                const to = dateRange.to ? new Date(dateRange.to) : new Date(from);
+                to.setHours(23, 59, 59, 999);
+                if (ed < from || ed > to) return false;
+            }
         }
 
-        // Campaign
-        if (filters.campaign !== "all") {
-            const loop = (email.loop || "").toLowerCase();
-            if (filters.campaign === "intro" && !loop.includes("intro")) return false;
-            if (filters.campaign === "nurture" && !loop.includes("nurture")) return false;
-            if (filters.campaign === "followup" && !loop.includes("follow")) return false;
+        // Campaign filter (exact match against DB campaign / source table)
+        if (filters.campaign !== "all" && email.campaign !== filters.campaign) {
+            return false;
         }
 
-        // Sender
-        if (filters.sender !== "all" && email.sender !== filters.sender) return false;
+        // Sender filter (exact match against DB sender / account)
+        if (filters.sender !== "all" && email.sender !== filters.sender) {
+            return false;
+        }
 
-        // Type
-        if (filters.type !== "all") {
-            const typeMap: Record<string, string> = {
-                email1: "email 1", email2: "email 2", email3: "email 3",
-                email4: "email 4", email5: "email 5", email6: "email 6",
-                email7: "email 7", email8: "email 8", email9: "email 9",
-                email10: "email 10",
-            };
-            const expected = typeMap[filters.type];
-            if (expected && !email.type.toLowerCase().includes(expected)) return false;
+        // Type filter (exact match against DB action_type / stage)
+        if (filters.type !== "all" && email.type !== filters.type) {
+            return false;
         }
 
         return true;
@@ -258,21 +346,25 @@ export default function SentEmailsPage() {
                 <div className="flex flex-wrap gap-2 items-center">
                     <Filter className="h-4 w-4 text-[var(--label-tertiary)] mr-2" />
 
+                    {/* Dynamic Campaign Filter */}
                     <Select value={filters.campaign} onValueChange={(val) => handleFilterChange("campaign", val)}>
-                        <SelectTrigger className="w-[140px] h-9 text-xs">
-                            <SelectValue placeholder="Campaign" />
+                        <SelectTrigger className="w-[180px] h-9 text-xs">
+                            <SelectValue placeholder="All Campaigns" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Campaigns</SelectItem>
-                            <SelectItem value="intro">Intro Loop</SelectItem>
-                            <SelectItem value="followup">Follow Up</SelectItem>
-                            <SelectItem value="nurture">Nurture Loop</SelectItem>
+                            {uniqueCampaigns.map((camp) => (
+                                <SelectItem key={camp} value={camp}>
+                                    {camp}
+                                </SelectItem>
+                            ))}
                         </SelectContent>
                     </Select>
 
+                    {/* Dynamic Sender Filter */}
                     <Select value={filters.sender} onValueChange={(val) => handleFilterChange("sender", val)}>
-                        <SelectTrigger className="w-[160px] h-9 text-xs">
-                            <SelectValue placeholder="Sender" />
+                        <SelectTrigger className="w-[180px] h-9 text-xs">
+                            <SelectValue placeholder="All Senders" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Senders</SelectItem>
@@ -284,21 +376,18 @@ export default function SentEmailsPage() {
                         </SelectContent>
                     </Select>
 
+                    {/* Dynamic Type Filter */}
                     <Select value={filters.type} onValueChange={(val) => handleFilterChange("type", val)}>
-                        <SelectTrigger className="w-[140px] h-9 text-xs">
-                            <SelectValue placeholder="Email Type" />
+                        <SelectTrigger className="w-[180px] h-9 text-xs">
+                            <SelectValue placeholder="All Types" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Types</SelectItem>
-                            <SelectItem value="email1">Email 1</SelectItem>
-                            <SelectItem value="email2">Email 2</SelectItem>
-                            <SelectItem value="email3">Email 3</SelectItem>
-                            <SelectItem value="email4">Email 4</SelectItem>
-                            <SelectItem value="email5">Email 5</SelectItem>
-                            <SelectItem value="email6">Email 6</SelectItem>
-                            <SelectItem value="email7">Email 7</SelectItem>
-                            <SelectItem value="email8">Email 8</SelectItem>
-                            <SelectItem value="email9">Email 9</SelectItem>
+                            {uniqueTypes.map((type) => (
+                                <SelectItem key={type} value={type}>
+                                    {type}
+                                </SelectItem>
+                            ))}
                         </SelectContent>
                     </Select>
 
@@ -320,7 +409,13 @@ export default function SentEmailsPage() {
 
             <div className="space-y-4">
                 {!loading && paginatedEmails.length > 0 ? (
-                    paginatedEmails.map((email) => <SentEmailCard key={email.id} email={email} />)
+                    paginatedEmails.map((email) => (
+                        <SentEmailCard
+                            key={email.id}
+                            email={email}
+                            onOpenThread={(id, initialLead) => setSelectedLeadItem({ id, initialLead })}
+                        />
+                    ))
                 ) : !loading ? (
                     <div className="flex flex-col items-center justify-center h-64 text-[var(--label-tertiary)] border border-dashed border-[var(--separator)] rounded-xl bg-[var(--bg-app)]/50">
                         <Mail className="h-8 w-8 mb-2 opacity-50" />
@@ -365,52 +460,138 @@ export default function SentEmailsPage() {
                     </div>
                 </div>
             )}
+
+            {/* Email Chat Detail Modal Overlay */}
+            {selectedLeadItem && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+                    <div className="w-full max-w-4xl h-[85vh] rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+                        <EmailChatDetail
+                            leadId={selectedLeadItem.id}
+                            initialLead={selectedLeadItem.initialLead}
+                            onClose={() => setSelectedLeadItem(null)}
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
 
-function SentEmailCard({ email }: { email: any }) {
-    const [isOpen, setIsOpen] = useState(false);
+interface ParsedEmailTurn {
+    sender: 'agent' | 'user';
+    label: string;
+    text: string;
+    timestamp?: string;
+}
 
-    // Simple helper to strip HTML tags for the text preview
-    const stripHtml = (html: string) => {
-        if (!html) return "";
-        // Replace <br> and other block tags with spaces for better truncation
-        const spaced = html.replace(/<(br|p|div|li|h[1-6])[^>]*>/gi, " ").replace(/<\/?[^>]+(>|$)/g, "");
-        return spaced;
-    };
+function parseCardContent(content: string, note?: string): ParsedEmailTurn[] {
+    const raw = (content || note || "").trim();
+    if (!raw) return [];
+
+    const turns: ParsedEmailTurn[] = [];
+
+    // Regex matching prefixes like Template:, Agent:, User:, Reply:
+    const regex = /(Template:|Agent\s*:|Outbound Email:|Email Sent:|User\s*:|Inbound Email:|Inbound Reply:|Reply:)/gi;
+    const matches = Array.from(raw.matchAll(regex));
+
+    if (matches.length > 0) {
+        for (let i = 0; i < matches.length; i++) {
+            const match = matches[i];
+            const startIdx = match.index! + match[0].length;
+            const endIdx = i < matches.length - 1 ? matches[i + 1].index! : raw.length;
+            let block = raw.substring(startIdx, endIdx).trim();
+
+            const prefix = match[0].toLowerCase();
+            const isAgent = prefix.includes('template') || prefix.includes('agent') || prefix.includes('outbound') || prefix.includes('sent');
+
+            let timestamp: string | undefined = undefined;
+            const tsMatch = block.match(/(\d{1,2}\/\d{1,2}\/\d{4},\s*\d{1,2}:\d{2}:\d{2}\s*(?:AM|PM)?)/i);
+            if (tsMatch) {
+                timestamp = tsMatch[1];
+                block = block.replace(tsMatch[0], '').trim();
+            }
+
+            if (block) {
+                turns.push({
+                    sender: isAgent ? 'agent' : 'user',
+                    label: isAgent ? 'AI Agent' : 'User Reply',
+                    text: block,
+                    timestamp
+                });
+            }
+        }
+    } else {
+        const parts = raw.split(/(?=\d{1,2}\/\d{1,2}\/\d{4})/g);
+        for (const part of parts) {
+            let p = part.trim();
+            if (!p) continue;
+            let timestamp: string | undefined = undefined;
+            const tsMatch = p.match(/(\d{1,2}\/\d{1,2}\/\d{4}(?:,\s*\d{1,2}:\d{2}:\d{2}\s*(?:AM|PM)?)?)/i);
+            if (tsMatch) {
+                timestamp = tsMatch[1];
+                p = p.replace(tsMatch[0], '').trim();
+            }
+            if (p) {
+                turns.push({
+                    sender: 'agent',
+                    label: 'Outbound Email',
+                    text: p,
+                    timestamp
+                });
+            }
+        }
+    }
+
+    if (turns.length === 0 && raw) {
+        turns.push({
+            sender: 'agent',
+            label: 'Email Content',
+            text: raw
+        });
+    }
+
+    return turns;
+}
+
+function SentEmailCard({ email, onOpenThread }: { email: any; onOpenThread: (id: string, lead?: any) => void }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const turns = parseCardContent(email?.content, email?.note);
+    const firstTurn = turns[0];
+    const rawText = firstTurn ? (firstTurn.text || '') : (email?.content || email?.note || '');
+    const rawPreview = String(rawText || '').replace(/^(Template:|Agent\s*:|User\s*:)/i, '').trim();
+    const previewText = rawPreview.replace(/<(br|p|div|li|h[1-6])[^>]*>/gi, " ").replace(/<\/?[^>]+(>|$)/g, "").trim();
 
     return (
         <Collapsible
             open={isOpen}
             onOpenChange={setIsOpen}
-            className="bg-[var(--glass-fill)] border border-[var(--separator)] rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)] transition-all hover:shadow-[var(--glass-shadow)]"
+            className="bg-[#0d121f]/90 backdrop-blur-xl border border-white/10 rounded-xl shadow-lg transition-all hover:border-white/20 overflow-hidden"
         >
             <CollapsibleTrigger asChild>
-                <div className="p-6 cursor-pointer group">
+                <div className="p-5 cursor-pointer group hover:bg-white/[0.02] transition-colors">
                     <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between">
-                        <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 shrink-0 bg-[rgba(52,199,89,0.08)] text-emerald-600 rounded-full flex items-center justify-center border border-emerald-100">
+                        <div className="flex items-start gap-4">
+                            <div className="h-10 w-10 shrink-0 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center border border-emerald-500/20 mt-0.5">
                                 <Mail className="h-5 w-5" />
                             </div>
-                            <div className="space-y-1">
+                            <div className="space-y-1.5">
                                 <div className="flex items-center gap-2 flex-wrap">
                                     <Badge
                                         variant="secondary"
-                                        className="bg-[var(--fill-quaternary)] text-[var(--label-secondary)] hover:bg-[var(--fill-tertiary)] text-[10px] tracking-wider font-bold uppercase"
+                                        className="bg-white/10 text-slate-300 text-[10px] tracking-wider font-bold uppercase border border-white/10"
                                     >
                                         {email.type}
                                     </Badge>
                                     <Badge
                                         variant="outline"
-                                        className="text-purple-600 border-purple-200 bg-purple-50 text-[10px] uppercase font-bold"
+                                        className="text-purple-400 border-purple-500/30 bg-purple-500/10 text-[10px] uppercase font-bold"
                                     >
-                                        {email.loop}
+                                        {email.campaign || email.loop}
                                     </Badge>
                                     {email.hasReplied && (
                                         <Badge
                                             variant="outline"
-                                            className="text-emerald-600 border-emerald-200 bg-[rgba(52,199,89,0.08)] text-[10px] font-bold gap-1"
+                                            className="text-emerald-400 border-emerald-500/30 bg-emerald-500/10 text-[10px] font-bold gap-1"
                                         >
                                             <Reply className="h-3 w-3" /> Replied
                                         </Badge>
@@ -418,25 +599,37 @@ function SentEmailCard({ email }: { email: any }) {
                                     {email.sentDate && (
                                         <Badge
                                             variant="outline"
-                                            className="text-cyan-600 border-cyan-200 bg-cyan-50 text-[10px]"
+                                            className="text-cyan-400 border-cyan-500/30 bg-cyan-500/10 text-[10px]"
                                         >
                                             {email.sentDate}
                                         </Badge>
                                     )}
                                 </div>
-                                <h4 className="text-lg font-bold text-[var(--label-primary)]">{email.recipient}</h4>
+                                <h4 className="text-base font-bold text-white">{email.recipient}</h4>
                                 {!isOpen && (
-                                    <p className="text-sm text-[var(--label-secondary)] truncate max-w-md" >
-                                        {stripHtml(email.content).substring(0, 80)}...
+                                    <p className="text-xs text-slate-400 truncate max-w-xl">
+                                        {previewText.substring(0, 100)}{previewText.length > 100 ? '...' : ''}
                                     </p>
                                 )}
                             </div>
                         </div>
-                        <div className="shrink-0">
+                        <div className="flex items-center gap-3 shrink-0">
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const shareId = email.rawLead?.lead_email || email.rawLead?.email || email.recipient || email.id;
+                                    onOpenThread(shareId, email.rawLead);
+                                }}
+                                className="h-8 text-xs gap-1.5 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 border border-blue-500/20 rounded-lg font-semibold"
+                            >
+                                <MessageSquare className="h-3.5 w-3.5" /> Full Thread
+                            </Button>
                             {isOpen ? (
-                                <ChevronUp className="h-4 w-4 text-[var(--label-tertiary)]" />
+                                <ChevronUp className="h-4 w-4 text-slate-400" />
                             ) : (
-                                <ChevronDown className="h-4 w-4 text-[var(--label-tertiary)] group-hover:text-[var(--label-secondary)]" />
+                                <ChevronDown className="h-4 w-4 text-slate-400 group-hover:text-white" />
                             )}
                         </div>
                     </div>
@@ -444,18 +637,44 @@ function SentEmailCard({ email }: { email: any }) {
             </CollapsibleTrigger>
 
             <CollapsibleContent>
-                <div className="px-6 pb-6 pt-0">
-                    <div className="pl-[56px] space-y-4 border-t border-[var(--separator)] pt-4">
+                <div className="px-5 pb-5 pt-0">
+                    <div className="border-t border-white/10 pt-4 space-y-3">
                         {email.sender && (
-                            <p className="text-xs text-[var(--label-tertiary)]">
-                                <span className="font-semibold text-[var(--label-secondary)]">From:</span> {email.sender}
+                            <p className="text-xs text-slate-400 flex items-center gap-1.5 font-mono">
+                                <span className="font-semibold text-slate-300">From:</span> {email.sender}
                             </p>
                         )}
-                        <div className="mt-4 text-sm text-[var(--label-primary)] leading-relaxed font-sans overflow-auto max-w-full">
-                            <div
-                                className="email-content"
-                                dangerouslySetInnerHTML={{ __html: email.content }}
-                            />
+
+                        {/* Structured Conversation Turns */}
+                        <div className="space-y-3 mt-3">
+                            {turns.map((turn, idx) => {
+                                const isAgent = turn.sender === 'agent';
+                                return (
+                                    <div
+                                        key={idx}
+                                        className={`p-3.5 rounded-xl border text-xs leading-relaxed transition-all ${
+                                            isAgent
+                                                ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-100'
+                                                : 'bg-purple-500/10 border-purple-500/20 text-purple-100'
+                                        }`}
+                                    >
+                                        <div className="flex items-center justify-between gap-2 mb-2 pb-1.5 border-b border-white/10">
+                                            <span className={`font-bold flex items-center gap-1.5 text-[11px] uppercase tracking-wider ${
+                                                isAgent ? 'text-emerald-400' : 'text-purple-400'
+                                            }`}>
+                                                {isAgent ? <Bot className="h-3.5 w-3.5" /> : <User className="h-3.5 w-3.5" />}
+                                                {turn.label}
+                                            </span>
+                                            {turn.timestamp && (
+                                                <span className="text-[10px] text-slate-400 font-mono">
+                                                    {turn.timestamp}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="whitespace-pre-wrap leading-relaxed">{turn.text}</p>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>

@@ -15,7 +15,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         const page = parseInt(searchParams.get('page') || '1');
         const limit = parseInt(searchParams.get('limit') || '50');
 
-        const fromDate = from || new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+        const fromDate = from || new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
         const toDate = to || new Date().toISOString();
 
         const allResults: any[] = [];
@@ -26,17 +26,19 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             try {
                 let countQuery = supabaseAdmin
                     .from(table)
-                    .select('id', { count: 'exact', head: true })
-                    .gte('created_at', fromDate)
-                    .lte('created_at', toDate);
+                    .select('id', { count: 'exact', head: true });
 
                 let dataQuery = supabaseAdmin
                     .from(table)
                     .select('*')
-                    .gte('created_at', fromDate)
-                    .lte('created_at', toDate)
                     .order('created_at', { ascending: false })
                     .limit(limit);
+
+                // Apply date filter if search is not present or if explicit dates provided
+                if (from || !search) {
+                    countQuery = countQuery.gte('created_at', fromDate).lte('created_at', toDate);
+                    dataQuery = dataQuery.gte('created_at', fromDate).lte('created_at', toDate);
+                }
 
                 if (channel && channel !== 'all') {
                     countQuery = countQuery.ilike('channel', channel);
@@ -44,7 +46,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
                 }
 
                 if (search) {
-                    const filter = `lead_name.ilike.%${search}%,lead_phone.ilike.%${search}%,lead_email.ilike.%${search}%,lead_id.ilike.%${search}%,action_type.ilike.%${search}%,note.ilike.%${search}%,content.ilike.%${search}%`;
+                    const cleanSearch = search.trim();
+                    const isNum = /^\d+$/.test(cleanSearch);
+                    let filter = `lead_name.ilike.%${cleanSearch}%,lead_phone.ilike.%${cleanSearch}%,lead_email.ilike.%${cleanSearch}%,action_type.ilike.%${cleanSearch}%,note.ilike.%${cleanSearch}%,content.ilike.%${cleanSearch}%,summary.ilike.%${cleanSearch}%`;
+                    if (isNum) {
+                        filter += `,lead_id.eq.${cleanSearch},id.eq.${cleanSearch}`;
+                    }
                     countQuery = countQuery.or(filter);
                     dataQuery = dataQuery.or(filter);
                 }

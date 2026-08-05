@@ -179,13 +179,13 @@ export default function PublicSMSSharePage({ params }: { params: Promise<{ leadI
     };
 
     return (
-        <div className="min-h-screen bg-[#0a0d14] text-white flex flex-col items-center justify-center p-4 md:p-8 relative">
+        <div className="h-screen max-h-screen bg-[#0a0d14] text-white flex flex-col items-center justify-center p-3 md:p-6 relative overflow-hidden">
             <div className="fixed -top-40 -left-40 w-96 h-96 rounded-full bg-amber-600/20 blur-[120px] pointer-events-none z-0" />
             <div className="fixed -bottom-40 -right-40 w-[500px] h-[500px] rounded-full bg-orange-600/15 blur-[120px] pointer-events-none z-0" />
 
-            <div className="w-full max-w-5xl min-h-[88vh] bg-[#0d121f]/90 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-2xl p-4 sm:p-6 flex flex-col relative z-10">
+            <div className="w-full max-w-5xl h-[85vh] max-h-[800px] bg-[#0d121f]/90 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-2xl p-4 sm:p-5 flex flex-col relative z-10 overflow-hidden">
 
-                <div className="mb-4 flex items-center justify-between shrink-0">
+                <div className="mb-3 flex items-center justify-between shrink-0">
                     <span className="text-xs font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-full font-semibold">
                         💬 SMS Conversation • {decodedLeadId}
                     </span>
@@ -209,7 +209,7 @@ export default function PublicSMSSharePage({ params }: { params: Promise<{ leadI
                 </div>
 
                 {lead && !loading && (
-                    <div className="mb-4 p-3 rounded-xl bg-white/5 border border-white/10 flex items-center gap-4 shrink-0">
+                    <div className="mb-3 p-3 rounded-xl bg-white/5 border border-white/10 flex items-center gap-4 shrink-0">
                         <div className="h-10 w-10 rounded-full bg-amber-600/30 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold text-sm">
                             {String(lead.name || lead.phone || '?').charAt(0).toUpperCase()}
                         </div>
@@ -230,7 +230,7 @@ export default function PublicSMSSharePage({ params }: { params: Promise<{ leadI
                         <div className="text-[10px] text-slate-500 font-bold">{messages.length} Messages</div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
                         {loading ? (
                             <div className="h-64 flex flex-col items-center justify-center gap-3 text-slate-400">
                                 <RefreshCw className="h-8 w-8 animate-spin text-amber-500" />

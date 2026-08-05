@@ -12,6 +12,7 @@ import { subDays } from "date-fns";
 import { useData } from "@/context/DataContext";
 import { LMLoader } from "@/components/ryan-loader";
 import { EmailTrackerSection } from "@/components/dashboard/email-tracker";
+import { calculateEmailMetrics } from "@/lib/email-analytics-utils";
 
 export default function EmailDashboardPage() {
     const router = useRouter();
@@ -70,88 +71,18 @@ export default function EmailDashboardPage() {
     };
 
     useEffect(() => {
-        const calculateStats = async () => {
-            if (loadingLeads) return;
+        if (loadingLeads) return;
 
-            try {
-                const fromD = dateRange?.from ? new Date(dateRange.from) : null;
-                const toD = dateRange?.to ? new Date(dateRange.to) : fromD;
-                if (fromD) fromD.setHours(0, 0, 0, 0);
-                if (toD) toD.setHours(23, 59, 59, 999);
+        const metrics = calculateEmailMetrics(allLeads, dateRange);
 
-                const checkEmailDate = (d: Date | null) => {
-                    if (!fromD || !toD) return true;
-                    if (!d) return false;
-                    return d >= fromD && d <= toD;
-                };
-
-                let totalEmails = 0;
-                let firstEmailCount = 0;
-                let replyCount = 0;
-                let unsubscribedCount = 0;
-
-                const tableStats = {
-                    naples: { name: "Naples (naples_activity)", emails: 0, replies: 0, unsubscribed: 0 },
-                    aspen: { name: "Aspen (aspen_activity)", emails: 0, replies: 0, unsubscribed: 0 },
-                    old: { name: "Old Leads (old_activity)", emails: 0, replies: 0, unsubscribed: 0 },
-                    fello: { name: "Fello (fello_activity)", emails: 0, replies: 0, unsubscribed: 0 },
-                };
-
-                allLeads.forEach((lead: any) => {
-                    const stageData = lead.stage_data || {};
-                    const stages = lead.stages_passed || [];
-                    const tableKey = getLeadSourceTable(lead);
-
-                    // --- REPLIES ---
-                    const emailReply = lead.email_replied;
-                    if (emailReply && !["no", "none", ""].includes(String(emailReply).toLowerCase().trim())) {
-                        const parsed = parseMsg(emailReply);
-                        const rDate = parsed.date || new Date(lead.updated_at || lead.created_at);
-                        if (checkEmailDate(rDate)) {
-                            replyCount++;
-                            tableStats[tableKey].replies++;
-                        }
-                    }
-
-                    // --- UNSUBS ---
-                    if (lead.unsubscribed && String(lead.unsubscribed).toLowerCase().includes("yes")) {
-                        if (checkEmailDate(new Date(lead.updated_at || lead.created_at))) {
-                            unsubscribedCount++;
-                            tableStats[tableKey].unsubscribed++;
-                        }
-                    }
-
-                    // --- EMAIL TRANSMISSIONS ---
-                    stages.forEach((stage: string) => {
-                        const s = stage.toLowerCase().trim();
-                        if (!s.startsWith("email_")) return;
-
-                        const rawContent = stageData[stage];
-                        let emailDate = parseMsg(rawContent).date || new Date(lead.created_at);
-
-                        if (checkEmailDate(emailDate)) {
-                            totalEmails++;
-                            tableStats[tableKey].emails++;
-                            if (s === "email_1") firstEmailCount++;
-                        }
-                    });
-                });
-
-                setData({
-                    totalEmails: totalEmails,
-                    firstEmail: firstEmailCount,
-                    totalReplies: replyCount,
-                    totalUnsubscribed: unsubscribedCount,
-                    tableStats
-                });
-
-            } catch (e) {
-                console.error("Dashboard calculation error", e);
-            }
-        };
-
-        calculateStats();
-    }, [dateRange, allLeads, loadingLeads]);
+        setData({
+            totalEmails: metrics.totalEmails,
+            firstEmail: metrics.firstEmailCount,
+            totalReplies: metrics.replyCount,
+            totalUnsubscribed: metrics.unsubscribedCount,
+            tableStats: metrics.tableStats
+        });
+    }, [allLeads, loadingLeads, dateRange]);
 
     const handleDateUpdate = (range: any) => {
         setDateRange(range.range);
@@ -192,7 +123,6 @@ export default function EmailDashboardPage() {
                     value={data.totalReplies}
                     icon={<Inbox className="h-6 w-6 text-sky-400" />}
                     bg="bg-sky-500/10 border-sky-500/20"
-                    onClick={() => router.push('/dashboard/email/received')}
                 />
 
                 <MetricCard

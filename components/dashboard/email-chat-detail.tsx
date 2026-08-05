@@ -26,6 +26,7 @@ function parseEmailContent(content: string, note?: string): any[] {
     const rawText = content || note || "";
     const lines = rawText.split('\n');
     let seq = 0;
+    let lastMessageKey = '';
 
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
@@ -40,27 +41,58 @@ function parseEmailContent(content: string, note?: string): any[] {
             continue;
         }
 
-        if (line.startsWith('Outbound Email:') || line.startsWith('Email Sent:') || line.startsWith('Template:')) {
-            const text = line.replace(/^(Outbound Email|Email Sent|Template):\s*/, '').trim();
-            messages.push({
-                type: 'bot' as const,
-                content: text,
-                label: 'Outbound Email',
-                date: null as string | null,
-                sequence: ++seq
-            });
+        const dtMatch = line.match(/^(?:Date\s*&\s*Time|Date|Timestamp):\s*(.*)$/i);
+        if (dtMatch) {
+            const rawDt = dtMatch[1].trim();
+            if (messages.length > 0) {
+                const tsMatch = rawDt.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})[,\s]+(\d{1,2}:\d{2}:\d{2}\s*(?:AM|PM)?)/i);
+                if (tsMatch) {
+                    const parsed = new Date(`${tsMatch[3]}-${tsMatch[1].padStart(2, '0')}-${tsMatch[2].padStart(2, '0')}T${tsMatch[4]}`);
+                    messages[messages.length - 1].date = !isNaN(parsed.getTime()) ? parsed.toISOString() : rawDt;
+                } else {
+                    messages[messages.length - 1].date = rawDt;
+                }
+            }
             continue;
         }
 
-        if (line.startsWith('Inbound Reply:') || line.startsWith('User:') || line.startsWith('Email Reply:')) {
-            const text = line.replace(/^(Inbound Reply|User|Email Reply):\s*/, '').trim();
+        if (line.startsWith('Outbound Email:') || line.startsWith('Email Sent:') || line.startsWith('Template:') || line.startsWith('Agent:') || line.startsWith('Agent :')) {
+            const text = line.replace(/^(Outbound Email|Email Sent|Template|Agent\s*:)\s*/, '').trim();
             messages.push({
-                type: 'user' as const,
+                type: 'bot' as const,
                 content: text,
-                label: 'Recipient Reply',
+                label: 'Agent Email',
                 date: null as string | null,
                 sequence: ++seq
             });
+            lastMessageKey = 'bot';
+            continue;
+        }
+
+        if (line.startsWith('Inbound Email:') || line.startsWith('Inbound Reply:') || line.startsWith('User:') || line.startsWith('Email Reply:') || line.startsWith('Reply:')) {
+            const text = line.replace(/^(Inbound Email|Inbound Reply|User|Email Reply|Reply):\s*/, '').trim();
+            const key = `user:${text}`;
+            if (key === lastMessageKey) continue;
+            messages.push({
+                type: 'user' as const,
+                content: text,
+                label: 'User Reply',
+                date: null as string | null,
+                sequence: ++seq
+            });
+            lastMessageKey = key;
+            continue;
+        }
+
+        const tsMatch = line.match(/^(\d{1,2}\/\d{1,2}\/\d{4}),\s*(\d{1,2}:\d{2}:\d{2}\s*(?:AM|PM))/i);
+        if (tsMatch) {
+            const dateStr = `${tsMatch[1]} ${tsMatch[2]}`;
+            const [m, d, y] = dateStr.split(/[\/\s,]+/);
+            const timeStr = dateStr.match(/\d{1,2}:\d{2}:\d{2}\s*(?:AM|PM)/i)?.[0] || '';
+            const parsed = new Date(`${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T${timeStr}`);
+            if (!isNaN(parsed.getTime()) && messages.length > 0) {
+                messages[messages.length - 1].date = parsed.toISOString();
+            }
             continue;
         }
 
@@ -70,12 +102,34 @@ function parseEmailContent(content: string, note?: string): any[] {
             messages.push({
                 type: 'bot' as const,
                 content: line,
-                label: 'Outbound Email',
+                label: 'Agent Email',
                 date: null as string | null,
                 sequence: ++seq
             });
         }
     }
+
+    messages.forEach(msg => {
+        if (msg.content) {
+            if (!msg.date) {
+                const m = msg.content.match(/(?:Date\s*&\s*Time|Date|Timestamp):\s*([^\n]+)/i);
+                if (m) {
+                    const rawDt = m[1].trim();
+                    const tsMatch = rawDt.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})[,\s]+(\d{1,2}:\d{2}:\d{2}\s*(?:AM|PM)?)/i);
+                    if (tsMatch) {
+                        const parsed = new Date(`${tsMatch[3]}-${tsMatch[1].padStart(2, '0')}-${tsMatch[2].padStart(2, '0')}T${tsMatch[4]}`);
+                        msg.date = !isNaN(parsed.getTime()) ? parsed.toISOString() : rawDt;
+                    } else {
+                        msg.date = rawDt;
+                    }
+                }
+            }
+            msg.content = msg.content
+                .replace(/\n?\s*(?:Date\s*&\s*Time|Date|Timestamp):\s*[^\n]+/gi, '')
+                .replace(/\n?\s*\d{1,2}\/\d{1,2}\/\d{4},\s*\d{1,2}:\d{2}:\d{2}\s*(?:AM|PM)?/gi, '')
+                .trim();
+        }
+    });
 
     return messages;
 }
@@ -172,7 +226,8 @@ export function EmailChatDetail({ leadId, onClose, initialLead }: EmailChatDetai
                 }
             }
 
-            const res = await fetch(`/api/activity?channel=email&search=${encodeURIComponent(leadId)}`);
+            const searchTarget = foundLead?.lead_email || foundLead?.Email || foundLead?.email || leadId;
+            const res = await fetch(`/api/activity?channel=email&search=${encodeURIComponent(searchTarget)}`);
             let actLogs: any[] = [];
             if (res.ok) {
                 const data = await res.json();
@@ -190,9 +245,20 @@ export function EmailChatDetail({ leadId, onClose, initialLead }: EmailChatDetai
                 };
             }
 
-            setLead(foundLead || { "Name": leadId, "Email": leadId });
+            setLead(foundLead || { "Name": searchTarget, "Email": searchTarget });
 
             const parsedMsgs: any[] = [];
+
+            // 1) Parse content directly if foundLead has content or note
+            if (foundLead && (foundLead.content || foundLead.note)) {
+                const msgs = parseEmailContent(foundLead.content, foundLead.note);
+                msgs.forEach(m => {
+                    if (foundLead.created_at && !m.date) m.date = foundLead.created_at;
+                });
+                parsedMsgs.push(...msgs);
+            }
+
+            // 2) Parse activity logs returned from API search
             actLogs.forEach(act => {
                 const msgs = parseEmailContent(act.content, act.note);
                 msgs.forEach(m => {
@@ -201,6 +267,7 @@ export function EmailChatDetail({ leadId, onClose, initialLead }: EmailChatDetai
                 parsedMsgs.push(...msgs);
             });
 
+            // 3) Parse legacy column stages (Email_1 ... Email_10) if no messages found
             if (parsedMsgs.length === 0 && foundLead) {
                 for (let i = 1; i <= 10; i++) {
                     const e = foundLead[`Email_${i}`] || foundLead[`Email ${i}`];
@@ -226,7 +293,16 @@ export function EmailChatDetail({ leadId, onClose, initialLead }: EmailChatDetai
                 }
             }
 
-            setMessages(parsedMsgs);
+            // Deduplicate messages by content
+            const seenContent = new Set<string>();
+            const uniqueMsgs = parsedMsgs.filter(m => {
+                const key = `${m.type}:${(m.content || '').trim()}`;
+                if (seenContent.has(key)) return false;
+                seenContent.add(key);
+                return true;
+            });
+
+            setMessages(uniqueMsgs);
         } catch (err) {
             console.error('[EmailChatDetail]', err);
         } finally {

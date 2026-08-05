@@ -9,6 +9,7 @@ function parseEmailContent(content: string, note?: string): any[] {
     const rawText = content || note || "";
     const lines = rawText.split('\n');
     let seq = 0;
+    let lastMessageKey = '';
 
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
@@ -19,28 +20,43 @@ function parseEmailContent(content: string, note?: string): any[] {
             continue;
         }
 
-        if (line.startsWith('Outbound Email:') || line.startsWith('Email Sent:') || line.startsWith('Template:')) {
-            const text = line.replace(/^(Outbound Email|Email Sent|Template):\s*/, '').trim();
-            messages.push({ type: 'bot', content: text, label: 'Outbound Email', date: null, sequence: ++seq });
+        const dtMatch = line.match(/^(?:Date\s*&\s*Time|Date|Timestamp):\s*(.*)$/i);
+        if (dtMatch) {
+            const rawDt = dtMatch[1].trim();
+            if (messages.length > 0) {
+                const tsMatch = rawDt.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})[,\s]+(\d{1,2}:\d{2}:\d{2}\s*(?:AM|PM)?)/i);
+                if (tsMatch) {
+                    const parsed = new Date(`${tsMatch[3]}-${tsMatch[1].padStart(2, '0')}-${tsMatch[2].padStart(2, '0')}T${tsMatch[4]}`);
+                    messages[messages.length - 1].date = !isNaN(parsed.getTime()) ? parsed.toISOString() : rawDt;
+                } else {
+                    messages[messages.length - 1].date = rawDt;
+                }
+            }
             continue;
         }
 
-        if (line.startsWith('Inbound Email:') || line.startsWith('Reply:') || line.startsWith('User:')) {
-            const text = line.replace(/^(Inbound Email|Reply|User):\s*/, '').trim();
-            messages.push({ type: 'user', content: text, label: 'Reply', date: null, sequence: ++seq });
+        if (line.startsWith('Outbound Email:') || line.startsWith('Email Sent:') || line.startsWith('Template:') || line.startsWith('Agent:') || line.startsWith('Agent :')) {
+            const text = line.replace(/^(Outbound Email|Email Sent|Template|Agent\s*:)\s*/, '').trim();
+            messages.push({ type: 'bot', content: text, label: 'Agent Email', date: null, sequence: ++seq });
+            lastMessageKey = 'bot';
             continue;
         }
 
-        if (line.startsWith('Agent:') || line.startsWith('Agent :')) {
-            const text = line.replace(/^Agent\s*:\s*/, '').trim();
-            messages.push({ type: 'bot', content: text, label: 'Agent', date: null, sequence: ++seq });
+        if (line.startsWith('Inbound Email:') || line.startsWith('Inbound Reply:') || line.startsWith('User:') || line.startsWith('Email Reply:') || line.startsWith('Reply:')) {
+            const text = line.replace(/^(Inbound Email|Inbound Reply|User|Email Reply|Reply):\s*/, '').trim();
+            const key = `user:${text}`;
+            if (key === lastMessageKey) continue;
+            messages.push({ type: 'user', content: text, label: 'User Reply', date: null, sequence: ++seq });
+            lastMessageKey = key;
             continue;
         }
 
         const tsMatch = line.match(/^(\d{1,2}\/\d{1,2}\/\d{4}),\s*(\d{1,2}:\d{2}:\d{2}\s*(?:AM|PM))/i);
         if (tsMatch) {
-            const [m, d, y] = tsMatch[1].split('/');
-            const parsed = new Date(`${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T${tsMatch[2]}`);
+            const dateStr = `${tsMatch[1]} ${tsMatch[2]}`;
+            const [m, d, y] = dateStr.split(/[\/\s,]+/);
+            const timeStr = dateStr.match(/\d{1,2}:\d{2}:\d{2}\s*(?:AM|PM)/i)?.[0] || '';
+            const parsed = new Date(`${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T${timeStr}`);
             if (!isNaN(parsed.getTime()) && messages.length > 0) {
                 messages[messages.length - 1].date = parsed.toISOString();
             }
@@ -50,9 +66,31 @@ function parseEmailContent(content: string, note?: string): any[] {
         if (messages.length > 0) {
             messages[messages.length - 1].content += '\n' + line;
         } else {
-            messages.push({ type: 'bot', content: line, label: 'Email', date: null, sequence: ++seq });
+            messages.push({ type: 'bot', content: line, label: 'Agent Email', date: null, sequence: ++seq });
         }
     }
+
+    messages.forEach(msg => {
+        if (msg.content) {
+            if (!msg.date) {
+                const m = msg.content.match(/(?:Date\s*&\s*Time|Date|Timestamp):\s*([^\n]+)/i);
+                if (m) {
+                    const rawDt = m[1].trim();
+                    const tsMatch = rawDt.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})[,\s]+(\d{1,2}:\d{2}:\d{2}\s*(?:AM|PM)?)/i);
+                    if (tsMatch) {
+                        const parsed = new Date(`${tsMatch[3]}-${tsMatch[1].padStart(2, '0')}-${tsMatch[2].padStart(2, '0')}T${tsMatch[4]}`);
+                        msg.date = !isNaN(parsed.getTime()) ? parsed.toISOString() : rawDt;
+                    } else {
+                        msg.date = rawDt;
+                    }
+                }
+            }
+            msg.content = msg.content
+                .replace(/\n?\s*(?:Date\s*&\s*Time|Date|Timestamp):\s*[^\n]+/gi, '')
+                .replace(/\n?\s*\d{1,2}\/\d{1,2}\/\d{4},\s*\d{1,2}:\d{2}:\d{2}\s*(?:AM|PM)?/gi, '')
+                .trim();
+        }
+    });
 
     return messages;
 }
@@ -148,13 +186,13 @@ export default function PublicEmailSharePage({ params }: { params: Promise<{ lea
     };
 
     return (
-        <div className="min-h-screen bg-[#0a0d14] text-white flex flex-col items-center justify-center p-4 md:p-8 relative">
+        <div className="h-screen max-h-screen bg-[#0a0d14] text-white flex flex-col items-center justify-center p-3 md:p-6 relative overflow-hidden">
             <div className="fixed -top-40 -left-40 w-96 h-96 rounded-full bg-blue-600/20 blur-[120px] pointer-events-none z-0" />
             <div className="fixed -bottom-40 -right-40 w-[500px] h-[500px] rounded-full bg-indigo-600/15 blur-[120px] pointer-events-none z-0" />
 
-            <div className="w-full max-w-5xl min-h-[88vh] bg-[#0d121f]/90 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-2xl p-4 sm:p-6 flex flex-col relative z-10">
+            <div className="w-full max-w-5xl h-[85vh] max-h-[800px] bg-[#0d121f]/90 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-2xl p-4 sm:p-5 flex flex-col relative z-10 overflow-hidden">
 
-                <div className="mb-4 flex items-center justify-between shrink-0">
+                <div className="mb-3 flex items-center justify-between shrink-0">
                     <span className="text-xs font-mono text-blue-400 bg-blue-500/10 border border-blue-500/20 px-3 py-1 rounded-full font-semibold">
                         ✉️ Email Thread • {decodedLeadId}
                     </span>
@@ -178,7 +216,7 @@ export default function PublicEmailSharePage({ params }: { params: Promise<{ lea
                 </div>
 
                 {lead && !loading && (
-                    <div className="mb-4 p-3 rounded-xl bg-white/5 border border-white/10 flex items-center gap-4 shrink-0">
+                    <div className="mb-3 p-3 rounded-xl bg-white/5 border border-white/10 flex items-center gap-4 shrink-0">
                         <div className="h-10 w-10 rounded-full bg-blue-600/30 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold text-sm">
                             {String(lead.name || lead.email || '?').charAt(0).toUpperCase()}
                         </div>
@@ -187,7 +225,7 @@ export default function PublicEmailSharePage({ params }: { params: Promise<{ lea
                             <p className="text-xs text-slate-400">{lead.email} {lead.phone ? `• ${lead.phone}` : ''} {lead.campaign ? `• ${lead.campaign}` : ''}</p>
                         </div>
                         <div className="ml-auto text-right">
-                            <p className="text-[10px] font-bold uppercase text-slate-500">Emails</p>
+                            <p className="text-[10px] font-bold uppercase text-slate-500">Messages</p>
                             <p className="text-lg font-bold text-blue-400">{messages.length}</p>
                         </div>
                     </div>
@@ -196,10 +234,10 @@ export default function PublicEmailSharePage({ params }: { params: Promise<{ lea
                 <div className="flex-1 overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] flex flex-col min-h-0">
                     <div className="border-b border-white/10 p-3 px-4 flex justify-between items-center shrink-0">
                         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email Thread</h3>
-                        <div className="text-[10px] text-slate-500 font-bold">{messages.length} Emails</div>
+                        <div className="text-[10px] text-slate-500 font-bold">{messages.length} Messages</div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
                         {loading ? (
                             <div className="h-64 flex flex-col items-center justify-center gap-3 text-slate-400">
                                 <RefreshCw className="h-8 w-8 animate-spin text-blue-500" />

@@ -40,16 +40,6 @@ const emailSidebarItems = [
         icon: Send,
     },
     {
-        title: "Received",
-        href: "/dashboard/email/received",
-        icon: Inbox,
-    },
-    {
-        title: "Bounces",
-        href: "/dashboard/email/bounces",
-        icon: AlertCircle,
-    },
-    {
         title: "Unsubscribed",
         href: "/dashboard/email/unsubscribed",
         icon: UserMinus,
@@ -59,7 +49,7 @@ const emailSidebarItems = [
         href: "/dashboard/email/analytics",
         icon: BarChart3,
     },
-    
+
 ];
 
 export default function EmailLayout({

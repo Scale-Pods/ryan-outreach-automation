@@ -1,76 +1,90 @@
 import { NextResponse } from 'next/server';
-import dns from 'node:dns';
+import { supabaseAdmin } from '@/lib/supabase';
 
-try {
-    dns.setDefaultResultOrder('ipv4first');
-} catch (e) {
-    // ignore
-}
+export const dynamic = 'force-dynamic';
+
+const ACTIVITY_TABLES = ['aspen_activity', 'fello_activity', 'naples_activity', 'old_activity'] as const;
 
 export async function GET(request: Request) {
     try {
-        const apiKey = process.env.INSTANTLY_API_KEY;
+        const { searchParams } = new URL(request.url);
+        const from = searchParams.get('start_date');
+        const to = searchParams.get('end_date');
 
-        if (!apiKey) {
-            return NextResponse.json(
-                { error: 'Configuration error: INSTANTLY_API_KEY is missing' },
-                { status: 500 }
-            );
+        const fromDate = from ? new Date(from).toISOString() : new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+        const toDate = to ? new Date(to).toISOString() : new Date().toISOString();
+
+        const tableStats: Record<string, { name: string; totalSent: number; totalReplies: number; totalUnsubscribed: number }> = {
+            aspen_activity: { name: 'Aspen', totalSent: 0, totalReplies: 0, totalUnsubscribed: 0 },
+            fello_activity: { name: 'Fello', totalSent: 0, totalReplies: 0, totalUnsubscribed: 0 },
+            naples_activity: { name: 'Naples', totalSent: 0, totalReplies: 0, totalUnsubscribed: 0 },
+            old_activity: { name: 'Old Leads', totalSent: 0, totalReplies: 0, totalUnsubscribed: 0 },
+        };
+
+        const dailyMap: Record<string, { date: string; sent: number; replies: number }> = {};
+        let grandTotalSent = 0;
+        let grandTotalReplies = 0;
+        let grandTotalUnsubscribed = 0;
+
+        for (const table of ACTIVITY_TABLES) {
+            const { data, error } = await supabaseAdmin
+                .from(table)
+                .select('*')
+                .gte('created_at', fromDate)
+                .lte('created_at', toDate);
+
+            if (!error && data) {
+                data.forEach((row: any) => {
+                    const channel = String(row.channel || '').toLowerCase();
+                    const actionType = String(row.action_type || '').toLowerCase();
+                    const status = String(row.status || '').toLowerCase();
+
+                    const isEmail = channel.includes('email') || actionType.includes('email') || !!row.lead_email;
+                    if (isEmail && channel !== 'voice' && channel !== 'whatsapp' && channel !== 'sms') {
+                        grandTotalSent++;
+                        tableStats[table].totalSent++;
+
+                        const isReply = status.includes('reply') || actionType.includes('reply') || !!row.replied_at;
+                        if (isReply) {
+                            grandTotalReplies++;
+                            tableStats[table].totalReplies++;
+                        }
+
+                        const isUnsub = status.includes('unsubscribed') || actionType.includes('unsubscribed');
+                        if (isUnsub) {
+                            grandTotalUnsubscribed++;
+                            tableStats[table].totalUnsubscribed++;
+                        }
+
+                        if (row.created_at) {
+                            const dateKey = new Date(row.created_at).toISOString().split('T')[0];
+                            if (!dailyMap[dateKey]) {
+                                dailyMap[dateKey] = { date: dateKey, sent: 0, replies: 0 };
+                            }
+                            dailyMap[dateKey].sent++;
+                            if (isReply) dailyMap[dateKey].replies++;
+                        }
+                    }
+                });
+            }
         }
 
-        const { searchParams } = new URL(request.url);
-        // Default to last 30 days if not specified
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - 30);
+        const dailyHistory = Object.values(dailyMap).sort((a, b) => a.date.localeCompare(b.date));
 
-        const start = searchParams.get('start_date') || startDate.toISOString().split('T')[0];
-        const end = searchParams.get('end_date') || endDate.toISOString().split('T')[0];
-
-        // Construct URL with query parameters
-        const apiUrl = new URL('https://api.instantly.ai/api/v2/accounts/analytics/daily');
-        apiUrl.searchParams.append('start_date', start);
-        apiUrl.searchParams.append('end_date', end);
-
-        // We might need to specify emails or campaigns ID if the API requires it. 
-        // Based on user prompt, assuming it returns data for all accounts or requires no extra body for GET.
-        // However, usually 'daily' analytics might need a campaign_id or similar. 
-        // If this endpoint returns aggregate for the account associated with the API key, then fine.
-        // If it requires post body, I would change to POST. But user said GET.
-
-        const response = await fetch(apiUrl.toString(), {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json'
-            }
+        return NextResponse.json({
+            totalSent: grandTotalSent,
+            totalReplies: grandTotalReplies,
+            totalUnsubscribed: grandTotalUnsubscribed,
+            tableStats,
+            dailyHistory,
+        }, {
+            headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' },
         });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Instantly Analytics API Error:', response.status, errorText);
-            return NextResponse.json(
-                { error: `Instantly API error: ${response.status}`, details: errorText },
-                { status: response.status }
-            );
-        }
-
-        const data = await response.json();
-
-        // Filter for specific emails
-        const targetEmails = ["info@ryansautomation.me", "sales@ryansautomation.me"];
-
-        let filteredData = data;
-        if (Array.isArray(data)) {
-            filteredData = data.filter((item: any) => targetEmails.includes(item.email_account));
-        }
-
-        return NextResponse.json(filteredData);
-
-    } catch (error) {
+    } catch (error: any) {
         console.error('Analytics API Route Error:', error);
         return NextResponse.json(
-            { error: 'Internal Server Error' },
+            { error: 'Internal Server Error', details: error.message },
             { status: 500 }
         );
     }

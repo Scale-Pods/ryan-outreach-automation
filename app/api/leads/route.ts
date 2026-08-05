@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
         const from = searchParams.get('from');
         const to = searchParams.get('to');
 
-        const fromDate = from || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+        const fromDate = from || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
         const toDate = to || new Date().toISOString();
 
         let nrWf: any[] = [];
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
                     .gte('created_at', fromDate)
                     .lte('created_at', toDate)
                     .order('created_at', { ascending: false })
-                    .limit(100);
+                    .limit(500);
 
                 if (!qErr && data && data.length > 0) {
                     activityLeads.push(...data.map((r: any) => ({

@@ -26,9 +26,18 @@ export default function UnsubscribedPage() {
         const fetchUnsubscribed = async () => {
             if (loadingLeads) return;
             try {
-                const unsubscribed = allLeads.filter((lead: any) =>
-                    lead.unsubscribed && String(lead.unsubscribed).toLowerCase().includes("yes")
-                );
+                const unsubscribed = allLeads.filter((lead: any) => {
+                    const channel = String(lead.channel || '').toLowerCase();
+                    const actionType = String(lead.action_type || '').toLowerCase();
+                    const status = String(lead.status || '').toLowerCase();
+
+                    if (lead._source_table || channel) {
+                        return (channel === 'email' || actionType.includes('email')) &&
+                            (status.includes('unsubscribed') || actionType.includes('unsubscribed') || String(lead.unsubscribed || '').toLowerCase().includes('yes'));
+                    }
+
+                    return lead.unsubscribed && String(lead.unsubscribed).toLowerCase().includes("yes");
+                });
 
                 // Sort by date mostly recently created desc
                 unsubscribed.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());

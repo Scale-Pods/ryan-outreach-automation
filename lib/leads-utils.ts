@@ -300,5 +300,38 @@ export function consolidateLeads(data: RawLeadsResponse): ConsolidatedLead[] {
         });
     }
 
+    // 5. Map activity_leads (from aspen_activity, fello_activity, naples_activity, old_activity)
+    if (Array.isArray((data as any).activity_leads)) {
+        (data as any).activity_leads.forEach((act: any, idx: number) => {
+            consolidatedLeads.push({
+                id: act.id ? `act-${act._source_table || 'tbl'}-${act.id}` : `act-${idx}`,
+                lead_id: act.lead_id || act.id,
+                name: String(act.lead_name || act.customer_name || "Lead"),
+                phone: String(act.lead_phone || act.customer_phone || ""),
+                email: String(act.lead_email || act.email || "No Email"),
+                replied: (act.status && String(act.status).toLowerCase().includes('reply')) ? 'Yes' : 'No',
+                current_loop: act._source_table || act.channel || "Activity Stream",
+                source_loop: act._source_table || act.channel || "Activity Stream",
+                stages_passed: [],
+                stage_data: {},
+                created_at: act.created_at || act.updated_at || new Date().toISOString(),
+                updated_at: act.updated_at || act.created_at,
+                _source_table: act._source_table,
+                channel: act.channel,
+                action_type: act.action_type,
+                status: act.status,
+                content: act.content,
+                note: act.note,
+                summary: act.summary,
+                lead_temp: act.lead_temp,
+                vapi_account: act.vapi_account,
+                workflow_name: act.workflow_name,
+                replied_at: act.replied_at,
+                unsubscribed: act.unsubscribed || (act.status && String(act.status).toLowerCase().includes('unsubscribed') ? 'Yes' : 'No'),
+                ...act
+            });
+        });
+    }
+
     return consolidatedLeads;
 }

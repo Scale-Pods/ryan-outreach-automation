@@ -40,6 +40,34 @@ export default function ReceivedEmailsPage() {
                 const realReplies: any[] = [];
 
                 allLeads.forEach((lead: any, index: number) => {
+                    const channel = String(lead.channel || '').toLowerCase();
+                    const actionType = String(lead.action_type || '').toLowerCase();
+                    const status = String(lead.status || '').toLowerCase();
+
+                    // --- Activity Table Record Mapping ---
+                    if (lead._source_table || channel) {
+                        if ((channel === 'email' || actionType.includes('email')) &&
+                            (status.includes('reply') || status.includes('replied') || actionType.includes('reply') || actionType.includes('inbound') || lead.replied_at)) {
+                            const rDate = new Date(lead.replied_at || lead.created_at || Date.now());
+                            let formattedTimestamp = "Unknown Date";
+                            try { formattedTimestamp = format(rDate, "MMM dd, yyyy • p"); } catch (_) {}
+
+                            realReplies.push({
+                                id: lead.id ? `act-reply-${lead.id}` : `act-reply-${index}`,
+                                sender: lead.lead_email || lead.email || "No Email Provided",
+                                senderName: lead.lead_name || lead.name || "Lead",
+                                status: "Replied",
+                                subject: lead.content ? (lead.content.split('\n')[0] || "Email Reply") : "Email Reply",
+                                timestamp: formattedTimestamp,
+                                content: lead.content || lead.note || "Email Reply Received",
+                                originalDate: rDate.toISOString(),
+                                loop: lead._source_table || lead.source_loop || "Activity Stream",
+                                repliedToStep: lead.action_type || "Email Reply",
+                            });
+                        }
+                        return;
+                    }
+
                     // Read Email_Replied column value (mapped to email_replied in leads-utils)
                     const emailReply = lead.email_replied;
                     if (!emailReply || emailReply === "No" || String(emailReply).trim() === "") return;

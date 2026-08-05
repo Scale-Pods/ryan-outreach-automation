@@ -106,7 +106,7 @@ export default function BouncedEmailsPage() {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <h1 className="text-2xl font-bold text-[var(--label-primary)]">Bounced Emails</h1>
-                        <p className="text-[var(--label-secondary)]">Real-time bounce tracking from Instantly.ai</p>
+                        <p className="text-[var(--label-secondary)]">Real-time bounce and delivery error tracking</p>
                     </div>
                     <Button
                         onClick={fetchBounces}
