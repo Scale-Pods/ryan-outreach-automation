@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { subDays } from "date-fns";
 import { useData } from "@/context/DataContext";
 import { LMLoader } from "@/components/ryan-loader";
+import { EmailTrackerSection } from "@/components/dashboard/email-tracker";
 
 export default function EmailDashboardPage() {
     const router = useRouter();
@@ -293,6 +294,15 @@ export default function EmailDashboardPage() {
                     </Table>
                 </CardContent>
             </Card>
+
+            {/* Email Account Tracker */}
+            <div className="space-y-4">
+                <div>
+                    <h2 className="text-lg font-bold text-[var(--label-primary)] uppercase tracking-wider">Email Account Tracker</h2>
+                    <p className="text-xs text-[var(--label-secondary)]">Monitor daily sending limits and usage per email account. Click the pencil icon to update the max allowed limit.</p>
+                </div>
+                <EmailTrackerSection />
+            </div>
         </div>
     );
 }
