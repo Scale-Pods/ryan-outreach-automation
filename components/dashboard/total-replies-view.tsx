@@ -78,14 +78,17 @@ export function TotalRepliesView({ leads = [], dateRange, onViewLead }: { leads?
 
     leads.forEach((lead: any, idx: number) => {
         let addedCount = 0;
-        const fallbackDate = getValidDate(lead.updated_at || lead.created_at || lead["Created At"] || lead.createdOn);
+        const fallbackDate = getValidDate(lead.replied_at || lead.updated_at || lead.created_at || lead["Created At"] || lead.createdOn);
+        const leadId = lead["Lead ID"] || lead.id || `lead-${idx}`;
+        const contactName = lead.name || lead["Name"] || lead.lead_name || lead.customer_name || "Unknown";
+        const contactInfo = lead.phone || lead["Phone"] || lead.lead_phone || lead.email || lead["Email"] || lead.lead_email || "No info";
 
         // --- WhatsApp Logic ---
         let wpReplyObj = { content: "Lead replied via WhatsApp", date: fallbackDate };
         let hasWP = false;
 
         const wtR = String(lead.WP_Replied_track || lead["WP_Replied_track"] || "").trim();
-        if (wtR && wtR.toLowerCase() !== "no" && wtR.toLowerCase() !== "none") {
+        if (wtR && wtR.toLowerCase() !== "no" && wtR.toLowerCase() !== "none" && wtR !== "0") {
             hasWP = true;
             const parsed = parseMsg(wtR);
             if (parsed.date) wpReplyObj = { content: parsed.content || wtR, date: parsed.date };
@@ -95,7 +98,7 @@ export function TotalRepliesView({ leads = [], dateRange, onViewLead }: { leads?
         const addWpReply = (raw: any) => {
             if (!raw) return;
             const s = String(raw).trim();
-            if (!s || s.toLowerCase() === "no" || s.toLowerCase() === "none") return;
+            if (!s || s.toLowerCase() === "no" || s.toLowerCase() === "none" || s === "0") return;
             hasWP = true;
             const parsed = parseMsg(raw);
             const msgDate = parsed.date || fallbackDate;
@@ -110,11 +113,10 @@ export function TotalRepliesView({ leads = [], dateRange, onViewLead }: { leads?
 
         if (hasWP) {
             addedCount++;
-            const leadId = lead["Lead ID"] || lead.id || `lead-${idx}`;
             realData.push({
-                id: `${leadId}-wp`,
-                contactName: lead.name || lead["Name"] || lead.lead_name || "Unknown",
-                contactInfo: lead.phone || lead["Phone"] || lead.lead_phone || "No info",
+                id: `${leadId}-wp-${idx}`,
+                contactName,
+                contactInfo,
                 mode: 'WhatsApp',
                 date: wpReplyObj.date.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' }),
                 time: wpReplyObj.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -128,7 +130,7 @@ export function TotalRepliesView({ leads = [], dateRange, onViewLead }: { leads?
 
         // --- Email Logic ---
         const rawEmail = lead.email_replied || lead["Email Replied"];
-        const hasEmail = rawEmail && !["no", "none", ""].includes(String(rawEmail).toLowerCase().trim());
+        const hasEmail = rawEmail && !["no", "none", "", "0"].includes(String(rawEmail).toLowerCase().trim());
 
         if (hasEmail) {
             addedCount++;
@@ -137,35 +139,38 @@ export function TotalRepliesView({ leads = [], dateRange, onViewLead }: { leads?
             const emailReplyObj = { content: parsed.content || String(rawEmail) || "Lead replied via Email", date: msgDate };
 
             realData.push({
-                id: `${lead.id || `lead-${idx}`}-email`,
-                contactName: lead.name || lead["Name"] || lead.lead_name || "Unknown",
-                contactInfo: lead.email || lead["Email"] || lead.lead_email || "No info",
+                id: `${leadId}-email-${idx}`,
+                contactName,
+                contactInfo: lead.email || lead["Email"] || lead.lead_email || contactInfo,
                 mode: 'Email',
                 date: emailReplyObj.date.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' }),
                 time: emailReplyObj.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 status: 'Replied',
                 preview: emailReplyObj.content.substring(0, 70) + (emailReplyObj.content.length > 70 ? "..." : ""),
-                link: `/dashboard/email/received`,
+                link: `/dashboard/email/sent`,
+                rawLead: lead,
                 sortDate: emailReplyObj.date
             });
         }
 
-        // --- Fallback for any other replied lead ---
+        // --- Fallback for any other replied lead (activity tables, voice, sms) ---
         if (addedCount === 0) {
             const replyDate = getValidDate(lead.replied_at || lead.updated_at || lead.created_at || lead["Created At"]);
-            const leadId = lead["Lead ID"] || lead.id || `lead-${idx}`;
-            const mode = (lead.channel === 'voice' || lead.mode === 'Voice') ? 'Voice' : ((lead.channel === 'email' || lead.mode === 'Email') ? 'Email' : 'WhatsApp');
+            const channel = String(lead.channel || '').toLowerCase();
+            let mode: 'Email' | 'WhatsApp' | 'Voice' = 'WhatsApp';
+            if (channel.includes('email') || lead.lead_email || lead.email) mode = 'Email';
+            else if (channel.includes('voice') || channel.includes('call') || lead.mode === 'Voice') mode = 'Voice';
 
             realData.push({
-                id: `${leadId}-fallback`,
-                contactName: lead.name || lead["Name"] || lead.lead_name || "Unknown",
-                contactInfo: lead.phone || lead["Phone"] || lead.lead_phone || lead.email || lead["Email"] || lead.lead_email || "No info",
-                mode: mode as any,
+                id: `${leadId}-act-${idx}`,
+                contactName,
+                contactInfo,
+                mode,
                 date: replyDate.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' }),
                 time: replyDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 status: 'Replied',
-                preview: (lead.note || lead.summary || lead.content || lead.WP_Replied_track || lead.whatsapp_replied || "Replied").substring(0, 70),
-                link: mode === 'WhatsApp' ? `/dashboard/whatsapp/chat?chat=${leadId}` : (mode === 'Voice' ? `/dashboard/voice` : `/dashboard/email/received`),
+                preview: (lead.content || lead.note || lead.summary || lead.transcript || lead.WP_Replied_track || lead.whatsapp_replied || "Replied").substring(0, 70),
+                link: mode === 'WhatsApp' ? `/dashboard/whatsapp/chat?chat=${leadId}` : (mode === 'Voice' ? `/dashboard/voice` : `/dashboard/email/sent`),
                 rawLead: lead,
                 sortDate: replyDate,
             });
@@ -175,19 +180,14 @@ export function TotalRepliesView({ leads = [], dateRange, onViewLead }: { leads?
     // Sort heavily by newest reply first
     realData.sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime());
 
-    // Filter logic
-    const rangeFrom = dateRange?.from ? new Date(dateRange.from).setHours(0, 0, 0, 0) : null;
-    const rangeTo = dateRange?.to ? new Date(dateRange.to).setHours(23, 59, 59, 999) : (dateRange?.from ? new Date(dateRange.from).setHours(23, 59, 59, 999) : null);
-
+    // Filter logic based on search and mode filter
     const filteredData = realData.filter(item => {
         const matchesSearch = !search ||
             item.contactName.toLowerCase().includes(search.toLowerCase()) ||
             item.contactInfo.toLowerCase().includes(search.toLowerCase()) ||
             item.preview.toLowerCase().includes(search.toLowerCase());
-        const matchesMode = modeFilter === "all" || item.mode.toLowerCase() === modeFilter;
-        const t = item.sortDate ? item.sortDate.getTime() : 0;
-        const matchesDate = !rangeFrom || isNaN(t) || t === 0 || (t >= rangeFrom && (!rangeTo || t <= rangeTo));
-        return matchesSearch && matchesMode && matchesDate;
+        const matchesMode = modeFilter === "all" || item.mode.toLowerCase() === modeFilter.toLowerCase();
+        return matchesSearch && matchesMode;
     });
 
     const totalPages = Math.ceil(filteredData.length / itemsPerPage);

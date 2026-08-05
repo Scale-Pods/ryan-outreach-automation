@@ -117,12 +117,56 @@ export default function MasterDashboard() {
     }, [dateRange, fetchWaStats]);
 
     const combinedReplyLeads = useMemo(() => {
-        if (waReplyLeads.length > 0) return waReplyLeads;
-        return (leads || []).filter((l: any) => {
-            const reply = l.WP_Replied_track || l["WP_Replied_track"] || l.whatsapp_replied || l["W.P_Replied 1"];
-            return reply && String(reply).toLowerCase() !== 'no' && String(reply).trim() !== '';
+        const fromTime = dateRange?.from ? startOfDay(new Date(dateRange.from)).getTime() : null;
+        const toTime = dateRange?.to ? endOfDay(new Date(dateRange.to)).getTime() : fromTime;
+
+        const replyList: any[] = [];
+        const seenIds = new Set<string>();
+
+        const checkReplyDate = (d: any) => {
+            if (!fromTime) return true;
+            if (!d) return true;
+            const t = new Date(d).getTime();
+            if (isNaN(t)) return true;
+            return t >= fromTime && (!toTime || t <= toTime);
+        };
+
+        // 1. Process waReplyLeads
+        (waReplyLeads || []).forEach((l: any) => {
+            const uid = l.id || l["Lead ID"] || l.lead_id;
+            if (uid && !seenIds.has(String(uid))) {
+                seenIds.add(String(uid));
+                replyList.push(l);
+            }
         });
-    }, [waReplyLeads, leads]);
+
+        // 2. Process leads context (includes aspen_activity, fello_activity, naples_activity, old_activity)
+        (leads || []).forEach((l: any) => {
+            const channel = String(l.channel || '').toLowerCase();
+            const actionType = String(l.action_type || '').toLowerCase();
+            const status = String(l.status || '').toLowerCase();
+
+            const wtR = l.WP_Replied_track || l["WP_Replied_track"] || l.whatsapp_replied || l["W.P_Replied 1"];
+            const emR = l.email_replied || l["Email Replied"];
+            const isActivityReply = status.includes('reply') || status.includes('replied') || actionType.includes('reply') || actionType.includes('inbound') || !!l.replied_at;
+
+            const hasWpReply = wtR && !["no", "none", "", "0"].includes(String(wtR).toLowerCase().trim());
+            const hasEmailReply = emR && !["no", "none", "", "0"].includes(String(emR).toLowerCase().trim());
+
+            if (hasWpReply || hasEmailReply || isActivityReply) {
+                const dateRef = l.replied_at || l.updated_at || l.created_at;
+                if (checkReplyDate(dateRef)) {
+                    const uid = l._source_table ? `${l._source_table}-${l.id}` : (l.id || l["Lead ID"]);
+                    if (uid && !seenIds.has(String(uid))) {
+                        seenIds.add(String(uid));
+                        replyList.push(l);
+                    }
+                }
+            }
+        });
+
+        return replyList;
+    }, [waReplyLeads, leads, dateRange]);
 
     const loading = loadingMasterMetrics;
 
@@ -147,7 +191,7 @@ export default function MasterDashboard() {
     const displayEmailsSent = emailCount;
     const displayWaReachouts = Math.max(totalWaReachouts, m?.activityWaCount ?? 0);
     const displayVoiceCalls = Math.max(m?.totalVoiceCalls ?? 0, m?.activityVoiceCount ?? 0);
-    const displayReplies = Math.max(totalWaReplies, m?.activityRepliesCount ?? 0);
+    const displayReplies = Math.max(combinedReplyLeads.length, totalWaReplies, m?.activityRepliesCount ?? 0);
     const displayReplyRate = displayWaReachouts > 0 ? ((displayReplies / displayWaReachouts) * 100).toFixed(1) : '0';
 
     const realServiceDistribution = useMemo(() => {
