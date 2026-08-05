@@ -10,7 +10,7 @@ env/
 .env
 .env.local
 bin/
-share/
+
 
 # Build and Output
 dist/
