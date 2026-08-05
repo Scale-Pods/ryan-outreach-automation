@@ -239,8 +239,9 @@ export function EmailChatDetail({ leadId, onClose, initialLead }: EmailChatDetai
     }, [leadId, initialLead]);
 
     const copyShareLink = () => {
-        const rawEmail = lead?.["Email"] || lead?.email || lead?.lead_email || leadId;
-        const shareId = String(rawEmail).trim() || lead?.["Lead ID"] || lead?.id || leadId;
+        // Use lead_email (activity column) as primary share identifier
+        const rawEmail = lead?.["lead_email"] || lead?.["Email"] || lead?.email || leadId;
+        const shareId = String(rawEmail).trim() || leadId;
         const shareUrl = `${window.location.origin}/share/email/${encodeURIComponent(shareId)}`;
         navigator.clipboard.writeText(shareUrl);
         setCopied(true);

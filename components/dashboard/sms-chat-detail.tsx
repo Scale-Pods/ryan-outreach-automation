@@ -323,9 +323,10 @@ export function SMSChatDetail({ customerId, onClose, initialLead }: SMSChatDetai
     }, [customerId, initialLead]);
 
     const copyLink = () => {
-        const rawPhone = lead?.["Phone"] || lead?.phone || lead?.lead_phone || customerId;
-        const cleanPhone = String(rawPhone).replace(/[^\d+]/g, '') || String(rawPhone).trim();
-        const shareId = cleanPhone || lead?.["Lead ID"] || lead?.id || customerId;
+        // Use lead_phone (activity column) as primary share identifier
+        const rawPhone = lead?.["lead_phone"] || lead?.["Phone"] || lead?.phone || customerId;
+        const cleanPhone = String(rawPhone).replace(/\s/g, '');  // keep + and digits, strip spaces only
+        const shareId = cleanPhone || customerId;
         const shareUrl = `${window.location.origin}/share/sms/${encodeURIComponent(shareId)}`;
         navigator.clipboard.writeText(shareUrl);
         setCopied(true);

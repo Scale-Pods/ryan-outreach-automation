@@ -164,12 +164,12 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
     const handleCopyLink = () => {
         if (!lead) return;
         const baseUrl = window.location.origin;
-        // Prioritize phone number for clean, recognizable share links
-        const rawPhone = lead.phone || (lead as any)["Phone"] || (lead as any).lead_phone || customerId;
-        const cleanPhone = String(rawPhone).replace(/[^\d+]/g, '') || String(rawPhone).trim();
-        const shareId = cleanPhone || lead.id || (lead as any)["Lead ID"] || customerId;
+        // Use lead_phone (activity column) → phone → customerId as share identifier
+        const rawPhone = (lead as any).lead_phone || lead.phone || (lead as any)["Phone"] || customerId;
+        const cleanPhone = String(rawPhone).replace(/\s/g, '');  // keep + and digits, strip spaces only
+        const shareId = cleanPhone || customerId;
         const shareUrl = `${baseUrl}/share/whatsapp/${encodeURIComponent(shareId)}`;
-        
+
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(shareUrl).then(() => {
                 setCopied(true);
@@ -178,7 +178,6 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
                 console.error("Failed to copy link:", err);
             });
         } else {
-            // Fallback for non-secure contexts
             const textArea = document.createElement("textarea");
             textArea.value = shareUrl;
             document.body.appendChild(textArea);
