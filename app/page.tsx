@@ -53,7 +53,7 @@ export default function LandingPage() {
                 </div>
             </header>
 
-            {/* Hero Section */}
+            {/* Hero Section asd */} 
             <main className="pt-32 pb-16 px-6">
                 <div className="container mx-auto max-w-5xl">
                     <div className="space-y-6">
