@@ -2,114 +2,100 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Mail, MessageCircle, Mic, ExternalLink, Copy, Eye, EyeOff, ShieldCheck, Wallet, Phone, BarChart3, Smartphone } from "lucide-react";
+import { Mail, MessageCircle, Mic, ExternalLink, Copy, Eye, EyeOff, Wallet, Phone, BarChart3, Smartphone } from "lucide-react";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { useData } from "@/context/DataContext";
 
 export default function CredentialsPage() {
-    const { calls, voiceBalance, twilioBalance, loadingBalances } = useData();
+    const { calls, voiceBalance, twilioBalance } = useData();
 
     const vapiAgentUsed = React.useMemo(() => {
         if (!calls || !Array.isArray(calls)) return 0;
         return calls.filter((c: any) => c.source === 'vapi').reduce((acc: number, call: any) => acc + (call.breakdown?.agent || 0), 0);
     }, [calls]);
 
-    const [senderEmails, setSenderEmails] = useState<string[]>([]);
-    const [loading, setLoading] = useState(true);
     const router = useRouter();
 
-    React.useEffect(() => {
-        const fetchEmails = async () => {
-            try {
-                const res = await fetch('/api/email/warmup-analytics', { method: 'POST' });
-                if (!res.ok) throw new Error("Failed to fetch analytics");
-                const data = await res.json();
+    const emailList = [
+        "matt@napleshomes.com",
+        "jen@napleshomes.com",
+        "matt@aspen.realestate",
+        "mia@aspen.realestate"
+    ];
 
-                // Extract emails from the warmup account objects
-                if (Array.isArray(data)) {
-                    const emails = data.map((account: any) => account.email);
-                    setSenderEmails(emails);
-                }
-            } catch (err) {
-                console.error("Error fetching sender emails:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
+    const whatsappNumbers = [
+        "+1 (239) 306-7557",
+        "+1 (970) 236-7780"
+    ];
 
-        fetchEmails();
-    }, []);
-
-    const vapiDetails = voiceBalance?.vapi;
+    const voiceNumbers = [
+        "+1 (970) 236-7780",
+        "+1 (239) 306-7557",
+        "+1 (269) 748-0274"
+    ];
 
     return (
         <div className="space-y-8 pb-10 max-w-5xl mx-auto">
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-[var(--label-primary)]">Credentials Management</h1>
-                    <p className="text-[var(--label-secondary)]">View your active integrations and manageable accounts.</p>
+                    <p className="text-[var(--label-secondary)]">View your active integrations, email senders, and telephony lines.</p>
                 </div>
             </div>
 
             <div className="grid gap-6">
-                {/* Email Section */}
-                <CredentialSection
-                    title="Email Integration"
-                    description="Active sender accounts detected from your campaigns."
-                    icon={Mail}
-                    iconColor="text-rose-600"
-                    iconBg="bg-rose-50"
-                >
-                    <div className="grid gap-6 md:grid-cols-2">
-                        {loading ? (
-                            <div className="md:col-span-2 text-[var(--label-tertiary)] text-sm animate-pulse">Detecting active email accounts...</div>
-                        ) : senderEmails.length > 0 ? (
-                            senderEmails.map((email, idx) => (
-                                <ReadOnlyField key={idx} label={`Project Email ${idx + 1}`} value={email} />
-                            ))
-                        ) : (
-                            <ReadOnlyField label="Connected Email" value="No active emails detected" />
-                        )}
-                    </div>
-                </CredentialSection>
-
                 {/* WhatsApp Section */}
                 <CredentialSection
                     title="WhatsApp Business API"
-                    description="Meta Business API credentials for WhatsApp CRM."
+                    description="Active WhatsApp outreach lines and Meta Business accounts."
                     icon={MessageCircle}
                     iconColor="text-emerald-600"
                     iconBg="bg-[rgba(52,199,89,0.08)]"
                 >
                     <div className="grid gap-6 md:grid-cols-2">
-                        <ReadOnlyField label="WhatsApp Account 1 " value="" />
-                        <ReadOnlyField label="WhatsApp Account 2" value="" />
+                        {whatsappNumbers.map((phone, idx) => (
+                            <ReadOnlyField key={idx} label={`WhatsApp Line ${idx + 1}`} value={phone} />
+                        ))}
                     </div>
                 </CredentialSection>
 
-                {/* Provisioned Numbers Section */}
+                {/* Email Section */}
                 <CredentialSection
-                    title="Provisioned Phone Numbers"
-                    description="Active telephony lines for Voice and WhatsApp."
-                    icon={Phone}
-                    iconColor="text-cyan-600"
-                    iconBg="bg-[rgba(0,122,255,0.08)]"
+                    title="Email Integration"
+                    description="Active sender accounts used for email outreach campaigns."
+                    icon={Mail}
+                    iconColor="text-rose-600"
+                    iconBg="bg-rose-50"
                 >
                     <div className="grid gap-6 md:grid-cols-2">
-                        <ReadOnlyField label="Twilio Telephony Line" value={process.env.NEXT_PUBLIC_TWILIO_PHONE_NUMBER || '+1 (970) 236-7780'} />
-                        <ReadOnlyField label="Active Voice Agent ID" value={process.env.NEXT_PUBLIC_VAPI_US_BOT || 'e128bcaf-4af3-4a59-abc3-f79b2e269d48'} />
+                        {emailList.map((email, idx) => (
+                            <ReadOnlyField key={idx} label={`Sender Account ${idx + 1}`} value={email} />
+                        ))}
                     </div>
                 </CredentialSection>
 
-                {/* Voice Section */}
+                {/* Voice Calls Section */}
+                <CredentialSection
+                    title="Voice Call Lines"
+                    description="Provisioned phone lines connected to AI Voice Assistants."
+                    icon={Phone}
+                    iconColor="text-blue-600"
+                    iconBg="bg-[rgba(0,122,255,0.08)]"
+                >
+                    <div className="grid gap-6 md:grid-cols-3">
+                        {voiceNumbers.map((phone, idx) => (
+                            <ReadOnlyField key={idx} label={`Voice Line ${idx + 1}`} value={phone} />
+                        ))}
+                    </div>
+                </CredentialSection>
+
+                {/* Voice Balance Section */}
                 <CredentialSection
                     title="Voice Agent (Vapi)"
-                    description="AI Voice configuration and wallet balances."
+                    description="AI Voice configuration and consumption metrics."
                     icon={Mic}
                     iconColor="text-blue-600"
                     iconBg="bg-[rgba(0,122,255,0.08)]"
@@ -127,7 +113,6 @@ export default function CredentialsPage() {
                     }
                 >
                     <div className="grid gap-6">
-                        {/* Vapi Details */}
                         <div className="bg-[rgba(0,122,255,0.08)]/50 rounded-lg p-5 border border-blue-100 flex flex-col gap-4">
                             <div className="flex flex-col text-center bg-[var(--glass-fill)] p-8 rounded-lg border border-blue-100 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)]">
                                 <span className="text-sm font-bold text-[var(--label-tertiary)] uppercase tracking-[0.2em] mb-2">Vapi Credits Used</span>
@@ -223,7 +208,6 @@ function CredentialSection({ title, description, icon: Icon, iconColor, iconBg, 
 function ReadOnlyField({ label, value, isPassword }: { label: string, value: string, isPassword?: boolean }) {
     const [show, setShow] = useState(false);
 
-    // Simple masking logic
     const displayValue = isPassword && !show
         ? "••••••••••••••••••••••••"
         : value;

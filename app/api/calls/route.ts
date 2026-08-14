@@ -44,43 +44,42 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             p_limit: limit,
         });
 
-        if (!rpcError && rpcData) {
-            let calls = rpcData.calls || [];
-            if (calls.length > 0) {
-                const vapiCallIds = calls.map((c: any) => c.id).filter((id: string) => id && id.includes('-'));
-                const integerIds = calls.map((c: any) => Number(c.id)).filter((id: number) => !isNaN(id));
+        if (!rpcError && rpcData && Array.isArray(rpcData.calls) && rpcData.calls.length > 0) {
+            let calls = rpcData.calls;
+            const vapiCallIds = calls.map((c: any) => c.id).filter((id: string) => id && id.includes('-'));
+            const integerIds = calls.map((c: any) => Number(c.id)).filter((id: number) => !isNaN(id));
 
-                const tempMap = new Map();
+            const tempMap = new Map();
 
-                for (const table of ACTIVITY_TABLES) {
-                    const queryBuilder = supabaseAdmin
-                        .from(table)
-                        .select('vapi_call_id, id, lead_temp');
+            for (const table of ACTIVITY_TABLES) {
+                const queryBuilder = supabaseAdmin
+                    .from(table)
+                    .select('vapi_call_id, id, lead_temp');
 
-                    const orConditions = [];
-                    if (vapiCallIds.length > 0) {
-                        orConditions.push(`vapi_call_id.in.(${vapiCallIds.map((id: string) => `"${id}"`).join(',')})`);
-                    }
-                    if (integerIds.length > 0) {
-                        orConditions.push(`id.in.(${integerIds.join(',')})`);
-                    }
+                const orConditions = [];
+                if (vapiCallIds.length > 0) {
+                    orConditions.push(`vapi_call_id.in.(${vapiCallIds.map((id: string) => `"${id}"`).join(',')})`);
+                }
+                if (integerIds.length > 0) {
+                    orConditions.push(`id.in.(${integerIds.join(',')})`);
+                }
 
-                    if (orConditions.length > 0) {
-                        const { data: temps } = await queryBuilder.or(orConditions.join(','));
-                        if (temps) {
-                            for (const t of temps) {
-                                if (t.vapi_call_id) tempMap.set(t.vapi_call_id, t.lead_temp);
-                                if (t.id) tempMap.set(String(t.id), t.lead_temp);
-                            }
+                if (orConditions.length > 0) {
+                    const { data: temps } = await queryBuilder.or(orConditions.join(','));
+                    if (temps) {
+                        for (const t of temps) {
+                            if (t.vapi_call_id) tempMap.set(t.vapi_call_id, t.lead_temp);
+                            if (t.id) tempMap.set(String(t.id), t.lead_temp);
                         }
                     }
                 }
-
-                calls = calls.map((c: any) => ({
-                    ...c,
-                    leadTemp: tempMap.get(c.id) || 'Unknown'
-                }));
             }
+
+            calls = calls.map((c: any) => ({
+                ...c,
+                leadTemp: tempMap.get(c.id) || 'Unknown'
+            }));
+
             return NextResponse.json({ calls, total: rpcData.total || calls.length }, {
                 headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' },
             });

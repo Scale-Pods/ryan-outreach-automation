@@ -199,6 +199,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                 if (data && Array.isArray(data.calls)) {
                     setCalls(data.calls);
                     setAllTimeVoiceCount(data.total || 0);
+                    if (data.calls.length === 0) {
+                        lastCallParams.current = null;
+                    }
                 }
             } else {
                 lastCallParams.current = null;
@@ -236,7 +239,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             if (response.ok) {
                 const data: VoiceMetrics = await response.json();
                 setVoiceMetrics(data);
-                hasVoiceMetrics.current = true;
+                if (data && data.totalCalls > 0) {
+                    hasVoiceMetrics.current = true;
+                } else {
+                    lastVoiceMetricsParams.current = null;
+                }
                 // Keep legacy allTime counters in sync for any components still using them
                 setAllTimeVoiceCount(data.allTimeNormalCalls);
                 setAllTimeOwnerVoiceCount(data.allTimeOwnerCalls);

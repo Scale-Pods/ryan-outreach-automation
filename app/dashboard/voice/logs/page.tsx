@@ -41,6 +41,13 @@ const DynamicRowCells = ({ call, telephonyCost }: { call: any, telephonyCost?: n
         return null;
     };
 
+    const rawVapiAccount = call.vapiAccount || call.vapi_account || call.account || null;
+    const formatAccountName = (acc: string | null) => {
+        if (!acc || acc === "N/A" || acc === "null" || acc === "undefined") return null;
+        return acc.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    };
+    const accountName = formatAccountName(rawVapiAccount);
+
     return (
         <>
             <TableCell className="font-semibold text-[var(--label-primary)]">
@@ -65,6 +72,11 @@ const DynamicRowCells = ({ call, telephonyCost }: { call: any, telephonyCost?: n
                         </Badge>
                         {getSourceBadge()}
                     </div>
+                    {accountName && (
+                        <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-50 border-blue-200 text-[8px] px-1.5 py-0 h-3.5 font-bold uppercase tracking-wider w-fit">
+                            {accountName}
+                        </Badge>
+                    )}
                     {call.assistantId === '560ca61b-8cd3-4b5f-996b-2966abfa37fd' && (
                         <Badge className="bg-[rgba(175,82,222,0.08)] text-purple-700 hover:bg-[rgba(175,82,222,0.08)] border-purple-200 text-[8px] px-1.5 py-0 h-3.5 font-bold uppercase tracking-wider w-fit">
                             secondary leads reachout
@@ -145,7 +157,7 @@ const DynamicRowCells = ({ call, telephonyCost }: { call: any, telephonyCost?: n
 };
 
 export default function VoiceLogsPage() {
-    const { calls: globalCalls, loadingCalls, refreshCalls } = useData();
+    const { calls: globalCalls, allTimeVoiceCount, loadingCalls, refreshCalls } = useData();
     const [calls, setCalls] = useState<any[]>([]);
     const [totalCount, setTotalCount] = useState(0);
     const loading = loadingCalls;
@@ -200,8 +212,9 @@ export default function VoiceLogsPage() {
     useEffect(() => {
         if (Array.isArray(globalCalls)) {
             setCalls(globalCalls);
+            setTotalCount(allTimeVoiceCount || globalCalls.length);
         }
-    }, [globalCalls]);
+    }, [globalCalls, allTimeVoiceCount]);
 
     const handleRefresh = () => {
         refreshCalls({

@@ -168,6 +168,16 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
     const guestNumber = displayCall.customer_number || displayCall.phone || displayCall.caller_number || "Unknown";
     const assistantNumber = displayCall.phoneNumber || displayCall.fromNumber || "Unknown";
     const assistantId = displayCall.assistantId || displayCall.assistant_id || "N/A";
+    const rawVapiAccount = displayCall.vapiAccount || displayCall.vapi_account || displayCall.account || null;
+
+    const formatVapiAccountName = (acc: string | null) => {
+        if (!acc || acc === "N/A" || acc === "null" || acc === "undefined") return null;
+        return acc
+            .replace(/[-_]/g, ' ')
+            .replace(/\b\w/g, char => char.toUpperCase());
+    };
+
+    const vapiAccountName = formatVapiAccountName(rawVapiAccount);
 
     const assistantMapping: Record<string, string> = {
         '70f05e16-18f3-4f6e-964a-f47b299c6c1d': "Ryan's Automation (UAE - 150)",
@@ -183,7 +193,7 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
         '1ef6ea66-0a75-45f5-b025-1743e048dc90': 'Open House Bot'
     };
 
-    const assistantName = displayCall.agent_name || assistantMapping[assistantId] || (assistantId !== "N/A" ? `Agent: ${assistantId.substring(0, 8)}...` : (displayCall.source === 'vapi' ? "Vapi AI Assistant" : "AI Agent"));
+    const assistantName = displayCall.agent_name || assistantMapping[assistantId] || (vapiAccountName ? `${vapiAccountName} Bot` : (displayCall.source === 'vapi' ? "Vapi AI Assistant" : "AI Agent"));
 
     // Reconstruct connection logic
     let fromName;
@@ -289,11 +299,11 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
                                 <p className="text-xs text-[var(--label-secondary)] font-medium uppercase tracking-wider mb-1">Agent / Bot</p>
                                 <div className="flex flex-col">
                                     <span className="font-bold text-[var(--label-primary)] text-sm truncate max-w-[180px]" title={assistantName}>{assistantName}</span>
-                                    {(assistantNumber !== "Unknown" && assistantNumber !== assistantId) ? (
+                                    {vapiAccountName ? (
+                                        <span className="text-[10px] text-blue-600 font-bold mt-0.5 tracking-wider truncate max-w-[180px]">{vapiAccountName}</span>
+                                    ) : (assistantNumber !== "Unknown" && assistantNumber !== assistantId) ? (
                                         <span className="text-[10px] text-[var(--label-secondary)] font-bold mt-0.5 tracking-wider">+{assistantNumber.replace(/\+/g, '')}</span>
-                                    ) : (assistantId !== "N/A" && (
-                                        <span className="text-[10px] text-[var(--label-tertiary)] font-medium mt-0.5 truncate max-w-[180px]">ID: {assistantId}</span>
-                                    ))}
+                                    ) : null}
                                 </div>
                             </div>
                         </div>
@@ -411,7 +421,7 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
                         {/* Summary Section (Structured Data) */}
                         {(() => {
                             const analysis = displayCall.analysis || {};
-                            let summaryText = displayCall.callSummary || analysis.summary || displayCall.summary || displayCall.transcript_summary || "";
+                            let summaryText = displayCall.callSummary || analysis.summary || displayCall.summary || displayCall.transcript_summary || displayCall.note || "";
 
                             // 1. Deep scan for "Call Summary" in structuredData or analysis objects
                             if (!summaryText && (analysis.structuredData || analysis.structured_data)) {
@@ -428,7 +438,7 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
                                 }
                             }
 
-                            // 2. Scan Artifacts (As suggested by Vapi Docs)
+                            // 2. Scan Artifacts
                             if (!summaryText && displayCall.artifact?.messages) {
                                 const artMsgs = displayCall.artifact.messages;
                                 for (const msg of artMsgs) {
@@ -441,58 +451,47 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
 
                             if (!summaryText) return null;
 
-                                return (
-                                    <div className="mb-8 p-6 bg-[var(--bg-app)] border border-[var(--separator)] rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)]">
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <div className="h-7 w-7 rounded-lg bg-blue-600 flex items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)]">
-                                                <FileText className="h-4 w-4 text-white" />
-                                            </div>
-                                            <h3 className="text-sm font-bold text-[var(--label-primary)] uppercase tracking-wider">Conversation Summary</h3>
+                            // Clean up deep_analysis prefix if present
+                            let cleanSummary = String(summaryText).replace(/^deep_analysis:\s*/i, '');
+
+                            // Handle splitting by '|' or newlines
+                            const sections = cleanSummary.includes('|')
+                                ? cleanSummary.split('|').map(s => s.trim()).filter(Boolean)
+                                : cleanSummary.split('\n').map(s => s.trim()).filter(Boolean);
+
+                            return (
+                                <div className="mb-6 p-6 rounded-[22px] bg-[#f8fafc] dark:bg-slate-900/60 border border-slate-200/90 dark:border-slate-800 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+                                    <div className="flex items-center gap-3 mb-3.5">
+                                        <div className="h-9 w-9 rounded-xl bg-[#2563eb] flex items-center justify-center text-white shadow-sm shrink-0">
+                                            <FileText className="h-5 w-5 stroke-[2.2]" />
                                         </div>
-                                        <div className="space-y-4">
-                                            {typeof summaryText === 'string' && summaryText.split('\n').map((line, i) => {
-                                                const trimmed = line.trim();
-                                                if (!trimmed) return null;
-
-                                                // Improved Detection: handle *, -, and • bullets
-                                                const isBullet = trimmed.startsWith('*') || trimmed.startsWith('-') || trimmed.startsWith('•');
-                                                let content = isBullet ? trimmed.replace(/^[*•-\s]+/, '').trim() : trimmed;
-
-                                                // Robust bold-title extraction (handles **Title:** or Title:)
-                                                // Improved regex to handle cases like ":Title**" or "**Title"
-                                                const boldMatch = content.match(/^(\*\*|:?)(.*?)(:|\*\*)+(.*)$/);
-
-                                                if (isBullet) {
-                                                    return (
-                                                        <div key={i} className="flex gap-4 group">
-                                                            <div className="mt-2 h-1.5 w-1.5 rounded-full bg-blue-400 group-hover:bg-blue-600 transition-colors shrink-0" />
-                                                            <div className="text-[13px] leading-relaxed text-[var(--label-secondary)] font-medium">
-                                                                {boldMatch ? (
-                                                                    <>
-                                                                        <span className="font-bold text-[var(--label-primary)] border-b-2 border-blue-100 mr-1">{boldMatch[2].replace(/:/g, '').trim()}</span>
-                                                                        {boldMatch[4].trim()}
-                                                                    </>
-                                                                ) : content}
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                }
-
+                                        <h3 className="text-sm font-bold text-[#1e293b] dark:text-slate-100 uppercase tracking-wider">
+                                            Conversation Summary
+                                        </h3>
+                                    </div>
+                                    <div className="space-y-3.5 pl-0.5">
+                                        {sections.map((section, idx) => {
+                                            const colonIndex = section.indexOf(':');
+                                            if (colonIndex > 0 && colonIndex < 25 && !section.startsWith('http')) {
+                                                const title = section.substring(0, colonIndex).trim();
+                                                const body = section.substring(colonIndex + 1).trim();
                                                 return (
-                                                    <p key={i} className="text-[13px] leading-relaxed text-[var(--label-secondary)] font-medium pl-0">
-                                                        {boldMatch ? (
-                                                            <>
-                                                                <span className="font-bold text-[var(--label-primary)] border-b-2 border-blue-100 mr-1">{boldMatch[2].replace(/:/g, '').trim()}</span>
-                                                                {boldMatch[4].trim()}
-                                                            </>
-                                                        ) : content}
+                                                    <p key={idx} className="text-[13.5px] leading-relaxed text-slate-600 dark:text-slate-300 font-normal">
+                                                        <span className="font-bold text-[#1e293b] dark:text-slate-100 mr-1.5">{title}:</span>
+                                                        {body}
                                                     </p>
                                                 );
-                                            })}
-                                        </div>
+                                            }
+                                            return (
+                                                <p key={idx} className="text-[13.5px] leading-relaxed text-slate-600 dark:text-slate-300 font-normal">
+                                                    {section}
+                                                </p>
+                                            );
+                                        })}
                                     </div>
-                                );
-                            })() }
+                                </div>
+                            );
+                        })()}
 
                         {/* Transcript */}
                         <div className="flex-1 min-h-[200px]">

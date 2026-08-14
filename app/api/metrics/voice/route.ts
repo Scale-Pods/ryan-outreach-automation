@@ -32,7 +32,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             p_to: toDate,
         });
 
-        if (!rpcError && rpcData) {
+        if (!rpcError && rpcData && typeof rpcData === 'object' && (rpcData.totalCalls ?? 0) > 0) {
             return NextResponse.json(rpcData, { headers: { 'Cache-Control': 'no-store' } });
         }
 
