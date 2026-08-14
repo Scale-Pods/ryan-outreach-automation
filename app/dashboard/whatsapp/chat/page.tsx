@@ -312,7 +312,7 @@ export default function WhatsappChatPage() {
 
     const [currentPage, setCurrentPage] = useState(1);
     const leadsPerPage = 10;
-    const [activeTab, setActiveTab] = useState<"leads">("leads");
+    const [activeTab, setActiveTab] = useState<"leads" | "owners">("leads");
 
     const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
     const initialSelectedId = searchParams?.get('chat');
