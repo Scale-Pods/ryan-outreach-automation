@@ -89,6 +89,9 @@ const DynamicRowCells = ({ call, telephonyCost }: { call: any, telephonyCost?: n
                     )}
                 </div>
             </TableCell>
+            <TableCell className="text-xs text-[var(--label-secondary)] font-mono whitespace-nowrap">
+                {call.displayDate || (call.startedAt ? format(new Date(call.startedAt), 'MMM dd, yyyy h:mm a') : '—')}
+            </TableCell>
             <TableCell className="text-[var(--label-secondary)] font-medium">{call.displayDuration || formatDuration(call.durationSeconds)}</TableCell>
             <TableCell className="text-[var(--label-secondary)] text-xs">
                 {call.leadTemp ? (
@@ -368,19 +371,6 @@ export default function VoiceLogsPage() {
                         <p className="text-[var(--label-secondary)]">Comprehensive history across all accounts and providers.</p>
                     </div>
                     <div className="flex items-center gap-3">
-                        <Button variant="outline" className="text-[var(--label-secondary)] border-[var(--separator)]" onClick={() => setCostModalOpen(true)}>
-                            <Info className="h-4 w-4 mr-2" />
-                            Cost Info
-                        </Button>
-                        <Button 
-                            variant="outline" 
-                            className="bg-[rgba(52,199,89,0.08)] text-emerald-700 border-emerald-100 hover:bg-emerald-100" 
-                            onClick={handleExport}
-                            disabled={exporting || calls.length === 0}
-                        >
-                            <Download className={`h-4 w-4 mr-2 ${exporting ? 'animate-pulse' : ''}`} />
-                            {exporting ? 'Exporting...' : 'Download Excel'}
-                        </Button>
                         <DateRangePicker onUpdate={(values) => setDateRange(values.range)} />
                         <Button variant="outline" onClick={handleRefresh} disabled={loading}>
                             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
@@ -453,6 +443,7 @@ export default function VoiceLogsPage() {
                             <TableHead className="font-bold text-[var(--label-primary)]">Name</TableHead>
                             <TableHead className="font-bold text-[var(--label-primary)]">Phone</TableHead>
                             <TableHead className="font-bold text-[var(--label-primary)]">Type</TableHead>
+                            <TableHead className="font-bold text-[var(--label-primary)]">Date & Time</TableHead>
                             <TableHead className="font-bold text-[var(--label-primary)]">Duration</TableHead>
                             <TableHead className="font-bold text-[var(--label-primary)]">Temperature</TableHead>
                             <TableHead className="font-bold text-[var(--label-primary)]">Cost</TableHead>
@@ -461,7 +452,7 @@ export default function VoiceLogsPage() {
                     <TableBody>
                         {calls.map((call: any, idx: number) => (
                             <TableRow
-                                key={call.id || idx}
+                                key={`${call.id || 'call'}-${call._source_table || ''}-${idx}`}
                                 className="cursor-pointer hover:bg-[rgba(0,122,255,0.08)]/50 transition-colors"
                                 onClick={() => { setSelectedCall(call); setModalOpen(true); }}
                             >
@@ -470,7 +461,7 @@ export default function VoiceLogsPage() {
                         ))}
                         {calls.length === 0 && !loading && (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center py-12 text-[var(--label-tertiary)]">
+                                <TableCell colSpan={7} className="text-center py-12 text-[var(--label-tertiary)]">
                                     No calls found for the selected filters.
                                 </TableCell>
                             </TableRow>

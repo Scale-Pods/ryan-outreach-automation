@@ -23,6 +23,7 @@ import {
     Search,
     Filter,
     Users,
+    UserCheck,
     Send,
     MessageSquare,
     RefreshCw,
@@ -196,17 +197,14 @@ const extractOwnerWADate = (o: any): Date | null => {
 };
 
 const getOwnerLatestActivity = (o: any) => {
-    // Start from the WA send date (extracted from message text) or createdOn
     const waDate = extractOwnerWADate(o);
     let latest = waDate || (o.createdOn ? new Date(o.createdOn) : new Date(0));
     
-    // Check WTS_Reply_Track for timestamp
     if (o.WTS_Reply_Track) {
         const { date } = parseMsg(o.WTS_Reply_Track);
         if (date && date > latest) latest = date;
     }
     
-    // Check Bot_Replied_X and User_Replied_X
     for (let i = 1; i <= 10; i++) {
         const br = o[`Bot_Replied_${i}`];
         if (br) {
@@ -223,7 +221,6 @@ const getOwnerLatestActivity = (o: any) => {
     return latest;
 };
 
-// Fetch WA-specific data from the dedicated endpoint (filters by WA TS columns, not Created At)
 async function fetchWALeadsData(from: Date, to: Date): Promise<{ nr_wf: any[]; followup: any[]; nurture: any[]; owners: any[]; wa_activity: any[] }> {
     const { startOfDay, endOfDay } = await import("date-fns");
     const fromISO = startOfDay(from).toISOString();
@@ -239,9 +236,8 @@ export default function WhatsappChatPage() {
     const [loadingWA, setLoadingWA] = useState(true);
     const loading = loadingWA;
     const [searchQuery, setSearchQuery] = useState("");
-    // Store the full lead object so WhatsAppChatDetail gets it via initialLead
-    // (it would otherwise search DataContext.allLeads which doesn't contain WA-page leads)
     const [selectedLeadObj, setSelectedLeadObj] = useState<any | null>(null);
+
     const getStandardTemplates = (loops: string[]) => {
         const result: any[] = [];
         if (loops.includes("Intro")) {
@@ -287,13 +283,10 @@ export default function WhatsappChatPage() {
     };
 
     const [dateRange, setDateRange] = useState<any>({
-        from: subDays(new Date(), 90),
+        from: subDays(new Date(), 7),
         to: new Date(),
     });
 
-    // Re-fetch from the WA-specific endpoint when date range changes.
-    // This filters by "W.P_1 TS" (nr_wf), "W.P_1  TS" (followup), and "Whatsapp_1_Date" (owners)
-    // so the list is correct regardless of "Created At".
     useEffect(() => {
         if (!dateRange?.from) return;
         setLoadingWA(true);
@@ -319,19 +312,22 @@ export default function WhatsappChatPage() {
 
     const [currentPage, setCurrentPage] = useState(1);
     const leadsPerPage = 10;
-
-    // Tab state: "leads" or "owners"
     const [activeTab, setActiveTab] = useState<"leads">("leads");
 
-    // URL Sync for chat
     const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
     const initialSelectedId = searchParams?.get('chat');
     const initialTab = searchParams?.get('tab');
 
     const [selectedLeadId, setSelectedLeadId] = useState<string | null>(initialSelectedId || null);
     const initialProcessed = useRef(false);
+    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    useEffect(() => {
+        if (!mounted) return;
         const url = new URL(window.location.origin + window.location.pathname);
         if (selectedLeadId) {
             url.searchParams.set('chat', selectedLeadId);
@@ -341,9 +337,8 @@ export default function WhatsappChatPage() {
             url.searchParams.delete('tab');
         }
         window.history.replaceState({}, '', url.toString());
-    }, [selectedLeadId]);
+    }, [selectedLeadId, mounted]);
 
-    // Handle initial URL parameters
     useEffect(() => {
         if (initialProcessed.current) return;
         
@@ -355,7 +350,6 @@ export default function WhatsappChatPage() {
         }
     }, [initialSelectedId]);
 
-    // Filter State
     const [pendingFilters, setPendingFilters] = useState<{
         replyStatus: string[],
         loops: string[],
@@ -380,20 +374,18 @@ export default function WhatsappChatPage() {
         templates: []
     });
 
-
-    // leadsInRange = only leads where W.P_1 was sent within the selected date range.
     const leadsInRange = useMemo(() => {
         const from = dateRange?.from ? startOfDay(new Date(dateRange.from)).getTime() : null;
         const to = endOfDay(new Date(dateRange?.to || dateRange?.from || new Date())).getTime();
         return leads.filter(lead => {
-            if (lead.source_loop === "Activity") {
-                if (!lead.created_at && !lead.wp1_parsed_date) return true;
-                const t = new Date(lead.created_at || lead.wp1_parsed_date).getTime();
+            const activityDate = getLeadLatestActivity(lead);
+            if (!activityDate || isNaN(activityDate.getTime()) || activityDate.getTime() === 0) {
+                const created = lead.created_at || lead["Created At"] || lead.created_date;
+                if (!created) return true;
+                const t = new Date(created).getTime();
                 return !from || (t >= from && t <= to);
             }
-            if (!lead["W.P_1"]) return false;
-            if (!lead.wp1_parsed_date) return true; // no date info — include
-            const t = new Date(lead.wp1_parsed_date).getTime();
+            const t = activityDate.getTime();
             return !from || (t >= from && t <= to);
         });
     }, [leads, dateRange]);
@@ -477,9 +469,7 @@ export default function WhatsappChatPage() {
             const name = String(o.Name || o.name || "").toLowerCase();
             const phone = String(o.contactNo || o.Phone || o.phone || "");
             const matchesSearch = name.includes(searchQuery.toLowerCase()) || phone.includes(searchQuery);
-            if (!matchesSearch) return false;
-
-            // Reply Status Filter
+            if (!matchesSearch) return false;            // Reply Status Filter
             if (activeFilters.replyStatus.length > 0) {
                 const wtsReply = o["WTS_Reply_Track"];
                 const hasReplied = wtsReply && wtsReply !== "" && String(wtsReply).toLowerCase() !== "no";
@@ -525,9 +515,6 @@ export default function WhatsappChatPage() {
     }, [waOwners, searchQuery, activeFilters]);
 
     // --- Stats ---
-    // Chat list + Unique Msg Sent = leadsInRange (W.P_1 sent in selected date range).
-    // Messages Sent = total filled WP message slots across all in-range leads.
-    // Total Replies = leads in filteredLeads (after search/filter) with a reply tracked.
     const stats = useMemo(() => {
         let sentCount = 0;
         let repliedCount = 0;
@@ -535,13 +522,10 @@ export default function WhatsappChatPage() {
         let uniqueSentCount = 0;
 
         if (activeTab === "leads") {
-            // uniqueSentCount = filteredLeads length (already filtered to in-range W.P_1 leads)
             uniqueSentCount = filteredLeads.length;
 
             filteredLeads.forEach(l => {
                 const lead = l as any;
-
-                // Messages Sent: all filled WP slots on this lead
                 if (lead.source_loop === "Activity") {
                     if (lead.content) {
                         const lines = String(lead.content).split('\n');
@@ -569,14 +553,12 @@ export default function WhatsappChatPage() {
                     }
                 }
 
-                // Replied
                 const rt = lead.WP_Replied_track || lead["WP_Replied_track"];
                 if (rt && String(rt).trim() && String(rt).trim().toLowerCase() !== "no" && String(rt).trim().toLowerCase() !== "none") {
                     repliedCount++;
                 }
             });
         } else {
-            // Owner Stats — owners are already filtered by Whatsapp_1_Date in range
             filteredOwners.forEach(o => {
                 if (o["Whatsapp_1"]) { sentCount++; uniqueSentCount++; }
                 if (o["retry_1"]) sentCount++;
@@ -607,14 +589,13 @@ export default function WhatsappChatPage() {
     };
 
     const toggleFilter = (type: 'replyStatus' | 'loops' | 'messageStatus' | 'templates', value: string) => {
-        setPendingFilters(prev => {
-            const current = prev[type];
-            if (current.includes(value)) {
-                return { ...prev, [type]: current.filter(v => v !== value) };
-            } else {
-                return { ...prev, [type]: [...current, value] };
-            }
-        });
+        const current = pendingFilters[type];
+        const updated = current.includes(value)
+            ? current.filter(v => v !== value)
+            : [...current, value];
+        const nextFilters = { ...pendingFilters, [type]: updated };
+        setPendingFilters(nextFilters);
+        setActiveFilters(nextFilters);
     };
 
     const paginatedLeads = useMemo(() => {
@@ -622,9 +603,10 @@ export default function WhatsappChatPage() {
         return filteredLeads.slice(start, start + leadsPerPage);
     }, [filteredLeads, currentPage]);
 
-    const totalPages = Math.ceil(filteredLeads.length / leadsPerPage);
+    const paginatedOwners = filteredOwners.slice((currentPage - 1) * leadsPerPage, currentPage * leadsPerPage);
+    const totalPages = Math.max(1, Math.ceil((activeTab === "leads" ? filteredLeads.length : filteredOwners.length) / leadsPerPage));
 
-    useEffect(() => { setCurrentPage(1); }, [searchQuery, activeFilters, dateRange]);
+    useEffect(() => { setCurrentPage(1); }, [searchQuery, activeFilters, dateRange, activeTab]);
 
     const renderPaginationItems = () => {
         const items = [];
@@ -664,17 +646,12 @@ export default function WhatsappChatPage() {
             key={page}
             variant={currentPage === page ? "default" : "outline"}
             size="sm"
-            className={`h-8 w-8 text-xs font-bold ${currentPage === page ? 'bg-slate-900 text-white' : 'text-[var(--label-secondary)]'
-                }`}
+            className={`h-8 w-8 text-xs font-bold ${currentPage === page ? 'bg-slate-900 text-white' : 'text-[var(--label-secondary)]'}`}
             onClick={() => setCurrentPage(page)}
         >
             {page}
         </Button>
     );
-
-
-
-    const paginatedOwners = filteredOwners.slice((currentPage - 1) * leadsPerPage, currentPage * leadsPerPage);
 
     return (
         <div className="space-y-6 pb-10 relative min-h-[500px]">
@@ -692,6 +669,12 @@ export default function WhatsappChatPage() {
                             className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${activeTab === "leads" ? "bg-[var(--glass-fill)] text-[var(--label-primary)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)]" : "text-[var(--label-secondary)] hover:text-[var(--label-primary)]"}`}
                         >
                             <Users className="h-3.5 w-3.5 inline mr-1.5" />Leads
+                        </button>
+                        <button
+                            onClick={() => { setActiveTab("owners"); setCurrentPage(1); }}
+                            className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${activeTab === "owners" ? "bg-[var(--glass-fill)] text-[var(--label-primary)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)]" : "text-[var(--label-secondary)] hover:text-[var(--label-primary)]"}`}
+                        >
+                            <UserCheck className="h-3.5 w-3.5 inline mr-1.5" />Owners
                         </button>
                     </div>
                     <DateRangePicker onUpdate={(values) => setDateRange(values.range)} />

@@ -283,13 +283,12 @@ export default function SmsLeadsPage() {
                                     <th className="py-3.5 px-4">Status</th>
                                     <th className="py-3.5 px-4">Interest</th>
                                     <th className="py-3.5 px-4">Last Activity</th>
-                                    <th className="py-3.5 px-4 text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5 text-slate-200">
                                 {paginatedLeads.length === 0 ? (
                                     <tr>
-                                        <td colSpan={8} className="py-12 text-center text-slate-400 text-sm">
+                                        <td colSpan={7} className="py-12 text-center text-slate-400 text-sm">
                                             No SMS leads found matching the criteria.
                                         </td>
                                     </tr>
@@ -298,8 +297,15 @@ export default function SmsLeadsPage() {
                                         const leadId = lead["Lead ID"] || lead["Phone"] || `lead-${idx}`;
                                         const isSelected = selectedLeads.includes(leadId);
                                         return (
-                                            <tr key={idx} className="hover:bg-white/[0.02] transition-colors group">
-                                                <td className="py-3.5 px-4 text-center">
+                                            <tr
+                                                key={idx}
+                                                onClick={() => {
+                                                    setSelectedLeadIdForChat(leadId);
+                                                    setSelectedLeadObj(lead);
+                                                }}
+                                                className="cursor-pointer hover:bg-white/[0.06] transition-colors group"
+                                            >
+                                                <td className="py-3.5 px-4 text-center" onClick={(e) => e.stopPropagation()}>
                                                     <Checkbox checked={isSelected} onCheckedChange={() => toggleSelectLead(leadId)} />
                                                 </td>
                                                 <td className="py-3.5 px-4 font-semibold text-white">
@@ -322,19 +328,6 @@ export default function SmsLeadsPage() {
                                                 </td>
                                                 <td className="py-3.5 px-4 text-xs text-slate-400 font-mono">
                                                     {lead.created_at ? new Date(lead.created_at).toLocaleDateString() : "Recent"}
-                                                </td>
-                                                <td className="py-3.5 px-4 text-right">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => {
-                                                            setSelectedLeadIdForChat(leadId);
-                                                            setSelectedLeadObj(lead);
-                                                        }}
-                                                        className="h-8 gap-1.5 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 rounded-lg text-xs font-semibold"
-                                                    >
-                                                        <MessageSquare className="h-3.5 w-3.5" /> Thread
-                                                    </Button>
                                                 </td>
                                             </tr>
                                         );

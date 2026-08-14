@@ -13,8 +13,7 @@ import {
     ChevronRight,
     CheckCircle2,
     Clock,
-    AlertCircle,
-    Share2
+    AlertCircle
 } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { subDays, startOfDay, endOfDay } from "date-fns";
@@ -177,19 +176,22 @@ export default function SmsSentPage() {
                                     <th className="py-3.5 px-4">Message Snippet</th>
                                     <th className="py-3.5 px-4">Delivery Status</th>
                                     <th className="py-3.5 px-4">Sent Time</th>
-                                    <th className="py-3.5 px-4 text-right">View Thread</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5 text-slate-200">
                                 {paginatedItems.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6} className="py-12 text-center text-slate-400 text-sm">
+                                        <td colSpan={5} className="py-12 text-center text-slate-400 text-sm">
                                             No sent SMS records found.
                                         </td>
                                     </tr>
                                 ) : (
                                     paginatedItems.map((item, idx) => (
-                                        <tr key={idx} className="hover:bg-white/[0.02] transition-colors">
+                                        <tr
+                                            key={idx}
+                                            onClick={() => setSelectedLeadIdForChat(item.lead_phone || item.id)}
+                                            className="cursor-pointer hover:bg-white/[0.06] transition-colors"
+                                        >
                                             <td className="py-3.5 px-4 font-semibold text-white">
                                                 {item.lead_name}
                                             </td>
@@ -204,30 +206,6 @@ export default function SmsSentPage() {
                                             </td>
                                             <td className="py-3.5 px-4 text-xs text-slate-400 font-mono">
                                                 {new Date(item.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
-                                            </td>
-                                            <td className="py-3.5 px-4 text-right flex items-center justify-end gap-1.5">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => {
-                                                        const link = `${window.location.origin}/share/sms/${encodeURIComponent(item.lead_phone || item.id)}`;
-                                                        navigator.clipboard.writeText(link);
-                                                        alert(`Copied share link: ${link}`);
-                                                    }}
-                                                    className="h-8 text-slate-300 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg text-xs"
-                                                    title="Copy Shareable Link"
-                                                >
-                                                    <Share2 className="h-3.5 w-3.5" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => setSelectedLeadIdForChat(item.lead_phone || item.id)}
-                                                    className="h-8 text-blue-400 hover:bg-blue-500/10 rounded-lg text-xs"
-                                                    title="Inspect Thread"
-                                                >
-                                                    <MessageSquare className="h-3.5 w-3.5" />
-                                                </Button>
                                             </td>
                                         </tr>
                                     ))

@@ -249,13 +249,16 @@ export default function SentEmailsPage() {
         fetchData();
     }, [allLeads, loadingLeads]);
 
+const SENDER_EMAILS = [
+    "matt@napleshomes.com",
+    "jen@napleshomes.com",
+    "matt@aspen.realestate",
+    "mia@aspen.realestate",
+];
+
     // Dynamic filter options derived from actual database records
     const uniqueCampaigns = Array.from(
         new Set(sentEmails.map((e) => e.campaign).filter(Boolean))
-    ).sort();
-
-    const uniqueSenders = Array.from(
-        new Set(sentEmails.map((e) => e.sender).filter(Boolean))
     ).sort();
 
     const uniqueTypes = Array.from(
@@ -296,9 +299,12 @@ export default function SentEmailsPage() {
             return false;
         }
 
-        // Sender filter (exact match against DB sender / account)
-        if (filters.sender !== "all" && email.sender !== filters.sender) {
-            return false;
+        // Sender filter (matches selected email in email.sender)
+        if (filters.sender !== "all") {
+            const sLower = (email.sender || "").toLowerCase();
+            if (!sLower.includes(filters.sender.toLowerCase())) {
+                return false;
+            }
         }
 
         // Type filter (exact match against DB action_type / stage)
@@ -361,14 +367,14 @@ export default function SentEmailsPage() {
                         </SelectContent>
                     </Select>
 
-                    {/* Dynamic Sender Filter */}
+                    {/* Sender Filter */}
                     <Select value={filters.sender} onValueChange={(val) => handleFilterChange("sender", val)}>
-                        <SelectTrigger className="w-[180px] h-9 text-xs">
+                        <SelectTrigger className="w-[200px] h-9 text-xs">
                             <SelectValue placeholder="All Senders" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Senders</SelectItem>
-                            {uniqueSenders.map((sender) => (
+                            {SENDER_EMAILS.map((sender) => (
                                 <SelectItem key={sender} value={sender}>
                                     {sender}
                                 </SelectItem>

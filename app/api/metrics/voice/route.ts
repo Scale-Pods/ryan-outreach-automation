@@ -23,20 +23,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         const from = searchParams.get('from');
         const to = searchParams.get('to');
 
-        const fromDate = from || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-        const toDate = to || new Date().toISOString();
+        const fromDate = from ? new Date(from).toISOString() : new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+        const toDate = to ? new Date(to).toISOString() : new Date().toISOString();
 
-        // Try RPC first
-        const { data: rpcData, error: rpcError } = await supabaseAdmin.rpc('get_voice_metrics_fello', {
-            p_from: fromDate,
-            p_to: toDate,
-        });
-
-        if (!rpcError && rpcData && typeof rpcData === 'object' && (rpcData.totalCalls ?? 0) > 0) {
-            return NextResponse.json(rpcData, { headers: { 'Cache-Control': 'no-store' } });
-        }
-
-        // Fallback: direct computation across all activity tables
+        // Direct computation across all 4 activity tables (naples, aspen, old, fello)
         const allRows: any[] = [];
         const allAllTimeRows: any[] = [];
 
