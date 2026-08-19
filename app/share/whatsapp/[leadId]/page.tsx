@@ -3,7 +3,7 @@
 import React, { useState, useEffect, use } from "react";
 import {
     RefreshCw, MessageSquare, User, Bot, Link as LinkIcon,
-    Check, Languages, Activity, Database, Zap, ThermometerSun
+    Check, Activity, Database, Zap, ThermometerSun
 } from "lucide-react";
 
 // ─── Parse WhatsApp activity content into messages ────────────────────────────
@@ -87,9 +87,6 @@ export default function PublicWhatsAppSharePage({ params }: { params: Promise<{ 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
-    const [isTranslated, setIsTranslated] = useState(false);
-    const [isTranslating, setIsTranslating] = useState(false);
-    const [translatedMessages, setTranslatedMessages] = useState<Record<number, string>>({});
 
     useEffect(() => {
         if (!decodedLeadId) return;
@@ -147,26 +144,6 @@ export default function PublicWhatsAppSharePage({ params }: { params: Promise<{ 
         });
     };
 
-    const handleTranslate = async () => {
-        if (isTranslated) { setIsTranslated(false); return; }
-        if (Object.keys(translatedMessages).length > 0) { setIsTranslated(true); return; }
-        setIsTranslating(true);
-        try {
-            const res = await fetch('/api/translate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ texts: messages.map(m => m.content) }),
-            });
-            if (res.ok) {
-                const data = await res.json();
-                const map: Record<number, string> = {};
-                (data.translatedTexts || []).forEach((t: string, i: number) => { if (t) map[i] = t; });
-                setTranslatedMessages(map);
-                setIsTranslated(true);
-            }
-        } catch { } finally { setIsTranslating(false); }
-    };
-
     const incoming = messages.filter(m => m.type === 'user').length;
     const outgoing = messages.filter(m => m.type === 'bot').length;
 
@@ -183,14 +160,6 @@ export default function PublicWhatsAppSharePage({ params }: { params: Promise<{ 
                         📱 WhatsApp Conversation • {decodedLeadId}
                     </span>
                     <div className="flex items-center gap-2">
-                        <button
-                            onClick={handleTranslate}
-                            disabled={isTranslating || loading}
-                            className="flex items-center gap-1.5 text-[10px] font-bold uppercase text-slate-400 hover:text-white border border-white/10 rounded-lg px-3 py-1.5 transition-all disabled:opacity-50"
-                        >
-                            {isTranslating ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
-                            {isTranslated ? 'Original' : 'Translate'}
-                        </button>
                         <button
                             onClick={handleCopyLink}
                             className={`flex items-center gap-1.5 text-[10px] font-bold uppercase rounded-lg px-3 py-1.5 transition-all ${copied ? 'bg-emerald-600 text-white' : 'bg-red-600 hover:bg-red-700 text-white'}`}
@@ -239,14 +208,7 @@ export default function PublicWhatsAppSharePage({ params }: { params: Promise<{ 
                                                     ? <span className="flex items-center gap-1"><User className="h-3 w-3" />Contact</span>
                                                     : <span className="flex items-center gap-1"><Bot className="h-3 w-3" />Agent</span>}
                                             </p>
-                                            <p className="whitespace-pre-wrap">
-                                                {isTranslated && translatedMessages[idx] ? (
-                                                    <span>
-                                                        <span className="block text-[10px] uppercase font-bold opacity-50 mb-1">English:</span>
-                                                        {translatedMessages[idx]}
-                                                    </span>
-                                                ) : msg.content}
-                                            </p>
+                                            <p className="whitespace-pre-wrap">{msg.content}</p>
                                         </div>
                                         {msg.date && (
                                             <span className="text-[10px] text-slate-500 mt-1 px-1">

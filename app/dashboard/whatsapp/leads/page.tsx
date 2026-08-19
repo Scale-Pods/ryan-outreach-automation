@@ -11,7 +11,6 @@ import {
     ChevronLeft,
     ChevronRight,
     MoreVertical,
-    Briefcase,
     RefreshCw,
     Users
 } from "lucide-react";
@@ -283,23 +282,6 @@ export default function WhatsappLeadsPage() {
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
-
-                    <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" className={`gap-2 h-10 border-[var(--separator)] ${activeFilters.loops.length > 0 ? 'bg-purple-50 border-purple-200 text-purple-700' : ''}`}>
-                                    <Briefcase className="h-4 w-4" />
-                                    {activeFilters.loops.length > 0 ? `Loops (${activeFilters.loops.length})` : 'Loops'}
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48">
-                                <DropdownMenuItem onClick={() => toggleFilter('loops', 'Intro')} className="flex items-center justify-between">
-                                    Intro {activeFilters.loops.includes('Intro') && "✓"}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => toggleFilter('loops', 'Follow Up')} className="flex items-center justify-between">
-                                    Follow Up {activeFilters.loops.includes('Follow Up') && "✓"}
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
 
                     <Button variant="outline" className="gap-2 h-10 border-[var(--separator)]" onClick={() => {
                         if (dateRange?.from) fetchWAData(dateRange.from, dateRange.to || dateRange.from);

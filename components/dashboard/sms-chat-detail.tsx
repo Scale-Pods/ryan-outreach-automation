@@ -11,7 +11,6 @@ import {
     Bot,
     Link as LinkIcon,
     Check,
-    Languages,
     Smartphone,
     Send,
     AlertCircle,
@@ -196,44 +195,6 @@ export function SMSChatDetail({ customerId, onClose, initialLead }: SMSChatDetai
     const [loading, setLoading] = useState(true);
     const [messages, setMessages] = useState<any[]>([]);
     const [copied, setCopied] = useState(false);
-    const [isTranslated, setIsTranslated] = useState(false);
-    const [isTranslating, setIsTranslating] = useState(false);
-    const [translatedMessages, setTranslatedMessages] = useState<Record<number, string>>({});
-
-    const handleTranslate = async () => {
-        if (isTranslated) {
-            setIsTranslated(false);
-            return;
-        }
-        if (Object.keys(translatedMessages).length > 0) {
-            setIsTranslated(true);
-            return;
-        }
-        setIsTranslating(true);
-        try {
-            const textsToTranslate = messages.map(m => m.content);
-            const response = await fetch('/api/translate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ texts: textsToTranslate })
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                const translations = data.translatedTexts || [];
-                const newTranslations: Record<number, string> = {};
-                translations.forEach((t: string, idx: number) => {
-                    newTranslations[idx] = t;
-                });
-                setTranslatedMessages(newTranslations);
-                setIsTranslated(true);
-            }
-        } catch (e) {
-            console.error('Translation error:', e);
-        } finally {
-            setIsTranslating(false);
-        }
-    };
 
     const fetchLeadAndMessages = async () => {
         setLoading(true);
@@ -360,18 +321,6 @@ export function SMSChatDetail({ customerId, onClose, initialLead }: SMSChatDetai
                     <Button
                         variant="ghost"
                         size="sm"
-                        disabled={isTranslating || messages.length === 0}
-                        className={`gap-2 text-xs font-bold uppercase transition-all rounded-full border border-white/10 ${
-                            isTranslated ? 'text-blue-400 bg-blue-500/10 border-blue-500/30' : 'text-slate-300 hover:bg-white/10'
-                        }`}
-                        onClick={handleTranslate}
-                    >
-                        {isTranslating ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Languages className="h-3.5 w-3.5" />}
-                        {isTranslated ? 'Original' : 'Translate'}
-                    </Button>
-                    <Button
-                        variant="ghost"
-                        size="sm"
                         className={`gap-2 text-xs font-bold uppercase transition-all rounded-full border border-white/10 ${
                             copied ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'text-slate-300 hover:bg-white/10'
                         }`}
@@ -418,7 +367,7 @@ export function SMSChatDetail({ customerId, onClose, initialLead }: SMSChatDetai
                         ) : (
                             messages.map((msg, idx) => {
                                 const isUser = msg.type === 'user';
-                                const text = (isTranslated && translatedMessages[idx]) ? translatedMessages[idx] : msg.content;
+                                const text = msg.content;
                                 return (
                                     <div key={idx} className={`flex flex-col ${isUser ? 'items-start' : 'items-end'}`}>
                                         <div className={`max-w-[85%] rounded-2xl p-4 shadow-md ${

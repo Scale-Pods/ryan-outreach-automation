@@ -39,6 +39,11 @@ import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { LMLoader } from "@/components/ryan-loader";
 
 export default function SmsAnalyticsPage() {
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
     const [dateRange, setDateRange] = useState<any>({
         from: subDays(new Date(), 90),
         to: new Date()
@@ -73,7 +78,7 @@ export default function SmsAnalyticsPage() {
                 totalSent: 0,
                 totalReplies: 0,
                 replyRate: '0.0',
-                deliveryRate: '100%',
+                deliveryRate: '0.0%',
                 dailyTrend: [] as any[],
                 tempData: [] as any[],
                 tempCounts: { hot: 0, warm: 0, cold: 0, unassigned: 0 },
@@ -147,7 +152,7 @@ export default function SmsAnalyticsPage() {
 
         const dailyTrend = Object.entries(dailyMap).map(([day, vals]) => ({ day, ...vals }));
         const replyRate = uniqueSentCount > 0 ? ((totalReplies / uniqueSentCount) * 100).toFixed(1) : '0.0';
-        const deliveryRate = totalSent > 0 ? (((totalSent - statusCounts.failed) / totalSent) * 100).toFixed(1) + '%' : '100%';
+        const deliveryRate = totalSent > 0 ? (((totalSent - statusCounts.failed) / totalSent) * 100).toFixed(1) + '%' : '0.0%';
 
         const totalTemps = tempCounts.hot + tempCounts.warm + tempCounts.cold || 1;
         const tempData = [
@@ -211,7 +216,7 @@ export default function SmsAnalyticsPage() {
                             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">SMS Delivery Rate</p>
                             <CheckCircle2 className="h-4 w-4 text-emerald-400" />
                         </div>
-                        <h3 className="text-3xl font-black text-emerald-400 mt-2">{stats.deliveryRate}</h3>
+                        <h3 className="text-3xl font-black text-emerald-400 mt-2" suppressHydrationWarning>{stats.deliveryRate}</h3>
                         <p className="text-xs text-slate-400 mt-1">Carrier delivery success rate</p>
                     </CardContent>
                 </Card>
@@ -222,7 +227,7 @@ export default function SmsAnalyticsPage() {
                             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">SMS Response Rate</p>
                             <TrendingUp className="h-4 w-4 text-amber-400" />
                         </div>
-                        <h3 className="text-3xl font-black text-amber-400 mt-2">{stats.replyRate}%</h3>
+                        <h3 className="text-3xl font-black text-amber-400 mt-2" suppressHydrationWarning>{stats.replyRate}%</h3>
                         <p className="text-xs text-slate-400 mt-1">Lead reply engagement rate</p>
                     </CardContent>
                 </Card>
@@ -233,7 +238,7 @@ export default function SmsAnalyticsPage() {
                             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Outbound SMS</p>
                             <Send className="h-4 w-4 text-blue-400" />
                         </div>
-                        <h3 className="text-3xl font-black text-blue-400 mt-2">{stats.totalSent}</h3>
+                        <h3 className="text-3xl font-black text-blue-400 mt-2" suppressHydrationWarning>{stats.totalSent}</h3>
                         <p className="text-xs text-slate-400 mt-1">Total SMS messages dispatched</p>
                     </CardContent>
                 </Card>
@@ -244,7 +249,7 @@ export default function SmsAnalyticsPage() {
                             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">SMS Inbound Replies</p>
                             <MessageSquare className="h-4 w-4 text-purple-400" />
                         </div>
-                        <h3 className="text-3xl font-black text-purple-400 mt-2">{stats.totalReplies}</h3>
+                        <h3 className="text-3xl font-black text-purple-400 mt-2" suppressHydrationWarning>{stats.totalReplies}</h3>
                         <p className="text-xs text-slate-400 mt-1">Inbound SMS replies captured</p>
                     </CardContent>
                 </Card>

@@ -12,7 +12,6 @@ import {
     Bot,
     Link as LinkIcon,
     Check,
-    Languages,
     Send,
     Inbox,
     Share2,
@@ -154,44 +153,6 @@ export function EmailChatDetail({ leadId, onClose, initialLead }: EmailChatDetai
     const [loading, setLoading] = useState(true);
     const [messages, setMessages] = useState<any[]>([]);
     const [copied, setCopied] = useState(false);
-    const [isTranslated, setIsTranslated] = useState(false);
-    const [isTranslating, setIsTranslating] = useState(false);
-    const [translatedMessages, setTranslatedMessages] = useState<Record<number, string>>({});
-
-    const handleTranslate = async () => {
-        if (isTranslated) {
-            setIsTranslated(false);
-            return;
-        }
-        if (Object.keys(translatedMessages).length > 0) {
-            setIsTranslated(true);
-            return;
-        }
-        setIsTranslating(true);
-        try {
-            const textsToTranslate = messages.map(m => m.content);
-            const response = await fetch('/api/translate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ texts: textsToTranslate })
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                const translations = data.translatedTexts || [];
-                const newTranslations: Record<number, string> = {};
-                translations.forEach((t: string, idx: number) => {
-                    newTranslations[idx] = t;
-                });
-                setTranslatedMessages(newTranslations);
-                setIsTranslated(true);
-            }
-        } catch (e) {
-            console.error('Translation error:', e);
-        } finally {
-            setIsTranslating(false);
-        }
-    };
 
     const fetchLeadAndEmailThread = async () => {
         setLoading(true);
@@ -345,16 +306,6 @@ export function EmailChatDetail({ leadId, onClose, initialLead }: EmailChatDetai
                     <Button
                         variant="ghost"
                         size="sm"
-                        onClick={handleTranslate}
-                        disabled={isTranslating || messages.length === 0}
-                        className={`gap-1.5 text-xs rounded-full border border-white/10 ${isTranslated ? 'bg-indigo-600 text-white' : 'text-slate-300 hover:bg-white/10'}`}
-                    >
-                        <Languages className="h-3.5 w-3.5" />
-                        {isTranslating ? "Translating..." : isTranslated ? "Original" : "Translate"}
-                    </Button>
-                    <Button
-                        variant="ghost"
-                        size="sm"
                         onClick={copyShareLink}
                         className="gap-1.5 text-xs bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 rounded-full border border-blue-500/30"
                     >
@@ -398,7 +349,7 @@ export function EmailChatDetail({ leadId, onClose, initialLead }: EmailChatDetai
                 ) : (
                     messages.map((msg, index) => {
                         const isUser = msg.type === 'user';
-                        const text = (isTranslated && translatedMessages[index]) ? translatedMessages[index] : msg.content;
+                        const text = msg.content;
                         return (
                             <div key={index} className={`flex ${isUser ? 'justify-start' : 'justify-end'} gap-2.5`}>
                                 {isUser && (

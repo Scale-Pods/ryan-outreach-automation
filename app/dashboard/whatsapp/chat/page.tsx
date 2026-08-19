@@ -23,16 +23,17 @@ import {
     Search,
     Filter,
     Users,
-    UserCheck,
     Send,
     MessageSquare,
     RefreshCw,
-    Building2
+    Building2,
+    ChevronLeft,
+    ChevronRight,
+    MoreHorizontal
 } from "lucide-react";
 import { LMLoader } from "@/components/ryan-loader";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { subDays, startOfDay, endOfDay } from "date-fns";
-import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 
 // --- Sorting & Activity Helpers ---
 const parseMsg = (raw: any): { date: Date | null, content: string } => {
@@ -662,21 +663,6 @@ export default function WhatsappChatPage() {
                     <p className="text-[var(--label-secondary)] text-sm">Real-time engagement across your leads</p>
                 </div>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                    {/* Tab Switcher */}
-                    <div className="flex bg-[var(--fill-quaternary)] rounded-lg p-0.5">
-                        <button
-                            onClick={() => { setActiveTab("leads"); setCurrentPage(1); }}
-                            className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${activeTab === "leads" ? "bg-[var(--glass-fill)] text-[var(--label-primary)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)]" : "text-[var(--label-secondary)] hover:text-[var(--label-primary)]"}`}
-                        >
-                            <Users className="h-3.5 w-3.5 inline mr-1.5" />Leads
-                        </button>
-                        <button
-                            onClick={() => { setActiveTab("owners"); setCurrentPage(1); }}
-                            className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${activeTab === "owners" ? "bg-[var(--glass-fill)] text-[var(--label-primary)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_8px_rgba(0,0,0,0.06)]" : "text-[var(--label-secondary)] hover:text-[var(--label-primary)]"}`}
-                        >
-                            <UserCheck className="h-3.5 w-3.5 inline mr-1.5" />Owners
-                        </button>
-                    </div>
                     <DateRangePicker onUpdate={(values) => setDateRange(values.range)} />
                     <Button variant="outline" size="sm" onClick={() => { window.location.reload(); }} className="gap-2 h-9">
                         <RefreshCw className="h-4 w-4" /> Refresh
