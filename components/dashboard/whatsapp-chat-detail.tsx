@@ -497,12 +497,6 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
                                     <p className="font-medium text-[var(--label-primary)] mt-1">{lead.phone}</p>
                                     <p className="text-[var(--label-secondary)] text-xs">{lead.email}</p>
                                 </div>
-                                <div>
-                                    <span className="text-[10px] font-bold text-[var(--label-tertiary)] uppercase">Campaign</span>
-                                    <Badge className="mt-1 bg-[rgba(175,82,222,0.08)] text-purple-700 hover:bg-[rgba(175,82,222,0.08)] border-none text-[10px] font-bold uppercase block w-fit">
-                                        {lead.source_loop}
-                                    </Badge>
-                                </div>
                                 {((lead as any).status || (lead as any).curr_lead_status) && (
                                     <div>
                                         <span className="text-[10px] font-bold text-[var(--label-tertiary)] uppercase">Status</span>

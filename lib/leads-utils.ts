@@ -303,13 +303,22 @@ export function consolidateLeads(data: RawLeadsResponse): ConsolidatedLead[] {
     // 5. Map activity_leads (from aspen_activity, fello_activity, naples_activity, old_activity)
     if (Array.isArray((data as any).activity_leads)) {
         (data as any).activity_leads.forEach((act: any, idx: number) => {
+            const rVal = String(act.replied ?? '').toLowerCase().trim();
+            const isActivityReplied =
+                rVal === 'yes' ||
+                rVal === 'true' ||
+                rVal === '1' ||
+                (act.status && String(act.status).toLowerCase().includes('reply')) ||
+                (act.status && String(act.status).toLowerCase().includes('replied')) ||
+                !!act.replied_at;
+
             consolidatedLeads.push({
                 id: act.id ? `act-${act._source_table || 'tbl'}-${act.id}` : `act-${idx}`,
                 lead_id: act.lead_id || act.id,
                 name: String(act.lead_name || act.customer_name || "Lead"),
                 phone: String(act.lead_phone || act.customer_phone || ""),
                 email: String(act.lead_email || act.email || "No Email"),
-                replied: (act.status && String(act.status).toLowerCase().includes('reply')) ? 'Yes' : 'No',
+                replied: isActivityReplied ? 'Yes' : 'No',
                 current_loop: act._source_table || act.channel || "Activity Stream",
                 source_loop: act._source_table || act.channel || "Activity Stream",
                 stages_passed: [],

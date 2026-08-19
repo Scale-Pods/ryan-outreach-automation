@@ -409,12 +409,6 @@ export function SMSChatDetail({ customerId, onClose, initialLead }: SMSChatDetai
                                     <p className="font-medium text-white mt-1 font-mono">{leadPhone}</p>
                                     {lead?.email && <p className="text-slate-400 text-xs">{lead.email}</p>}
                                 </div>
-                                <div>
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase">Campaign</span>
-                                    <Badge className="mt-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] font-bold uppercase block w-fit">
-                                        {sourceLoop}
-                                    </Badge>
-                                </div>
                                  {(lead?.status || lead?.workflow_status) && (
                                      <div>
                                          <span className="text-[10px] font-bold text-slate-400 uppercase">Status</span>

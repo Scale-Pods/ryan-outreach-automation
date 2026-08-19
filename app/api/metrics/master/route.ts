@@ -62,7 +62,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
                 supabaseAdmin.from(table).select('id', { count: 'exact', head: true }).ilike('channel', 'whatsapp').gte('created_at', fromDate).lte('created_at', toDate),
                 supabaseAdmin.from(table).select('id', { count: 'exact', head: true }).ilike('channel', 'voice').gte('created_at', fromDate).lte('created_at', toDate),
                 supabaseAdmin.from(table).select('id', { count: 'exact', head: true }).ilike('channel', 'sms').gte('created_at', fromDate).lte('created_at', toDate),
-                supabaseAdmin.from(table).select('id', { count: 'exact', head: true }).or('action_type.ilike.reply,status.ilike.replied,replied_at.not.is.null').gte('created_at', fromDate).lte('created_at', toDate),
+                supabaseAdmin.from(table).select('id', { count: 'exact', head: true }).or('action_type.ilike.reply,action_type.ilike.%reply%,status.ilike.replied,status.ilike.%reply%,replied_at.not.is.null,replied.ilike.yes,replied.eq.true').gte('created_at', fromDate).lte('created_at', toDate),
                 supabaseAdmin.from(table).select('id', { count: 'exact', head: true }).gte('created_at', fromDate).lte('created_at', toDate),
             ]);
 

@@ -54,23 +54,38 @@ export async function GET(request: NextRequest) {
             nrWf = felloRes.data || [];
         }
 
-        // Fetch activity leads from activity tables
+        // Fetch activity leads from activity tables (combining date-filtered and explicit replied leads)
         const activityLeads: any[] = [];
+        const seenActivityKeys = new Set<string>();
+
         for (const table of ACTIVITY_TABLES) {
             try {
-                const { data, error: qErr } = await supabaseAdmin
-                    .from(table)
-                    .select('*')
-                    .gte('created_at', fromDate)
-                    .lte('created_at', toDate)
-                    .order('created_at', { ascending: false })
-                    .limit(500);
+                const [dateRes, replyRes] = await Promise.all([
+                    supabaseAdmin
+                        .from(table)
+                        .select('*')
+                        .gte('created_at', fromDate)
+                        .lte('created_at', toDate)
+                        .order('created_at', { ascending: false })
+                        .limit(500),
+                    supabaseAdmin
+                        .from(table)
+                        .select('*')
+                        .or('replied.ilike.yes,replied.eq.true,status.ilike.%reply%,status.ilike.%replied%,action_type.ilike.%reply%')
+                        .order('created_at', { ascending: false })
+                        .limit(500)
+                ]);
 
-                if (!qErr && data && data.length > 0) {
-                    activityLeads.push(...data.map((r: any) => ({
-                        ...r,
-                        _source_table: table,
-                    })));
+                const combinedRows = [...(dateRes.data || []), ...(replyRes.data || [])];
+                for (const row of combinedRows) {
+                    const key = `${table}-${row.id}`;
+                    if (!seenActivityKeys.has(key)) {
+                        seenActivityKeys.add(key);
+                        activityLeads.push({
+                            ...row,
+                            _source_table: table,
+                        });
+                    }
                 }
             } catch {
                 // skip tables that don't exist

@@ -20,13 +20,13 @@ import {
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, Search, Mail, MessageCircle, Phone } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, Mail, MessageCircle, Phone, Smartphone } from "lucide-react";
 
 interface ReplyData {
     id: string;
     contactName: string;
     contactInfo: string;
-    mode: 'Email' | 'WhatsApp' | 'Voice';
+    mode: 'Email' | 'WhatsApp' | 'Voice' | 'SMS';
     date: string;
     time: string;
     status: 'Replied' | 'Pending' | 'Follow-up';
@@ -156,10 +156,13 @@ export function TotalRepliesView({ leads = [], dateRange, onViewLead }: { leads?
         // --- Fallback for any other replied lead (activity tables, voice, sms) ---
         if (addedCount === 0) {
             const replyDate = getValidDate(lead.replied_at || lead.updated_at || lead.created_at || lead["Created At"]);
-            const channel = String(lead.channel || '').toLowerCase();
-            let mode: 'Email' | 'WhatsApp' | 'Voice' = 'WhatsApp';
-            if (channel.includes('email') || lead.lead_email || lead.email) mode = 'Email';
+            const channel = String(lead.channel || lead._source_table || '').toLowerCase();
+            let mode: 'Email' | 'WhatsApp' | 'Voice' | 'SMS' = 'WhatsApp';
+            if (channel.includes('email')) mode = 'Email';
+            else if (channel.includes('sms')) mode = 'SMS';
             else if (channel.includes('voice') || channel.includes('call') || lead.mode === 'Voice') mode = 'Voice';
+            else if (channel.includes('whatsapp') || channel.includes('wp')) mode = 'WhatsApp';
+            else if (lead.lead_email && !lead.lead_phone && !lead.phone) mode = 'Email';
 
             realData.push({
                 id: `${leadId}-act-${idx}`,
@@ -170,7 +173,7 @@ export function TotalRepliesView({ leads = [], dateRange, onViewLead }: { leads?
                 time: replyDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 status: 'Replied',
                 preview: (lead.content || lead.note || lead.summary || lead.transcript || lead.WP_Replied_track || lead.whatsapp_replied || "Replied").substring(0, 70),
-                link: mode === 'WhatsApp' ? `/dashboard/whatsapp/chat?chat=${leadId}` : (mode === 'Voice' ? `/dashboard/voice` : `/dashboard/email/sent`),
+                link: mode === 'WhatsApp' ? `/dashboard/whatsapp/chat?chat=${leadId}` : (mode === 'Voice' ? `/dashboard/voice` : (mode === 'SMS' ? `/dashboard/sms` : `/dashboard/email/sent`)),
                 rawLead: lead,
                 sortDate: replyDate,
             });
@@ -217,6 +220,8 @@ export function TotalRepliesView({ leads = [], dateRange, onViewLead }: { leads?
                             <SelectItem value="all">All Modes</SelectItem>
                             <SelectItem value="email">Email</SelectItem>
                             <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                            <SelectItem value="voice">Voice</SelectItem>
+                            <SelectItem value="sms">SMS</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -232,13 +237,22 @@ export function TotalRepliesView({ leads = [], dateRange, onViewLead }: { leads?
                             <TableHead>Date & Time</TableHead>
                             <TableHead>Preview</TableHead>
                             <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Action</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {displayedData.length > 0 ? (
                             displayedData.map((item: any) => (
-                                <TableRow key={item.id}>
+                                <TableRow
+                                    key={item.id}
+                                    className="cursor-pointer hover:bg-[var(--bg-app)]/80 transition-colors"
+                                    onClick={() => {
+                                        if (onViewLead && item.rawLead) {
+                                            onViewLead(item.rawLead);
+                                        } else {
+                                            window.location.href = item.link;
+                                        }
+                                    }}
+                                >
                                     <TableCell>
                                         <div className="font-medium">{item.contactName}</div>
                                         <div className="text-xs text-[var(--label-secondary)]">{item.contactInfo}</div>
@@ -248,6 +262,7 @@ export function TotalRepliesView({ leads = [], dateRange, onViewLead }: { leads?
                                             {item.mode === 'Email' && <Mail className="h-4 w-4 text-sky-500" />}
                                             {item.mode === 'WhatsApp' && <MessageCircle className="h-4 w-4 text-green-500" />}
                                             {item.mode === 'Voice' && <Phone className="h-4 w-4 text-purple-500" />}
+                                            {item.mode === 'SMS' && <Smartphone className="h-4 w-4 text-amber-500" />}
                                             <span>{item.mode}</span>
                                         </div>
                                     </TableCell>
@@ -263,22 +278,11 @@ export function TotalRepliesView({ leads = [], dateRange, onViewLead }: { leads?
                                             {item.status}
                                         </Badge>
                                     </TableCell>
-                                    <TableCell className="text-right">
-                                        <Button size="sm" variant="ghost" className="text-blue-600 hover:text-blue-700" onClick={() => {
-                                            if (onViewLead && item.rawLead) {
-                                                onViewLead(item.rawLead);
-                                            } else {
-                                                window.location.href = item.link;
-                                            }
-                                        }}>
-                                            View
-                                        </Button>
-                                    </TableCell>
                                 </TableRow>
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={6} className="h-24 text-center">
+                                <TableCell colSpan={5} className="h-24 text-center">
                                     No results found.
                                 </TableCell>
                             </TableRow>

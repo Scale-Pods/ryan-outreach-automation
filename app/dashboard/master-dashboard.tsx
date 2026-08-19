@@ -145,10 +145,19 @@ export default function MasterDashboard() {
             const channel = String(l.channel || '').toLowerCase();
             const actionType = String(l.action_type || '').toLowerCase();
             const status = String(l.status || '').toLowerCase();
+            const rVal = String(l.replied ?? '').toLowerCase().trim();
 
             const wtR = l.WP_Replied_track || l["WP_Replied_track"] || l.whatsapp_replied || l["W.P_Replied 1"];
             const emR = l.email_replied || l["Email Replied"];
-            const isActivityReply = status.includes('reply') || status.includes('replied') || actionType.includes('reply') || actionType.includes('inbound') || !!l.replied_at;
+            const isActivityReply =
+                rVal === 'yes' ||
+                rVal === 'true' ||
+                rVal === '1' ||
+                status.includes('reply') ||
+                status.includes('replied') ||
+                actionType.includes('reply') ||
+                actionType.includes('inbound') ||
+                !!l.replied_at;
 
             const hasWpReply = wtR && !["no", "none", "", "0"].includes(String(wtR).toLowerCase().trim());
             const hasEmailReply = emR && !["no", "none", "", "0"].includes(String(emR).toLowerCase().trim());

@@ -11,6 +11,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         const from = searchParams.get('from');
         const to = searchParams.get('to');
         const channel = searchParams.get('channel');
+        const reply = searchParams.get('reply');
         const search = searchParams.get('search');
         const page = parseInt(searchParams.get('page') || '1');
         const limit = parseInt(searchParams.get('limit') || '50');
@@ -45,10 +46,22 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
                     dataQuery = dataQuery.ilike('channel', channel);
                 }
 
+                if (reply && reply !== 'all') {
+                    if (reply === 'yes') {
+                        const filterReply = 'replied.ilike.yes,replied.eq.true,status.ilike.%reply%,status.ilike.%replied%';
+                        countQuery = countQuery.or(filterReply);
+                        dataQuery = dataQuery.or(filterReply);
+                    } else if (reply === 'no') {
+                        const filterNoReply = 'replied.ilike.no,replied.is.null,replied.eq.false';
+                        countQuery = countQuery.or(filterNoReply);
+                        dataQuery = dataQuery.or(filterNoReply);
+                    }
+                }
+
                 if (search) {
                     const cleanSearch = search.trim();
                     const isNum = /^\d+$/.test(cleanSearch);
-                    let filter = `lead_name.ilike.%${cleanSearch}%,lead_phone.ilike.%${cleanSearch}%,lead_email.ilike.%${cleanSearch}%,action_type.ilike.%${cleanSearch}%,note.ilike.%${cleanSearch}%,content.ilike.%${cleanSearch}%,summary.ilike.%${cleanSearch}%`;
+                    let filter = `lead_name.ilike.%${cleanSearch}%,lead_phone.ilike.%${cleanSearch}%,lead_email.ilike.%${cleanSearch}%,action_type.ilike.%${cleanSearch}%,note.ilike.%${cleanSearch}%,content.ilike.%${cleanSearch}%,summary.ilike.%${cleanSearch}%,replied.ilike.%${cleanSearch}%`;
                     if (isNum) {
                         filter += `,lead_id.eq.${cleanSearch},id.eq.${cleanSearch}`;
                     }

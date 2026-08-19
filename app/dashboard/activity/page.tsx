@@ -21,6 +21,12 @@ const CHANNEL_OPTIONS = [
     { value: "sms", label: "SMS" },
 ];
 
+const REPLIED_OPTIONS = [
+    { value: "all", label: "All Replies" },
+    { value: "yes", label: "Replied (Yes)" },
+    { value: "no", label: "Not Replied (No)" },
+];
+
 function getChannelIcon(channel: string) {
     const c = channel.toLowerCase();
     if (c === "voice") return <Phone className="h-3.5 w-3.5" />;
@@ -53,6 +59,7 @@ export default function ActivityPage() {
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [channelFilter, setChannelFilter] = useState("all");
+    const [replyFilter, setReplyFilter] = useState("all");
     const [searchQuery, setSearchQuery] = useState("");
     const [errors, setErrors] = useState<string[]>([]);
     const [dateRange, setDateRange] = useState<any>({
@@ -73,6 +80,7 @@ export default function ActivityPage() {
             if (dr?.from) params.set("from", startOfDay(dr.from).toISOString());
             if (dr?.to) params.set("to", endOfDay(dr.to).toISOString());
             if (channelFilter && channelFilter !== "all") params.set("channel", channelFilter);
+            if (replyFilter && replyFilter !== "all") params.set("reply", replyFilter);
             if (searchQuery) params.set("search", searchQuery);
             params.set("page", String(currentPage));
             params.set("limit", String(limit));
@@ -88,7 +96,7 @@ export default function ActivityPage() {
         } finally {
             setLoading(false);
         }
-    }, [channelFilter, searchQuery, currentPage]);
+    }, [channelFilter, replyFilter, searchQuery, currentPage]);
 
     useEffect(() => {
         fetchActivity();
@@ -142,11 +150,23 @@ export default function ActivityPage() {
                         </div>
                         <div className="flex items-center gap-3">
                             <Select value={channelFilter} onValueChange={(v) => { setChannelFilter(v); setCurrentPage(1); }}>
-                                <SelectTrigger className="w-[180px] h-10">
+                                <SelectTrigger className="w-[160px] h-10">
                                     <SelectValue placeholder="Channel" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {CHANNEL_OPTIONS.map((opt) => (
+                                        <SelectItem key={opt.value} value={opt.value}>
+                                            {opt.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <Select value={replyFilter} onValueChange={(v) => { setReplyFilter(v); setCurrentPage(1); }}>
+                                <SelectTrigger className="w-[160px] h-10">
+                                    <SelectValue placeholder="Replied" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {REPLIED_OPTIONS.map((opt) => (
                                         <SelectItem key={opt.value} value={opt.value}>
                                             {opt.label}
                                         </SelectItem>
@@ -164,6 +184,7 @@ export default function ActivityPage() {
                                 <TableHead>Channel</TableHead>
                                 <TableHead>Action</TableHead>
                                 <TableHead>Status</TableHead>
+                                <TableHead>Replied</TableHead>
                                 <TableHead>Source</TableHead>
                                 <TableHead>Date</TableHead>
                             </TableRow>
@@ -171,7 +192,7 @@ export default function ActivityPage() {
                         <TableBody>
                             {loading && activities.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-24 text-center">
+                                    <TableCell colSpan={7} className="h-24 text-center">
                                         <div className="flex items-center justify-center gap-2 text-[var(--label-secondary)]">
                                             <RefreshCw className="h-4 w-4 animate-spin" />
                                             Loading activity...
@@ -180,13 +201,22 @@ export default function ActivityPage() {
                                 </TableRow>
                             ) : activities.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-24 text-center text-[var(--label-secondary)]">
+                                    <TableCell colSpan={7} className="h-24 text-center text-[var(--label-secondary)]">
                                         No activity found for the selected filters.
                                     </TableCell>
                                 </TableRow>
                             ) : (
                                 activities.map((act: any, idx: number) => {
                                     const sourceInfo = getSourceBadge(act._source_table || "");
+                                    const repliedVal = String(act.replied ?? '').toLowerCase().trim();
+                                    const isReplied =
+                                        repliedVal === 'yes' ||
+                                        repliedVal === 'true' ||
+                                        repliedVal === '1' ||
+                                        act.status?.toLowerCase().includes('reply') ||
+                                        act.status?.toLowerCase().includes('replied') ||
+                                        !!act.replied_at;
+
                                     return (
                                         <TableRow key={act.id || idx} className="hover:bg-[var(--bg-app)]/50 transition-colors">
                                             <TableCell>
@@ -226,6 +256,14 @@ export default function ActivityPage() {
                                                     className="text-[11px]"
                                                 >
                                                     {act.status || "—"}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge
+                                                    variant={isReplied ? "success" : "outline"}
+                                                    className="text-[11px]"
+                                                >
+                                                    {isReplied ? "Yes" : "No"}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell>

@@ -246,16 +246,6 @@ export default function PublicWhatsAppSharePage({ params }: { params: Promise<{ 
                                         {lead.email && <p className="text-xs text-slate-400 mt-0.5">{lead.email}</p>}
                                     </div>
 
-                                    {/* Campaign */}
-                                    {lead.campaign && (
-                                        <div>
-                                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Campaign</p>
-                                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-purple-500/10 text-purple-400 border border-purple-500/20">
-                                                {lead.campaign}
-                                            </span>
-                                        </div>
-                                    )}
-
                                     {/* Status */}
                                     {lead.status && (
                                         <div>
