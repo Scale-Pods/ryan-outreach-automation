@@ -978,8 +978,62 @@ function CustomerRow({ lead: leadRaw, onClick }: { lead: any; onClick: () => voi
         return d.toLocaleString([], { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' });
     };
 
-    const statusValue = lead.status || lead["status"] || (hasReplied ? "replied" : "sent");
+    let statusValue = lead.status || lead["status"];
+    if (!statusValue) {
+        let isAnyTsFailed = false;
+        for (let i = 1; i <= 12; i++) {
+            const ts = lead[`W.P_${i} TS`];
+            if (ts && String(ts).toLowerCase().includes("failed")) { isAnyTsFailed = true; break; }
+        }
+        if (isAnyTsFailed) {
+            statusValue = "failed";
+        } else {
+            statusValue = hasReplied ? "replied" : "sent";
+        }
+    }
     const tempValue = lead.lead_temp || lead["lead_temp"] || lead.lead_temperature || lead["Lead Temperature"] || lead.sentiment || "";
+
+    const s = String(statusValue || '').trim().toLowerCase();
+    const isFailed = s === 'failed' || s === 'error';
+
+    const getErrorMessage = (l: any): string => {
+        const directErr = l["Error"] || l.Error || l.error || l.error_message || l.errorMessage || l["Error Message"];
+        if (directErr && String(directErr).trim()) {
+            return String(directErr).trim();
+        }
+
+        // Search TS keys for embedded error message: "failed - <error> - <timestamp>"
+        for (let i = 1; i <= 12; i++) {
+            const ts = l[`W.P_${i} TS`] || l[`W.P_${i}_TS`];
+            if (ts && typeof ts === 'string' && (ts.toLowerCase().includes('failed') || ts.toLowerCase().includes('error'))) {
+                const parts = ts.split(' - ');
+                if (parts.length >= 3) {
+                    return parts.slice(1, -1).join(' - ').trim();
+                } else if (parts.length === 2 && !/^\d{1,2}\/\d{1,2}\/\d{4}/.test(parts[1].trim())) {
+                    return parts[1].trim();
+                }
+            }
+        }
+
+        for (let i = 1; i <= 10; i++) {
+            const ts = l[`W.P_FollowUp_TS${i}`] || l[`W.P_FollowUp ${i} TS`] || l[`W.P_FollowUp_${i} TS`];
+            if (ts && typeof ts === 'string' && (ts.toLowerCase().includes('failed') || ts.toLowerCase().includes('error'))) {
+                const parts = ts.split(' - ');
+                if (parts.length >= 3) {
+                    return parts.slice(1, -1).join(' - ').trim();
+                } else if (parts.length === 2 && !/^\d{1,2}\/\d{1,2}\/\d{4}/.test(parts[1].trim())) {
+                    return parts[1].trim();
+                }
+            }
+        }
+
+        if (l.note && String(l.note).trim()) return String(l.note).trim();
+        if (l.summary && String(l.summary).trim()) return String(l.summary).trim();
+
+        return "Message delivery failed";
+    };
+
+    const errorMessage = isFailed ? getErrorMessage(lead) : "";
 
     return (
         <tr className="hover:bg-[var(--bg-app)] transition-colors cursor-pointer group" onClick={onClick}>
@@ -994,15 +1048,20 @@ function CustomerRow({ lead: leadRaw, onClick }: { lead: any; onClick: () => voi
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <div>
+                            <div className="inline-block cursor-help">
                                 {getStatusBadge(statusValue)}
                             </div>
                         </TooltipTrigger>
-                        {hasReplied && (
+                        {isFailed ? (
+                            <TooltipContent side="top" className="bg-slate-900 text-rose-300 text-xs border border-rose-800/60 px-3 py-1.5 shadow-xl max-w-xs z-50">
+                                <p className="font-bold text-[10px] text-rose-400 uppercase tracking-wider mb-0.5">Error</p>
+                                <p className="leading-snug">{errorMessage}</p>
+                            </TooltipContent>
+                        ) : hasReplied ? (
                             <TooltipContent side="top" className="bg-slate-800/40 backdrop-blur-md text-white text-[10px] border-none px-2 py-1 shadow-xl">
                                 {formatTooltipDate(latestDate)}
                             </TooltipContent>
-                        )}
+                        ) : null}
                     </Tooltip>
                 </TooltipProvider>
             </td>

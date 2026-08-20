@@ -29,6 +29,12 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { WhatsAppChatDetail } from "@/components/dashboard/whatsapp-chat-detail";
 import { LMLoader } from "@/components/ryan-loader";
 
@@ -367,7 +373,28 @@ export default function WhatsappLeadsPage() {
                                                     ) : "—"}
                                                 </td>
                                                 <td className="px-4 py-4 text-center">
-                                                    {getStatusBadge(lead.status)}
+                                                    {(() => {
+                                                        const s = String(lead.status || '').trim().toLowerCase();
+                                                        const isFailed = s === 'failed' || s === 'error';
+                                                        const err = lead["Error"] || lead.Error || lead.error || lead.error_message || lead.note || "Message delivery failed";
+                                                        return (
+                                                            <TooltipProvider>
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                        <div className="inline-block cursor-help">
+                                                                            {getStatusBadge(lead.status)}
+                                                                        </div>
+                                                                    </TooltipTrigger>
+                                                                    {isFailed && (
+                                                                        <TooltipContent side="top" className="bg-slate-900 text-rose-300 text-xs border border-rose-800/60 px-3 py-1.5 shadow-xl max-w-xs z-50">
+                                                                            <p className="font-bold text-[10px] text-rose-400 uppercase tracking-wider mb-0.5">Error</p>
+                                                                            <p className="leading-snug">{String(err)}</p>
+                                                                        </TooltipContent>
+                                                                    )}
+                                                                </Tooltip>
+                                                            </TooltipProvider>
+                                                        );
+                                                    })()}
                                                 </td>
                                                 <td className="px-4 py-4 text-center">
                                                     {hasReplied
