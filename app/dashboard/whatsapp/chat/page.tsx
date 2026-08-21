@@ -422,9 +422,16 @@ export default function WhatsappChatPage() {
                 activeFilters.messageStatus.some(status => {
                     const target = status.toLowerCase();
                     for (let i = 1; i <= 12; i++) {
-                        const s = (lead[`W.P_${i} TS`] || "").toLowerCase();
+                        const s = (lead[`W.P_${i} TS`] || lead[`W.P_${i}_TS`] || "").toLowerCase();
                         if (s.includes(target)) return true;
                     }
+                    for (let i = 1; i <= 10; i++) {
+                        const s = (lead[`W.P_FollowUp_TS${i}`] || lead[`W.P_FollowUp ${i} TS`] || lead[`W.P_FollowUp_${i} TS`] || "").toLowerCase();
+                        if (s.includes(target)) return true;
+                    }
+                    const leadStatus = String(lead.status || lead.message_status || lead.delivery_status || "").toLowerCase();
+                    if (leadStatus.includes(target)) return true;
+                    if ((target === "failed" || target === "error") && (lead.Error || lead.error || lead.error_message || lead.errorMessage)) return true;
                     return false;
                 });
 
@@ -470,7 +477,9 @@ export default function WhatsappChatPage() {
             const name = String(o.Name || o.name || "").toLowerCase();
             const phone = String(o.contactNo || o.Phone || o.phone || "");
             const matchesSearch = name.includes(searchQuery.toLowerCase()) || phone.includes(searchQuery);
-            if (!matchesSearch) return false;            // Reply Status Filter
+            if (!matchesSearch) return false;
+            
+            // Reply Status Filter
             if (activeFilters.replyStatus.length > 0) {
                 const wtsReply = o["WTS_Reply_Track"];
                 const hasReplied = wtsReply && wtsReply !== "" && String(wtsReply).toLowerCase() !== "no";
@@ -537,20 +546,50 @@ export default function WhatsappChatPage() {
                             }
                         }
                     }
+                    const actStatus = String(lead.status || lead.action_type || '').toLowerCase();
+                    const actErr = lead.Error || lead.error || lead.error_message || lead.errorMessage;
+                    if (actStatus.includes("failed") || actStatus.includes("error") || (actErr && String(actErr).trim())) {
+                        failedCount++;
+                    }
                 } else {
+                    let leadHasFailedMsg = false;
                     for (let i = 1; i <= 12; i++) {
                         if (lead[`W.P_${i}`]) {
                             sentCount++;
-                            const ts = lead[`W.P_${i} TS`];
-                            if (ts && String(ts).toLowerCase().includes("failed")) failedCount++;
+                            const ts = lead[`W.P_${i} TS`] || lead[`W.P_${i}_TS`];
+                            if (ts && typeof ts === 'string') {
+                                const low = ts.toLowerCase();
+                                if (low.includes("failed") || low.includes("error") || low.includes("undelivered")) {
+                                    failedCount++;
+                                    leadHasFailedMsg = true;
+                                }
+                            }
                         }
                     }
                     if (lead["W.P_FollowUp"]) sentCount++;
                     for (let i = 1; i <= 10; i++) {
-                        if (lead[`W.P_FollowUp_${i}`] || lead[`W.P_FollowUp ${i}`]) sentCount++;
+                        if (lead[`W.P_FollowUp_${i}`] || lead[`W.P_FollowUp ${i}`]) {
+                            sentCount++;
+                            const ts = lead[`W.P_FollowUp_TS${i}`] || lead[`W.P_FollowUp ${i} TS`] || lead[`W.P_FollowUp_${i} TS`];
+                            if (ts && typeof ts === 'string') {
+                                const low = ts.toLowerCase();
+                                if (low.includes("failed") || low.includes("error") || low.includes("undelivered")) {
+                                    failedCount++;
+                                    leadHasFailedMsg = true;
+                                }
+                            }
+                        }
                     }
                     for (let i = 1; i <= 10; i++) {
                         if (lead[`W.P_Replied_${i}`] || lead[`W.P_Replied ${i}`]) sentCount++;
+                    }
+
+                    if (!leadHasFailedMsg) {
+                        const lStatus = String(lead.status || lead.message_status || lead.delivery_status || '').toLowerCase();
+                        const lErr = lead.Error || lead.error || lead.error_message || lead.errorMessage;
+                        if (lStatus.includes("failed") || lStatus.includes("error") || (lErr && String(lErr).trim())) {
+                            failedCount++;
+                        }
                     }
                 }
 
@@ -564,7 +603,9 @@ export default function WhatsappChatPage() {
                 if (o["Whatsapp_1"]) { sentCount++; uniqueSentCount++; }
                 if (o["retry_1"]) sentCount++;
                 for (let i = 1; i <= 5; i++) { if (o[`Bot_Replied_${i}`]) sentCount++; }
-                if (o["Whatsapp_1_status"]?.toLowerCase().includes("failed")) failedCount++;
+                const oStatus = String(o["Whatsapp_1_status"] || o["status"] || "").toLowerCase();
+                const oErr = o["Error"] || o["error"] || o["error_message"];
+                if (oStatus.includes("failed") || oStatus.includes("error") || (oErr && String(oErr).trim())) failedCount++;
                 const wtsReply = o["WTS_Reply_Track"];
                 if (wtsReply && wtsReply !== "" && String(wtsReply).toLowerCase() !== "no") repliedCount++;
             });
@@ -746,10 +787,8 @@ export default function WhatsappChatPage() {
                                 </div>
                                 <div className="space-y-3">
                                     <StatusBar label="Sent" value={stats.sentCount} total={stats.sentCount || 1} color="bg-blue-400" />
-                                    <StatusBar label="Replied" value={stats.repliedCount} total={stats.uniqueSentCount || 1} color="bg-[rgba(52,199,89,0.08)]0" />
-                                    {stats.failedCount > 0 && (
-                                        <StatusBar label="Failed" value={stats.failedCount} total={stats.sentCount || 1} color="bg-rose-500" />
-                                    )}
+                                    <StatusBar label="Replied" value={stats.repliedCount} total={stats.uniqueSentCount || 1} color="bg-emerald-500" />
+                                    <StatusBar label="Failed" value={stats.failedCount} total={stats.sentCount || 1} color="bg-rose-500" />
                                 </div>
                             </CardContent>
                         </Card>
@@ -851,7 +890,7 @@ function MetricCard({ title, value, desc, icon: Icon, dots }: any) {
                 <p className="text-[10px] text-[var(--label-tertiary)] mt-1">{desc}</p>
                 {dots && (
                     <div className="flex gap-1 mt-2">
-                        <div className="h-2 w-2 rounded-full bg-blue-400" /><div className="h-2 w-2 rounded-full bg-[rgba(52,199,89,0.08)]0" /><div className="h-2 w-2 rounded-full bg-rose-500" />
+                        <div className="h-2 w-2 rounded-full bg-blue-400" /><div className="h-2 w-2 rounded-full bg-emerald-500" /><div className="h-2 w-2 rounded-full bg-rose-500" />
                     </div>
                 )}
             </CardContent>
@@ -982,8 +1021,24 @@ function CustomerRow({ lead: leadRaw, onClick }: { lead: any; onClick: () => voi
     if (!statusValue) {
         let isAnyTsFailed = false;
         for (let i = 1; i <= 12; i++) {
-            const ts = lead[`W.P_${i} TS`];
-            if (ts && String(ts).toLowerCase().includes("failed")) { isAnyTsFailed = true; break; }
+            const ts = lead[`W.P_${i} TS`] || lead[`W.P_${i}_TS`];
+            if (ts && typeof ts === 'string') {
+                const low = ts.toLowerCase();
+                if (low.includes("failed") || low.includes("error") || low.includes("undelivered")) { isAnyTsFailed = true; break; }
+            }
+        }
+        if (!isAnyTsFailed) {
+            for (let i = 1; i <= 10; i++) {
+                const ts = lead[`W.P_FollowUp_TS${i}`] || lead[`W.P_FollowUp ${i} TS`] || lead[`W.P_FollowUp_${i} TS`];
+                if (ts && typeof ts === 'string') {
+                    const low = ts.toLowerCase();
+                    if (low.includes("failed") || low.includes("error") || low.includes("undelivered")) { isAnyTsFailed = true; break; }
+                }
+            }
+        }
+        if (!isAnyTsFailed) {
+            const err = lead["Error"] || lead.Error || lead.error || lead.error_message || lead.errorMessage;
+            if (err && String(err).trim()) isAnyTsFailed = true;
         }
         if (isAnyTsFailed) {
             statusValue = "failed";
