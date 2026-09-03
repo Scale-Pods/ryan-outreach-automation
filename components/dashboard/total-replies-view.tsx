@@ -21,6 +21,7 @@ import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Search, Mail, MessageCircle, Phone, Smartphone } from "lucide-react";
+import { FollowUpBossButton } from "@/components/ui/followup-boss-button";
 
 interface ReplyData {
     id: string;
@@ -237,6 +238,7 @@ export function TotalRepliesView({ leads = [], dateRange, onViewLead }: { leads?
                             <TableHead>Date & Time</TableHead>
                             <TableHead>Preview</TableHead>
                             <TableHead>Status</TableHead>
+                            <TableHead className="text-center">FUB</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -278,11 +280,14 @@ export function TotalRepliesView({ leads = [], dateRange, onViewLead }: { leads?
                                             {item.status}
                                         </Badge>
                                     </TableCell>
+                                    <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                                        <FollowUpBossButton lead={item.rawLead || item} variant="icon" />
+                                    </TableCell>
                                 </TableRow>
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={5} className="h-24 text-center">
+                                <TableCell colSpan={6} className="h-24 text-center">
                                     No results found.
                                 </TableCell>
                             </TableRow>

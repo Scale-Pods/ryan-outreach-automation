@@ -12,6 +12,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { subDays, startOfDay, endOfDay, format } from "date-fns";
 import { Search, ChevronLeft, ChevronRight, RefreshCw, Phone, Mail, MessageCircle, Activity, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { FollowUpBossButton } from "@/components/ui/followup-boss-button";
 
 const CHANNEL_OPTIONS = [
     { value: "all", label: "All Channels" },
@@ -187,12 +188,13 @@ export default function ActivityPage() {
                                 <TableHead>Replied</TableHead>
                                 <TableHead>Source</TableHead>
                                 <TableHead>Date</TableHead>
+                                <TableHead className="text-center">FUB</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {loading && activities.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="h-24 text-center">
+                                    <TableCell colSpan={8} className="h-24 text-center">
                                         <div className="flex items-center justify-center gap-2 text-[var(--label-secondary)]">
                                             <RefreshCw className="h-4 w-4 animate-spin" />
                                             Loading activity...
@@ -201,7 +203,7 @@ export default function ActivityPage() {
                                 </TableRow>
                             ) : activities.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="h-24 text-center text-[var(--label-secondary)]">
+                                    <TableCell colSpan={8} className="h-24 text-center text-[var(--label-secondary)]">
                                         No activity found for the selected filters.
                                     </TableCell>
                                 </TableRow>
@@ -275,6 +277,9 @@ export default function ActivityPage() {
                                                 {act.created_at
                                                     ? format(new Date(act.created_at), "MMM dd, yyyy • p")
                                                     : "—"}
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                <FollowUpBossButton lead={act} variant="icon" />
                                             </TableCell>
                                         </TableRow>
                                     );

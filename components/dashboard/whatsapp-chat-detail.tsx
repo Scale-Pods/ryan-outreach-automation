@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { ConsolidatedLead } from "@/lib/leads-utils";
 import { useData } from "@/context/DataContext";
+import { FollowUpBossButton } from "@/components/ui/followup-boss-button";
 
 function parseActivityContent(content: string, summary?: string): any[] {
     if (!content) return [];
@@ -410,6 +411,7 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
+                    <FollowUpBossButton lead={lead} variant="button" />
                     <Button
                         variant="default"
                         size="sm"

@@ -13,6 +13,7 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { WhatsAppChatDetail } from "@/components/dashboard/whatsapp-chat-detail";
+import { FollowUpBossButton } from "@/components/ui/followup-boss-button";
 import {
     Dialog,
     DialogContent,
@@ -820,6 +821,7 @@ export default function WhatsappChatPage() {
                                             <th className="px-4 py-3 text-center">Messages Sent</th>
                                             <th className="px-4 py-3 text-center">Status</th>
                                             <th className="px-4 py-3 text-center">Temperature</th>
+                                            <th className="px-4 py-3 text-center">FUB</th>
                                             <th className="px-4 py-3 text-right">Last Contacted</th>
                                         </tr>
                                     </thead>
@@ -1127,6 +1129,9 @@ function CustomerRow({ lead: leadRaw, onClick }: { lead: any; onClick: () => voi
             </td>
             <td className="px-4 py-3 text-center">
                 {getTemperatureBadge(tempValue)}
+            </td>
+            <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                <FollowUpBossButton lead={lead} variant="icon" />
             </td>
             <td className="px-4 py-3 text-right text-[var(--label-secondary)] text-xs text-nowrap">
                 {latestDate.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' })}

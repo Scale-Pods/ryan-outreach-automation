@@ -14,6 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { FollowUpBossButton } from "@/components/ui/followup-boss-button";
 
 interface CallDetailsModalProps {
     open: boolean;
@@ -269,8 +270,9 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-3xl p-0 gap-0 bg-[var(--glass-fill)] overflow-hidden max-h-[90vh] flex flex-col">
-                <DialogHeader className="p-6 border-b border-[var(--separator)] flex flex-row items-center justify-between space-y-0">
+                <DialogHeader className="p-6 border-b border-[var(--separator)] flex flex-row items-center justify-between space-y-0 pr-12">
                     <DialogTitle className="text-xl font-semibold">Call Details</DialogTitle>
+                    <FollowUpBossButton lead={displayCall || call} variant="button" />
                 </DialogHeader>
 
                 <div className="flex-1 overflow-auto relative">

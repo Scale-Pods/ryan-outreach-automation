@@ -18,9 +18,10 @@ import {
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { subDays, startOfDay, endOfDay } from "date-fns";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SMSChatDetail } from "@/components/dashboard/sms-chat-detail";
 import { LMLoader } from "@/components/ryan-loader";
+import { FollowUpBossButton } from "@/components/ui/followup-boss-button";
 
 interface SentSMSItem {
     id: string;
@@ -176,12 +177,13 @@ export default function SmsSentPage() {
                                     <th className="py-3.5 px-4">Message Snippet</th>
                                     <th className="py-3.5 px-4">Delivery Status</th>
                                     <th className="py-3.5 px-4">Sent Time</th>
+                                    <th className="py-3.5 px-4 text-center">FUB</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5 text-slate-200">
                                 {paginatedItems.length === 0 ? (
                                     <tr>
-                                        <td colSpan={5} className="py-12 text-center text-slate-400 text-sm">
+                                        <td colSpan={6} className="py-12 text-center text-slate-400 text-sm">
                                             No sent SMS records found.
                                         </td>
                                     </tr>
@@ -206,6 +208,9 @@ export default function SmsSentPage() {
                                             </td>
                                             <td className="py-3.5 px-4 text-xs text-slate-400 font-mono">
                                                 {new Date(item.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                                            </td>
+                                            <td className="py-3.5 px-4 text-center" onClick={(e) => e.stopPropagation()}>
+                                                <FollowUpBossButton lead={item} variant="icon" />
                                             </td>
                                         </tr>
                                     ))
@@ -247,6 +252,9 @@ export default function SmsSentPage() {
             {/* Chat Thread Dialog */}
             <Dialog open={!!selectedLeadIdForChat} onOpenChange={(open) => !open && setSelectedLeadIdForChat(null)}>
                 <DialogContent className="max-w-3xl h-[85vh] p-0 bg-transparent border-none">
+                    <DialogHeader className="sr-only">
+                        <DialogTitle>SMS Chat Detail</DialogTitle>
+                    </DialogHeader>
                     {selectedLeadIdForChat && (
                         <SMSChatDetail
                             customerId={selectedLeadIdForChat}

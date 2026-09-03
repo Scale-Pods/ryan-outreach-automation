@@ -17,6 +17,7 @@ import { format, subDays } from "date-fns";
 import { formatDuration } from "@/lib/utils";
 import { useData } from "@/context/DataContext";
 import { useSearchParams } from "next/navigation";
+import { FollowUpBossButton } from "@/components/ui/followup-boss-button";
 
 const DynamicRowCells = ({ call, telephonyCost }: { call: any, telephonyCost?: number }) => {
     const guestName = call.name || "Guest";
@@ -154,6 +155,9 @@ const DynamicRowCells = ({ call, telephonyCost }: { call: any, telephonyCost?: n
                         </div>
                     </PopoverContent>
                 </Popover>
+            </TableCell>
+            <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                <FollowUpBossButton lead={call} variant="icon" />
             </TableCell>
         </>
     );
@@ -447,6 +451,7 @@ export default function VoiceLogsPage() {
                             <TableHead className="font-bold text-[var(--label-primary)]">Duration</TableHead>
                             <TableHead className="font-bold text-[var(--label-primary)]">Temperature</TableHead>
                             <TableHead className="font-bold text-[var(--label-primary)]">Cost</TableHead>
+                            <TableHead className="font-bold text-[var(--label-primary)] text-center">FUB</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -461,7 +466,7 @@ export default function VoiceLogsPage() {
                         ))}
                         {calls.length === 0 && !loading && (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center py-12 text-[var(--label-tertiary)]">
+                                <TableCell colSpan={8} className="text-center py-12 text-[var(--label-tertiary)]">
                                     No calls found for the selected filters.
                                 </TableCell>
                             </TableRow>

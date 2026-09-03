@@ -18,6 +18,7 @@ import {
     X
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
+import { FollowUpBossButton } from "@/components/ui/followup-boss-button";
 
 function parseEmailContent(content: string, note?: string): any[] {
     if (!content && !note) return [];
@@ -303,6 +304,7 @@ export function EmailChatDetail({ leadId, onClose, initialLead }: EmailChatDetai
                 </div>
 
                 <div className="flex items-center gap-2">
+                    <FollowUpBossButton lead={lead} variant="button" />
                     <Button
                         variant="ghost"
                         size="sm"

@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { subDays, startOfDay, endOfDay } from "date-fns";
+import { FollowUpBossButton } from "@/components/ui/followup-boss-button";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -283,12 +284,13 @@ export default function SmsLeadsPage() {
                                     <th className="py-3.5 px-4">Status</th>
                                     <th className="py-3.5 px-4">Interest</th>
                                     <th className="py-3.5 px-4">Last Activity</th>
+                                    <th className="py-3.5 px-4 text-center">FUB</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5 text-slate-200">
                                 {paginatedLeads.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className="py-12 text-center text-slate-400 text-sm">
+                                        <td colSpan={8} className="py-12 text-center text-slate-400 text-sm">
                                             No SMS leads found matching the criteria.
                                         </td>
                                     </tr>
@@ -328,6 +330,9 @@ export default function SmsLeadsPage() {
                                                 </td>
                                                 <td className="py-3.5 px-4 text-xs text-slate-400 font-mono">
                                                     {lead.created_at ? new Date(lead.created_at).toLocaleDateString() : "Recent"}
+                                                </td>
+                                                <td className="py-3.5 px-4 text-center" onClick={(e) => e.stopPropagation()}>
+                                                    <FollowUpBossButton lead={lead} variant="icon" />
                                                 </td>
                                             </tr>
                                         );
@@ -372,6 +377,9 @@ export default function SmsLeadsPage() {
             {/* Chat Thread Dialog */}
             <Dialog open={!!selectedLeadIdForChat} onOpenChange={(open) => !open && setSelectedLeadIdForChat(null)}>
                 <DialogContent className="max-w-3xl h-[85vh] p-0 bg-transparent border-none">
+                    <DialogHeader className="sr-only">
+                        <DialogTitle>SMS Chat Detail</DialogTitle>
+                    </DialogHeader>
                     {selectedLeadIdForChat && (
                         <SMSChatDetail
                             customerId={selectedLeadIdForChat}

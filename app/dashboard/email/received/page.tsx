@@ -22,6 +22,7 @@ import {
 import { format, subDays } from "date-fns";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { useData } from "@/context/DataContext";
+import { FollowUpBossButton } from "@/components/ui/followup-boss-button";
 
 export default function ReceivedEmailsPage() {
     const { leads: allLeads, loadingLeads } = useData();
@@ -336,8 +337,11 @@ function EmailReplyCard({ reply }: { reply: any }) {
                         )}
                     </div>
 
-                    <div className="shrink-0 p-2 rounded-full text-[var(--label-tertiary)] group-hover:bg-[var(--bg-app)] group-hover:text-[var(--label-secondary)] transition-colors">
-                        {isOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                    <div className="shrink-0 flex items-center gap-2">
+                        <FollowUpBossButton lead={reply.rawLead || reply} variant="button" />
+                        <div className="p-2 rounded-full text-[var(--label-tertiary)] group-hover:bg-[var(--bg-app)] group-hover:text-[var(--label-secondary)] transition-colors">
+                            {isOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                        </div>
                     </div>
                 </div>
             </CollapsibleTrigger>

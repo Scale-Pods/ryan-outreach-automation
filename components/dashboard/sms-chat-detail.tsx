@@ -17,6 +17,7 @@ import {
     CheckCircle2
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
+import { FollowUpBossButton } from "@/components/ui/followup-boss-button";
 
 function getSmsStatusBadge(statusRaw?: string) {
     if (!statusRaw || !String(statusRaw).trim()) {
@@ -318,6 +319,7 @@ export function SMSChatDetail({ customerId, onClose, initialLead }: SMSChatDetai
                 </div>
 
                 <div className="flex items-center gap-2.5 pr-8">
+                    <FollowUpBossButton lead={lead} variant="button" />
                     <Button
                         variant="ghost"
                         size="sm"

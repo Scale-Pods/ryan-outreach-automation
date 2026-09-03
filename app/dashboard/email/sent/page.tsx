@@ -35,6 +35,7 @@ import {
 import { format, subDays } from "date-fns";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { useData } from "@/context/DataContext";
+import { FollowUpBossButton } from "@/components/ui/followup-boss-button";
 import { LMLoader } from "@/components/ryan-loader";
 import { EmailChatDetail } from "@/components/dashboard/email-chat-detail";
 
@@ -620,6 +621,7 @@ function SentEmailCard({ email, onOpenThread }: { email: any; onOpenThread: (id:
                             </div>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
+                            <FollowUpBossButton lead={email.rawLead || email} variant="button" />
                             <Button
                                 size="sm"
                                 variant="ghost"

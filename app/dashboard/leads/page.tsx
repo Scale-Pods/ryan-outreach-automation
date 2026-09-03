@@ -28,6 +28,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { LMLoader } from "@/components/ryan-loader";
 import { useMemo } from "react";
 import { useData } from "@/context/DataContext";
+import { FollowUpBossButton } from "@/components/ui/followup-boss-button";
 
 interface Lead {
     id?: string;
@@ -447,12 +448,13 @@ export default function LeadsPage() {
                                         <TableHead>Current Loop</TableHead>
                                         <TableHead>Reply Status</TableHead>
                                         <TableHead className="w-[250px]">Progress</TableHead>
+                                        <TableHead className="text-center">Follow Up Boss</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {loading && leads.length === 0 ? (
                                         <TableRow>
-                                            <TableCell colSpan={7} className="h-24 text-center">
+                                            <TableCell colSpan={8} className="h-24 text-center">
                                                 <div className="flex items-center justify-center gap-2 text-[var(--label-secondary)]">
                                                     <Loader2 className="h-4 w-4 animate-spin" />
                                                     Loading leads...
@@ -461,7 +463,7 @@ export default function LeadsPage() {
                                         </TableRow>
                                     ) : filteredLeads.length === 0 ? (
                                         <TableRow>
-                                            <TableCell colSpan={7} className="h-24 text-center text-[var(--label-secondary)]">
+                                            <TableCell colSpan={8} className="h-24 text-center text-[var(--label-secondary)]">
                                                 No leads matching these filters.
                                             </TableCell>
                                         </TableRow>
@@ -501,6 +503,9 @@ export default function LeadsPage() {
                                                     </TableCell>
                                                     <TableCell>
                                                         <ProgressBreakdown lead={lead} />
+                                                    </TableCell>
+                                                    <TableCell className="text-center">
+                                                        <FollowUpBossButton lead={lead} />
                                                     </TableCell>
                                                 </TableRow>
                                             );

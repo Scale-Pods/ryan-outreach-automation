@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { subDays, startOfDay, endOfDay } from "date-fns";
+import { FollowUpBossButton } from "@/components/ui/followup-boss-button";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -327,20 +328,21 @@ export default function WhatsappLeadsPage() {
                                     <th className="px-4 py-4 text-center">Status</th>
                                     <th className="px-4 py-4 text-center">Reply Status</th>
                                     <th className="px-4 py-4">Date</th>
+                                    <th className="px-4 py-4 text-center">FUB</th>
                                     <th className="px-4 py-4 text-right"></th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-[var(--separator)]">
                                 {loading ? (
                                     <tr>
-                                        <td colSpan={9} className="px-4 py-20 text-center text-[var(--label-tertiary)]">
+                                        <td colSpan={10} className="px-4 py-20 text-center text-[var(--label-tertiary)]">
                                             <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2 text-emerald-500" />
                                             Loading WhatsApp leads...
                                         </td>
                                     </tr>
                                 ) : filteredLeads.length === 0 ? (
                                     <tr>
-                                        <td colSpan={9} className="px-4 py-20 text-center text-[var(--label-tertiary)]">
+                                        <td colSpan={10} className="px-4 py-20 text-center text-[var(--label-tertiary)]">
                                             No leads found for this date range.
                                         </td>
                                     </tr>
@@ -404,6 +406,9 @@ export default function WhatsappLeadsPage() {
                                                 </td>
                                                 <td className="px-4 py-4 text-[var(--label-secondary)] text-xs">
                                                     {waDate ? waDate.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' }) : "—"}
+                                                </td>
+                                                <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}>
+                                                    <FollowUpBossButton lead={lead} variant="icon" />
                                                 </td>
                                                 <td className="px-4 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0">

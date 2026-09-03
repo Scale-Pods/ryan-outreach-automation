@@ -10,6 +10,7 @@ import { subDays } from "date-fns";
 import { consolidateLeads } from "@/lib/leads-utils";
 import { LMLoader } from "@/components/ryan-loader";
 import { useData } from "@/context/DataContext";
+import { FollowUpBossButton } from "@/components/ui/followup-boss-button";
 
 export default function WhatsappSentPage() {
     const { leads: allLeads, loadingLeads } = useData();
@@ -153,7 +154,10 @@ export default function WhatsappSentPage() {
                                             </span>
                                         </div>
                                     </div>
-                                    <Button variant="ghost" size="sm">Details</Button>
+                                    <div className="flex items-center gap-2">
+                                        <FollowUpBossButton lead={msg} variant="button" />
+                                        <Button variant="ghost" size="sm">Details</Button>
+                                    </div>
                                 </div>
                             ))
                         ) : (
