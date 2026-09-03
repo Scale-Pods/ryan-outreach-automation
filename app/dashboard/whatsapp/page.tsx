@@ -65,11 +65,31 @@ export default function WhatsappDashboardPage() {
     }, [dateRange, fetchData]);
 
     // Compute metrics:
-    // Unique Msg Sent = leads whose W.P_1 was sent in range (wp1_parsed_date).
-    // Messages Sent   = total filled WP slots on those in-range leads.
-    // Total Replies   = all leads with a reply tracked.
+    // Unique Msg Sent = distinct leads contacted in date range.
+    // Messages Sent   = total outbound WhatsApp messages.
+    // Total Replies   = all leads/activities with a reply tracked.
     const stats = useMemo(() => {
         if (!waData) return { totalLeads: 0, sentCount: 0, uniqueSentCount: 0, totalReplies: 0, activityReachouts: 0, activityReplies: 0, dailyTrend: [] as any[] };
+
+        const parseDate = (raw: any): Date | null => {
+            if (!raw) return null;
+            if (typeof raw === 'number') return new Date(raw);
+            const s = String(raw).trim();
+            if (!s) return null;
+            const ddmmyyyy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+            if (ddmmyyyy) {
+                const day = ddmmyyyy[1].padStart(2, '0');
+                const month = ddmmyyyy[2].padStart(2, '0');
+                const year = ddmmyyyy[3];
+                const hh = (ddmmyyyy[4] || '00').padStart(2, '0');
+                const mm = (ddmmyyyy[5] || '00').padStart(2, '0');
+                const ss = (ddmmyyyy[6] || '00').padStart(2, '0');
+                const d = new Date(`${year}-${month}-${day}T${hh}:${mm}:${ss}.000Z`);
+                if (!isNaN(d.getTime())) return d;
+            }
+            const d = new Date(s);
+            return isNaN(d.getTime()) ? null : d;
+        };
 
         const allLeads = [
             ...(waData.nr_wf || []),
@@ -82,86 +102,100 @@ export default function WhatsappDashboardPage() {
             source_loop: "Activity",
             "Name": a.lead_name || a.name || "",
             "Phone": a.lead_phone || a.phone || "",
-            "WP_Replied_track": a.replied_at ? "Replied" : "",
+            "WP_Replied_track": (a.replied_at || a.status === "completed" || a.status === "replied" || a.replied) ? "Replied" : "",
             wp1_parsed_date: a.created_at,
         }));
 
-        // Merge activity rows into allLeads so they contribute to main metrics too
         const mergedLeads = [...allLeads, ...activityRows];
 
         const from = dateRange?.from ? startOfDay(new Date(dateRange.from)).getTime() : null;
         const to = endOfDay(new Date(dateRange?.to || dateRange?.from || new Date())).getTime();
         const inRange = (t: number) => !from || (t >= from && t <= to);
 
-const inRangeLeads = mergedLeads.filter(lead => {
-            if (!lead["W.P_1"]) {
-                const hasAnyWP = Array.from({length: 12}, (_, i) => lead[`W.P_${i + 1}`]).some(Boolean);
-                if (!hasAnyWP && !lead["W.P_FollowUp"] && lead.source_loop !== "Activity") return false;
-            }
-            if (!lead.wp1_parsed_date) return true;
-            return inRange(new Date(lead.wp1_parsed_date).getTime());
+        const inRangeLeads = mergedLeads.filter(lead => {
+            const dateSource = lead.wp1_parsed_date || lead.created_at || lead["Created At"] || lead['1st_wa_ts'];
+            if (!dateSource) return true;
+            const parsed = parseDate(dateSource);
+            if (!parsed) return true;
+            return inRange(parsed.getTime());
         });
 
+        // Deduplicate unique leads contacted
+        const uniqueLeads = new Set<string>();
+        inRangeLeads.forEach(lead => {
+            const phone = String(lead.Phone || lead.phone || lead.lead_phone || lead.customer_phone || '').replace(/\D/g, '');
+            const key = phone || String(lead.Name || lead.lead_name || lead.name || lead.id || '').trim();
+            if (key) uniqueLeads.add(key);
+        });
+        const uniqueSentCount = uniqueLeads.size;
+
         let sentCount = 0;
-        let uniqueSentCount = inRangeLeads.length;
         let totalReplies = 0;
-        let activityReachouts = activityRows.length;
-        let activityReplies = 0;
-        const dailyMap: Record<string, { reachouts: number; replies: number }> = {};
 
         inRangeLeads.forEach(lead => {
             const hasReplied = (() => {
                 if (lead.source_loop === "Activity") {
-                    return !!(lead.replied_at || lead.status === "completed" || lead.status === "replied");
+                    return !!(lead.replied_at || lead.status === "completed" || lead.status === "replied" || lead.replied);
                 }
-                const wp = lead.WP_Replied_track || lead["WP_Replied_track"];
-                return !!(wp && String(wp).trim() && String(wp).trim().toLowerCase() !== "no" && String(wp).trim().toLowerCase() !== "none");
+                const wp = lead.WP_Replied_track || lead["WP_Replied_track"] || lead.replied;
+                return !!(wp && String(wp).trim() && String(wp).trim().toLowerCase() !== "no" && String(wp).trim().toLowerCase() !== "false" && String(wp).trim().toLowerCase() !== "none");
             })();
             if (hasReplied) totalReplies++;
 
             // Count messages
-            if (lead.source_loop === "Activity" && lead.content) {
-                const lines = String(lead.content).split('\n');
-                for (const line of lines) {
-                    const trimmed = line.trim();
-                    if (trimmed.startsWith('Template:') || trimmed.startsWith('User:') || trimmed.startsWith('Agent:') || trimmed.startsWith('Agent :')) {
-                        sentCount++;
+            if (lead.source_loop === "Activity") {
+                if (lead.content) {
+                    const lines = String(lead.content).split('\n');
+                    let found = 0;
+                    for (const line of lines) {
+                        const trimmed = line.trim();
+                        if (trimmed.startsWith('Template:') || trimmed.startsWith('User:') || trimmed.startsWith('Agent:') || trimmed.startsWith('Agent :')) {
+                            found++;
+                        }
                     }
+                    sentCount += Math.max(1, found);
+                } else {
+                    sentCount++;
                 }
             } else {
-                for (let i = 1; i <= 12; i++) {
-                    if (lead[`W.P_${i}`]) sentCount++;
-                }
-                if (lead["W.P_FollowUp"]) sentCount++;
-                for (let i = 1; i <= 10; i++) {
-                    if (lead[`W.P_FollowUp_${i}`] || lead[`W.P_FollowUp ${i}`]) sentCount++;
-                }
-                for (let i = 1; i <= 10; i++) {
-                    if (lead[`W.P_Replied_${i}`] || lead[`W.P_Replied ${i}`]) sentCount++;
-                }
-            }
-
-            const dateSource = lead.wp1_parsed_date || lead.created_at || lead["Created At"];
-            if (dateSource) {
-                const dayKey = new Date(dateSource).toISOString().slice(0, 10);
-                if (!isNaN(new Date(dateSource).getTime())) {
-                    if (!dailyMap[dayKey]) dailyMap[dayKey] = { reachouts: 0, replies: 0 };
-                    dailyMap[dayKey].reachouts++;
-                    if (hasReplied) dailyMap[dayKey].replies++;
+                const waCnt = Number(lead.whatsapp_count || 0);
+                if (waCnt > 0) {
+                    sentCount += waCnt;
+                } else {
+                    let cnt = 0;
+                    for (let i = 1; i <= 12; i++) {
+                        if (lead[`W.P_${i}`]) cnt++;
+                    }
+                    if (lead["W.P_FollowUp"]) cnt++;
+                    sentCount += Math.max(1, cnt);
                 }
             }
         });
 
-        // Count activity-specific metrics
-        activityRows.forEach((a: any) => {
-            const hasReplied = !!(a.replied_at || a.status === "completed" || a.status === "replied");
+        // Filter activities in range
+        const inRangeActivity = activityRows.filter(a => {
+            const parsed = parseDate(a.created_at || a.wp1_parsed_date);
+            if (!parsed) return true;
+            return inRange(parsed.getTime());
+        });
+
+        const activityReachouts = inRangeActivity.length;
+        let activityReplies = 0;
+        const dailyMap: Record<string, { reachouts: number; replies: number }> = {};
+
+        inRangeActivity.forEach((a: any) => {
+            const hasReplied = !!(a.replied_at || a.status === "completed" || a.status === "replied" || a.replied);
             if (hasReplied) activityReplies++;
 
-            if (a.created_at && !a.wp1_parsed_date) {
-                const dayKey = new Date(a.created_at).toISOString().slice(0, 10);
-                if (!dailyMap[dayKey]) dailyMap[dayKey] = { reachouts: 0, replies: 0 };
-                dailyMap[dayKey].reachouts++;
-                if (hasReplied) dailyMap[dayKey].replies++;
+            const dateSource = a.created_at || a.wp1_parsed_date;
+            if (dateSource) {
+                const parsed = parseDate(dateSource);
+                if (parsed) {
+                    const dayKey = parsed.toISOString().slice(0, 10);
+                    if (!dailyMap[dayKey]) dailyMap[dayKey] = { reachouts: 0, replies: 0 };
+                    dailyMap[dayKey].reachouts++;
+                    if (hasReplied) dailyMap[dayKey].replies++;
+                }
             }
         });
 
@@ -170,13 +204,14 @@ const inRangeLeads = mergedLeads.filter(lead => {
             .map(([date, vals]) => ({ date, ...vals }));
 
         return { totalLeads: allLeads.length, sentCount, uniqueSentCount, totalReplies, activityReachouts, activityReplies, dailyTrend };
-    }, [waData]);
+    }, [waData, dateRange]);
 
     const trendData = useMemo(() => stats.dailyTrend.map(d => ({
         date: format(new Date(d.date + 'T00:00:00'), 'MMM dd'),
         sent: d.reachouts,
         replied: d.replies,
     })), [stats.dailyTrend]);
+
 
     const donutData = [
         { name: 'Unique Msg Sent', value: stats.uniqueSentCount, color: '#8b5cf6' },

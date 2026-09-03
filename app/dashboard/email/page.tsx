@@ -5,7 +5,7 @@ import { Mail, Inbox, BarChart3 } from "lucide-react";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { subDays } from "date-fns";
+import { subDays, format } from "date-fns";
 import { useData } from "@/context/DataContext";
 import { LMLoader } from "@/components/ryan-loader";
 import { calculateEmailMetrics } from "@/lib/email-analytics-utils";
@@ -26,7 +26,7 @@ export default function EmailDashboardPage() {
 
     const { leads: allLeads, loadingLeads } = useData();
     const [dateRange, setDateRange] = useState<any>({
-        from: subDays(new Date(), 7),
+        from: subDays(new Date(), 90),
         to: new Date(),
     });
     const loading = loadingLeads;
@@ -39,10 +39,48 @@ export default function EmailDashboardPage() {
     });
 
     useEffect(() => {
-        if (loadingLeads) return;
+        let isMounted = true;
+        const fetchMetrics = async () => {
+            try {
+                const startDate = dateRange?.from ? new Date(dateRange.from).toISOString().split('T')[0] : '';
+                const endDate = dateRange?.to ? new Date(dateRange.to).toISOString().split('T')[0] : '';
+                const queryParams = new URLSearchParams();
+                if (startDate) queryParams.append('start_date', startDate);
+                if (endDate) queryParams.append('end_date', endDate);
 
-        const computed = calculateEmailMetrics(allLeads, dateRange);
-        setMetrics(computed);
+                const res = await fetch(`/api/email/analytics?${queryParams.toString()}`);
+                if (res.ok) {
+                    const json = await res.json();
+                    if (isMounted) {
+                        const dailyChartData = (json.dailyHistory || []).map((item: any) => {
+                            let dateStr = item.date;
+                            try {
+                                const d = new Date(item.date);
+                                if (!isNaN(d.getTime())) dateStr = format(d, "MMM dd");
+                            } catch (_) {}
+                            return { ...item, date: dateStr };
+                        });
+                        setMetrics({
+                            totalEmails: json.totalSent || 0,
+                            replyCount: json.totalReplies || 0,
+                            replyRate: json.totalSent > 0 ? ((json.totalReplies / json.totalSent) * 100).toFixed(1) : "0.0",
+                            dailyChartData
+                        });
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.error("[Email page metrics fetch error]", e);
+            }
+
+            if (!loadingLeads && isMounted) {
+                const computed = calculateEmailMetrics(allLeads, dateRange);
+                setMetrics(computed);
+            }
+        };
+
+        fetchMetrics();
+        return () => { isMounted = false; };
     }, [allLeads, loadingLeads, dateRange]);
 
     const handleDateUpdate = (range: any) => {

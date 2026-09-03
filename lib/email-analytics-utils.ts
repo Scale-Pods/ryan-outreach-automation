@@ -48,14 +48,31 @@ export function getLeadSourceTableKey(lead: any): 'naples' | 'aspen' | 'old' | '
 }
 
 function parseMsgDate(content: any): Date | null {
-    if (!content || typeof content !== 'string') return null;
-    const lines = content.split('\n');
+    if (!content) return null;
+    if (typeof content === 'number') return new Date(content);
+    const s = String(content).trim();
+    if (!s) return null;
+
+    const ddmmyyyy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+    if (ddmmyyyy) {
+        const day = ddmmyyyy[1].padStart(2, '0');
+        const month = ddmmyyyy[2].padStart(2, '0');
+        const year = ddmmyyyy[3];
+        const hh = (ddmmyyyy[4] || '00').padStart(2, '0');
+        const mm = (ddmmyyyy[5] || '00').padStart(2, '0');
+        const ss = (ddmmyyyy[6] || '00').padStart(2, '0');
+        const d = new Date(`${year}-${month}-${day}T${hh}:${mm}:${ss}.000Z`);
+        if (!isNaN(d.getTime())) return d;
+    }
+
+    const lines = s.split('\n');
     const lastLine = lines[lines.length - 1].trim();
     const dateObj = new Date(lastLine.replace(' ', 'T'));
     if (!isNaN(dateObj.getTime()) && lastLine.includes('-') && lastLine.includes(':')) {
         return dateObj;
     }
-    return null;
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
 }
 
 export function calculateEmailMetrics(
@@ -100,11 +117,11 @@ export function calculateEmailMetrics(
 
         // 1. Activity Table Records (aspen_activity, fello_activity, naples_activity, old_activity)
         if (lead._source_table || channel) {
-            const isEmail = (channel.includes('email') || actionType.includes('email') || !!lead.lead_email || !!lead.email) &&
-                channel !== 'voice' && channel !== 'whatsapp' && channel !== 'sms';
+            const isEmail = channel.includes('email') || actionType.includes('email');
 
-            if (isEmail) {
-                const actDate = lead.created_at || lead.updated_at ? new Date(lead.created_at || lead.updated_at) : null;
+            if (isEmail && channel !== 'voice' && channel !== 'whatsapp' && channel !== 'sms') {
+                const rawDate = lead.created_at || lead.updated_at || lead['1st_email_ts'] || lead.last_email_at;
+                const actDate = parseMsgDate(rawDate);
                 if (checkDate(actDate)) {
                     totalLeadsCount++;
                     tableStats[tableKey].totalLeads++;

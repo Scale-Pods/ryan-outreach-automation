@@ -284,7 +284,7 @@ export default function WhatsappChatPage() {
     };
 
     const [dateRange, setDateRange] = useState<any>({
-        from: subDays(new Date(), 7),
+        from: subDays(new Date(), 90),
         to: new Date(),
     });
 
@@ -301,7 +301,7 @@ export default function WhatsappChatPage() {
                     source_loop: "Activity",
                     "Name": a.lead_name || a.name || "",
                     "Phone": a.lead_phone || a.phone || "",
-                    "WP_Replied_track": a.replied_at ? "Replied" : "",
+                    "WP_Replied_track": (a.replied_at || a.status === "completed" || a.status === "replied" || a.replied) ? "Replied" : "",
                     wp1_parsed_date: a.created_at,
                 }));
                 setLeads([...nr_wf, ...followup, ...nurture, ...waActivity]);
@@ -399,12 +399,13 @@ export default function WhatsappChatPage() {
             const phone = String(lead["Phone"] || lead.phone || "");
             const matchesSearch = name.includes(searchQuery.toLowerCase()) || phone.includes(searchQuery);
 
-            const wtReplied = lead["WP_Replied_track"] || lead.WP_Replied_track;
+            const wtReplied = lead["WP_Replied_track"] || lead.WP_Replied_track || lead.replied || lead.replied_at;
             let hasReplied = false;
             if (wtReplied && String(wtReplied).trim() !== "") {
                 const s = String(wtReplied).trim().toLowerCase();
-                if (s !== "no" && s !== "none") hasReplied = true;
+                if (s !== "no" && s !== "none" && s !== "false") hasReplied = true;
             }
+            if (lead.status === "completed" || lead.status === "replied") hasReplied = true;
 
             const matchesReplyStatus = activeFilters.replyStatus.length === 0 ||
                 (activeFilters.replyStatus.includes("Replied") && hasReplied) ||
@@ -593,10 +594,13 @@ export default function WhatsappChatPage() {
                     }
                 }
 
-                const rt = lead.WP_Replied_track || lead["WP_Replied_track"];
-                if (rt && String(rt).trim() && String(rt).trim().toLowerCase() !== "no" && String(rt).trim().toLowerCase() !== "none") {
-                    repliedCount++;
+                const rt = lead.WP_Replied_track || lead["WP_Replied_track"] || lead.replied || lead.replied_at;
+                let isReplied = false;
+                if (rt && String(rt).trim() && String(rt).trim().toLowerCase() !== "no" && String(rt).trim().toLowerCase() !== "none" && String(rt).trim().toLowerCase() !== "false") {
+                    isReplied = true;
                 }
+                if (lead.status === "completed" || lead.status === "replied") isReplied = true;
+                if (isReplied) repliedCount++;
             });
         } else {
             filteredOwners.forEach(o => {
@@ -1001,12 +1005,13 @@ function CustomerRow({ lead: leadRaw, onClick }: { lead: any; onClick: () => voi
         for (let i = 1; i <= 10; i++) { if (lead[`W.P_Replied_${i}`] || lead[`W.P_Replied ${i}`]) sentCount++; }
     }
 
-    const wtRepliedTrack = lead["WP_Replied_track"] || lead.WP_Replied_track;
+    const wtRepliedTrack = lead["WP_Replied_track"] || lead.WP_Replied_track || lead.replied || lead.replied_at;
     let hasReplied = false;
     if (wtRepliedTrack && String(wtRepliedTrack).trim() !== "") {
         const s = String(wtRepliedTrack).trim().toLowerCase();
-        if (s !== "no" && s !== "none") hasReplied = true;
+        if (s !== "no" && s !== "none" && s !== "false") hasReplied = true;
     }
+    if (lead.status === "completed" || lead.status === "replied") hasReplied = true;
 
     const formatTooltipDate = (date: Date | string) => {
         const d = typeof date === 'string' ? new Date(date) : date;

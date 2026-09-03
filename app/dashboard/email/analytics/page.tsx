@@ -28,7 +28,7 @@ export default function EmailAnalyticsPage() {
     const [loadingLocal, setLoadingLocal] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [dateRange, setDateRange] = useState<DateRange | undefined>({
-        from: subDays(new Date(), 30),
+        from: subDays(new Date(), 90),
         to: new Date(),
     });
 
@@ -69,10 +69,34 @@ export default function EmailAnalyticsPage() {
         }
     };
 
-    // Calculate comprehensive metrics across allLeads using unified helper
+    // Calculate comprehensive metrics across activity tables & allLeads
     const analytics = useMemo(() => {
+        if (apiAnalytics && typeof apiAnalytics.totalSent === 'number') {
+            const tableStats = {
+                naples: { name: "Naples (naples_activity)", totalLeads: apiAnalytics.tableStats?.naples_activity?.totalSent || 0, emails: apiAnalytics.tableStats?.naples_activity?.totalSent || 0, replies: apiAnalytics.tableStats?.naples_activity?.totalReplies || 0, unsubscribed: apiAnalytics.tableStats?.naples_activity?.totalUnsubscribed || 0 },
+                aspen: { name: "Aspen (aspen_activity)", totalLeads: apiAnalytics.tableStats?.aspen_activity?.totalSent || 0, emails: apiAnalytics.tableStats?.aspen_activity?.totalSent || 0, replies: apiAnalytics.tableStats?.aspen_activity?.totalReplies || 0, unsubscribed: apiAnalytics.tableStats?.aspen_activity?.totalUnsubscribed || 0 },
+                old: { name: "Old Leads (old_activity)", totalLeads: apiAnalytics.tableStats?.old_activity?.totalSent || 0, emails: apiAnalytics.tableStats?.old_activity?.totalSent || 0, replies: apiAnalytics.tableStats?.old_activity?.totalReplies || 0, unsubscribed: apiAnalytics.tableStats?.old_activity?.totalUnsubscribed || 0 },
+                fello: { name: "Fello (fello_activity)", totalLeads: apiAnalytics.tableStats?.fello_activity?.totalSent || 0, emails: apiAnalytics.tableStats?.fello_activity?.totalSent || 0, replies: apiAnalytics.tableStats?.fello_activity?.totalReplies || 0, unsubscribed: apiAnalytics.tableStats?.fello_activity?.totalUnsubscribed || 0 },
+            };
+            const replyRate = apiAnalytics.totalSent > 0 ? ((apiAnalytics.totalReplies / apiAnalytics.totalSent) * 100).toFixed(1) : "0.0";
+            return {
+                totalEmails: apiAnalytics.totalSent,
+                totalSent: apiAnalytics.totalSent,
+                firstEmailCount: apiAnalytics.totalSent,
+                replyCount: apiAnalytics.totalReplies,
+                totalReplies: apiAnalytics.totalReplies,
+                unsubscribedCount: apiAnalytics.totalUnsubscribed,
+                totalUnsubscribed: apiAnalytics.totalUnsubscribed,
+                totalLeadsCount: apiAnalytics.totalSent,
+                totalLeads: apiAnalytics.totalSent,
+                replyRate,
+                unsubRate: "0.0",
+                tableStats,
+                dailyChartData: apiAnalytics.dailyHistory || []
+            };
+        }
         return calculateEmailMetrics(allLeads, dateRange);
-    }, [allLeads, dateRange]);
+    }, [allLeads, dateRange, apiAnalytics]);
 
     return (
         <div className="space-y-8 pb-10 relative min-h-[500px]">

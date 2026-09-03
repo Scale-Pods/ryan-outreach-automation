@@ -45,7 +45,7 @@ export default function SentEmailsPage() {
     const [page, setPage] = useState(1);
     const [selectedLeadItem, setSelectedLeadItem] = useState<{ id: string; initialLead?: any } | null>(null);
     const [dateRange, setDateRange] = useState<any>({
-        from: subDays(new Date(), 7),
+        from: subDays(new Date(), 90),
         to: new Date(),
     });
     const [sentEmails, setSentEmails] = useState<any[]>([]);
