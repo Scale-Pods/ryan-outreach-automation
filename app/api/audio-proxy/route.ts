@@ -1,47 +1,55 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
-    const { searchParams } = new URL(request.url);
-    const url = searchParams.get('url');
+export const dynamic = 'force-dynamic';
 
-    if (!url) {
-        return new NextResponse('Missing URL', { status: 400 });
-    }
-
+export async function GET(request: NextRequest): Promise<NextResponse> {
     try {
-        const headers: Record<string, string> = {
-            'Accept': 'audio/*',
-        };
+        const { searchParams } = new URL(request.url);
+        const rawUrl = searchParams.get('url');
 
-        const range = request.headers.get('range');
-        if (range) headers['Range'] = range;
-
-        // Auth for providers
-        if (url.includes('api.vapi.ai') && process.env.VAPI_PRIVATE_KEY) headers['Authorization'] = `Bearer ${process.env.VAPI_PRIVATE_KEY}`;
-
-        const response = await fetch(url, { headers, redirect: 'follow' });
-
-        if (!response.ok && response.status !== 206) {
-            console.error('[AudioProxy] Source fetch failed:', { status: response.status, url });
-            return new NextResponse('Source fetch failed', { status: response.status });
+        if (!rawUrl) {
+            return new NextResponse('Missing url parameter', { status: 400 });
         }
 
-        const contentType = response.headers.get('Content-Type') || 'audio/mpeg';
-        const contentLength = response.headers.get('Content-Length');
-        const contentRange = response.headers.get('Content-Range');
+        // Extract clean http(s) URL if rawUrl contains titles or newlines
+        const match = rawUrl.match(/https?:\/\/[^\s\)\"\']+/i);
+        const targetUrl = match ? match[0] : rawUrl;
 
-        return new NextResponse(response.body, {
-            status: response.status === 206 ? 206 : 200,
-            headers: {
-                'Content-Type': contentType,
-                'Content-Length': contentLength || '',
-                'Content-Range': contentRange || '',
-                'Accept-Ranges': 'bytes',
-                'Cache-Control': 'no-cache',
-            },
+        // Pass along range header for audio seeking support
+        const range = request.headers.get('range');
+        const fetchHeaders: Record<string, string> = {};
+        if (range) {
+            fetchHeaders['range'] = range;
+        }
+
+        const audioRes = await fetch(targetUrl, { headers: fetchHeaders });
+
+        if (!audioRes.ok && audioRes.status !== 206) {
+            return new NextResponse(`Failed to fetch audio (${audioRes.status})`, { status: audioRes.status });
+        }
+
+        const responseHeaders = new Headers();
+        const contentType = audioRes.headers.get('content-type') || 'audio/wav';
+        const contentLength = audioRes.headers.get('content-length');
+        const contentRange = audioRes.headers.get('content-range');
+        const acceptRanges = audioRes.headers.get('accept-ranges') || 'bytes';
+
+        responseHeaders.set('Content-Type', contentType);
+        responseHeaders.set('Accept-Ranges', acceptRanges);
+        responseHeaders.set('Access-Control-Allow-Origin', '*');
+        responseHeaders.set('Cache-Control', 'public, max-age=86400');
+
+        if (contentLength) responseHeaders.set('Content-Length', contentLength);
+        if (contentRange) responseHeaders.set('Content-Range', contentRange);
+
+        const status = audioRes.status === 206 ? 206 : 200;
+
+        return new NextResponse(audioRes.body, {
+            status,
+            headers: responseHeaders,
         });
-    } catch (error) {
-        console.error('[AudioProxy] Internal error:', error);
-        return new NextResponse('Proxy server error', { status: 500 });
+    } catch (error: any) {
+        console.error('Audio proxy error:', error);
+        return new NextResponse('Internal Server Error', { status: 500 });
     }
 }

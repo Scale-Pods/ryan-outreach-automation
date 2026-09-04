@@ -46,13 +46,11 @@ export default function VoiceDashboardPage() {
         calls: d.calls,
     }));
 
-    // Hourly distribution — show every 3rd hour
-    const hourlyDistribution = (m?.hourlyDistribution ?? [])
-        .filter(h => h.hour % 3 === 0)
-        .map(h => ({
-            name: `${String(h.hour).padStart(2, '0')}:00`,
-            calls: h.calls,
-        }));
+    // Hourly distribution — map all 24 hours
+    const hourlyDistribution = (m?.hourlyDistribution ?? []).map(h => ({
+        name: `${String(h.hour).padStart(2, '0')}:00`,
+        calls: h.calls,
+    }));
 
     return (
         <div className="flex flex-col gap-4 p-6 bg-[var(--bg-app)]/30 min-h-screen relative">
@@ -148,7 +146,7 @@ export default function VoiceDashboardPage() {
                                         </linearGradient>
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} interval={2} />
                                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} allowDecimals={false} />
                                     <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0' }} />
                                     <Area type="monotone" dataKey="calls" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorCalls)" />

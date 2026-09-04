@@ -27,7 +27,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         const page = parseInt(searchParams.get('page') || '1');
         const limit = parseInt(searchParams.get('limit') || '10');
 
-        const fromDate = from || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+        const fromDate = from || new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
         const toDate = to || new Date().toISOString();
 
         // Try RPC first
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             let query = supabaseAdmin
                 .from(table)
                 .select('*', { count: 'exact' })
-                .eq('channel', 'voice')
+                .ilike('channel', 'voice')
                 .gte('created_at', fromDate)
                 .lte('created_at', toDate);
 
@@ -231,8 +231,32 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
                 displayDuration = `${dur}s`;
             }
 
+            let cleanRecordingUrl: string | null = null;
+            let callOrderTitle: string | null = null;
+            if (row.recording_url && typeof row.recording_url === 'string') {
+                const matchUrl = row.recording_url.match(/https?:\/\/[^\s\)\"\']+/i);
+                if (matchUrl) {
+                    cleanRecordingUrl = matchUrl[0];
+                    const titlePart = row.recording_url.substring(0, matchUrl.index).trim();
+                    if (titlePart) callOrderTitle = titlePart.replace(/[\n\r]+/g, ' ').trim();
+                } else if (row.recording_url.startsWith('http')) {
+                    cleanRecordingUrl = row.recording_url;
+                }
+            }
+
+            let cleanId = String(row.id);
+            if (row.vapi_call_id && typeof row.vapi_call_id === 'string') {
+                const uuidMatch = row.vapi_call_id.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+                if (uuidMatch) {
+                    cleanId = uuidMatch[0];
+                } else if (!row.vapi_call_id.includes('\n')) {
+                    cleanId = row.vapi_call_id;
+                }
+            }
+
             return {
-                id: row.vapi_call_id || String(row.id),
+                id: cleanId,
+                rawVapiCallId: row.vapi_call_id,
                 name,
                 phone: row.lead_phone || 'Unknown',
                 startedAt: row.created_at,
@@ -245,7 +269,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
                 type: resolvedType,
                 sentiment: row.sentiment || null,
                 summary: row.summary || null,
-                recordingUrl: row.recording_url || null,
+                recordingUrl: cleanRecordingUrl,
+                callOrderTitle: callOrderTitle,
                 transcript: row.transcript || null,
                 vapiAccount: row.vapi_account || null,
                 assistantId: row.assistant_id || null,

@@ -6,7 +6,10 @@ export async function GET(
 ) {
     try {
         const vapiPrivKey = process.env.VAPI_PRIVATE_KEY;
-        const { id } = await context.params;
+        const { id: rawId } = await context.params;
+        const decodedId = decodeURIComponent(rawId || '');
+        const uuidMatch = decodedId.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+        const id = uuidMatch ? uuidMatch[0] : (decodedId.includes('\n') ? decodedId.split('\n').pop()?.trim() || decodedId : decodedId);
 
         const leadsMap = new Map<string, string>();
 

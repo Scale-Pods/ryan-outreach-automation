@@ -29,7 +29,33 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
 
     const displayCall = fullCall || call || {};
 
-    const audioUrl = displayCall.audio_url || displayCall.recordingUrl || null;
+    const { audioUrl, callOrderTitle } = React.useMemo(() => {
+        if (!displayCall) return { audioUrl: null, callOrderTitle: null };
+        const candidates = [
+            displayCall.audio_url,
+            displayCall.recordingUrl,
+            displayCall.recording_url,
+            displayCall.artifact?.recordingUrl,
+            displayCall.recording,
+            displayCall.vapi_call_id,
+        ];
+        let url: string | null = null;
+        let title: string | null = displayCall.callOrderTitle || null;
+
+        for (const candidate of candidates) {
+            if (!candidate || typeof candidate !== 'string') continue;
+            const match = candidate.match(/https?:\/\/[^\s\)\"\']+/i);
+            if (match) {
+                url = match[0];
+                if (!title && match.index && match.index > 0) {
+                    const prefix = candidate.substring(0, match.index).trim();
+                    if (prefix) title = prefix.replace(/[\n\r]+/g, ' ').trim();
+                }
+                break;
+            }
+        }
+        return { audioUrl: url, callOrderTitle: title };
+    }, [displayCall]);
 
     useEffect(() => {
         if (open && call?.id) {
@@ -416,7 +442,7 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
 
                             {/* Audio Player Section */}
                             {audioUrl && (
-                                <ModernAudioPlayer audioUrl={audioUrl} initialDuration={durationSeconds} />
+                                <ModernAudioPlayer audioUrl={audioUrl} titleText={callOrderTitle} initialDuration={durationSeconds} />
                             )}
                         </div>
 
@@ -535,7 +561,7 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
     );
 }
 
-function ModernAudioPlayer({ audioUrl, initialDuration = 0 }: { audioUrl: string, initialDuration?: number }) {
+function ModernAudioPlayer({ audioUrl, titleText, initialDuration = 0 }: { audioUrl: string, titleText?: string | null, initialDuration?: number }) {
     const audioRef = useRef<HTMLAudioElement>(null);
     const seekRef = useRef<HTMLDivElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -740,7 +766,14 @@ function ModernAudioPlayer({ audioUrl, initialDuration = 0 }: { audioUrl: string
                         <Volume2 className="h-4 w-4" />
                     </div>
                     <div>
-                        <h3 className="text-sm font-bold text-[var(--label-primary)] leading-none">Call Recording</h3>
+                        <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-bold text-[var(--label-primary)] leading-none">Call Recording</h3>
+                            {titleText && (
+                                <Badge variant="outline" className="bg-[rgba(0,122,255,0.08)] text-blue-600 border-blue-200 text-[10px] px-2 py-0.5 font-bold uppercase tracking-wider">
+                                    {titleText}
+                                </Badge>
+                            )}
+                        </div>
                         <p className="text-[10px] font-bold text-[var(--label-tertiary)] uppercase tracking-wide mt-1">Play to review conversation</p>
                     </div>
                 </div>

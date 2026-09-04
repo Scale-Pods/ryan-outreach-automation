@@ -34,7 +34,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             const { data: rows } = await supabaseAdmin
                 .from(table)
                 .select('created_at, duration_seconds, cost_usd, status, vapi_account, sentiment')
-                .eq('channel', 'voice')
+                .ilike('channel', 'voice')
                 .gte('created_at', fromDate)
                 .lte('created_at', toDate);
 
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             const { data: allTimeRows } = await supabaseAdmin
                 .from(table)
                 .select('vapi_account')
-                .eq('channel', 'voice');
+                .ilike('channel', 'voice');
 
             if (allTimeRows) allAllTimeRows.push(...allTimeRows);
         }
@@ -133,7 +133,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             const { data: rows } = await supabaseAdmin
                 .from(table)
                 .select('created_at, duration_seconds, cost_usd, status, sentiment')
-                .eq('channel', 'voice')
+                .ilike('channel', 'voice')
                 .gte('created_at', fromDate)
                 .lte('created_at', toDate);
 

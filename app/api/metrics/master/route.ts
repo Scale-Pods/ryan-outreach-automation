@@ -129,24 +129,24 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             const [vc, ovc, nc, oc] = await Promise.all([
                 supabaseAdmin.from(table)
                     .select('id', { count: 'exact', head: true })
-                    .eq('channel', 'voice')
+                    .ilike('channel', 'voice')
                     .gte('created_at', fromDate)
                     .lte('created_at', toDate),
                 supabaseAdmin.from(table)
                     .select('id', { count: 'exact', head: true })
-                    .eq('channel', 'voice')
+                    .ilike('channel', 'voice')
                     .eq('vapi_account', 'owners')
                     .gte('created_at', fromDate)
                     .lte('created_at', toDate),
                 supabaseAdmin.from(table)
                     .select('cost_usd')
-                    .eq('channel', 'voice')
+                    .ilike('channel', 'voice')
                     .or('vapi_account.is.null,vapi_account.neq.owners')
                     .gte('created_at', fromDate)
                     .lte('created_at', toDate),
                 supabaseAdmin.from(table)
                     .select('cost_usd')
-                    .eq('channel', 'voice')
+                    .ilike('channel', 'voice')
                     .eq('vapi_account', 'owners')
                     .gte('created_at', fromDate)
                     .lte('created_at', toDate),
