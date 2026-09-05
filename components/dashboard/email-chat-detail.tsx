@@ -20,6 +20,8 @@ import {
 import { useData } from "@/context/DataContext";
 import { FollowUpBossButton } from "@/components/ui/followup-boss-button";
 
+import { parseMsgDate, cleanMessageContent } from "@/lib/reply-utils";
+
 function parseEmailContent(content: string, note?: string): any[] {
     if (!content && !note) return [];
     const messages: any[] = [];
@@ -45,19 +47,14 @@ function parseEmailContent(content: string, note?: string): any[] {
         if (dtMatch) {
             const rawDt = dtMatch[1].trim();
             if (messages.length > 0) {
-                const tsMatch = rawDt.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})[,\s]+(\d{1,2}:\d{2}:\d{2}\s*(?:AM|PM)?)/i);
-                if (tsMatch) {
-                    const parsed = new Date(`${tsMatch[3]}-${tsMatch[1].padStart(2, '0')}-${tsMatch[2].padStart(2, '0')}T${tsMatch[4]}`);
-                    messages[messages.length - 1].date = !isNaN(parsed.getTime()) ? parsed.toISOString() : rawDt;
-                } else {
-                    messages[messages.length - 1].date = rawDt;
-                }
+                const parsedDate = parseMsgDate(rawDt);
+                messages[messages.length - 1].date = parsedDate ? parsedDate.toISOString() : rawDt;
             }
             continue;
         }
 
         if (line.startsWith('Outbound Email:') || line.startsWith('Email Sent:') || line.startsWith('Template:') || line.startsWith('Agent:') || line.startsWith('Agent :')) {
-            const text = line.replace(/^(Outbound Email|Email Sent|Template|Agent\s*:)\s*/, '').trim();
+            const text = cleanMessageContent(line.replace(/^(Outbound Email|Email Sent|Template|Agent\s*:)\s*/, ''), 'Agent Email');
             messages.push({
                 type: 'bot' as const,
                 content: text,
@@ -70,7 +67,7 @@ function parseEmailContent(content: string, note?: string): any[] {
         }
 
         if (line.startsWith('Inbound Email:') || line.startsWith('Inbound Reply:') || line.startsWith('User:') || line.startsWith('Email Reply:') || line.startsWith('Reply:')) {
-            const text = line.replace(/^(Inbound Email|Inbound Reply|User|Email Reply|Reply):\s*/, '').trim();
+            const text = cleanMessageContent(line.replace(/^(Inbound Email|Inbound Reply|User|Email Reply|Reply):\s*/, ''), 'User Reply');
             const key = `user:${text}`;
             if (key === lastMessageKey) continue;
             messages.push({
@@ -84,15 +81,9 @@ function parseEmailContent(content: string, note?: string): any[] {
             continue;
         }
 
-        const tsMatch = line.match(/^(\d{1,2}\/\d{1,2}\/\d{4}),\s*(\d{1,2}:\d{2}:\d{2}\s*(?:AM|PM))/i);
-        if (tsMatch) {
-            const dateStr = `${tsMatch[1]} ${tsMatch[2]}`;
-            const [m, d, y] = dateStr.split(/[\/\s,]+/);
-            const timeStr = dateStr.match(/\d{1,2}:\d{2}:\d{2}\s*(?:AM|PM)/i)?.[0] || '';
-            const parsed = new Date(`${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T${timeStr}`);
-            if (!isNaN(parsed.getTime()) && messages.length > 0) {
-                messages[messages.length - 1].date = parsed.toISOString();
-            }
+        const parsedDate = parseMsgDate(line);
+        if (parsedDate && messages.length > 0) {
+            messages[messages.length - 1].date = parsedDate.toISOString();
             continue;
         }
 
@@ -111,23 +102,7 @@ function parseEmailContent(content: string, note?: string): any[] {
 
     messages.forEach(msg => {
         if (msg.content) {
-            if (!msg.date) {
-                const m = msg.content.match(/(?:Date\s*&\s*Time|Date|Timestamp):\s*([^\n]+)/i);
-                if (m) {
-                    const rawDt = m[1].trim();
-                    const tsMatch = rawDt.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})[,\s]+(\d{1,2}:\d{2}:\d{2}\s*(?:AM|PM)?)/i);
-                    if (tsMatch) {
-                        const parsed = new Date(`${tsMatch[3]}-${tsMatch[1].padStart(2, '0')}-${tsMatch[2].padStart(2, '0')}T${tsMatch[4]}`);
-                        msg.date = !isNaN(parsed.getTime()) ? parsed.toISOString() : rawDt;
-                    } else {
-                        msg.date = rawDt;
-                    }
-                }
-            }
-            msg.content = msg.content
-                .replace(/\n?\s*(?:Date\s*&\s*Time|Date|Timestamp):\s*[^\n]+/gi, '')
-                .replace(/\n?\s*\d{1,2}\/\d{1,2}\/\d{4},\s*\d{1,2}:\d{2}:\d{2}\s*(?:AM|PM)?/gi, '')
-                .trim();
+            msg.content = cleanMessageContent(msg.content, msg.type === 'user' ? 'Lead Replied' : 'Email Sent');
         }
     });
 
@@ -236,20 +211,21 @@ export function EmailChatDetail({ leadId, onClose, initialLead }: EmailChatDetai
                     if (e) {
                         parsedMsgs.push({
                             type: 'bot',
-                            content: String(e),
+                            content: cleanMessageContent(e, `Email #${i}`),
                             label: `Email #${i}`,
-                            date: foundLead[`Email_${i}_TS`] || null,
+                            date: parseMsgDate(foundLead[`Email_${i}_TS`])?.toISOString() || null,
                             sequence: i
                         });
                     }
                 }
                 const reply = foundLead.email_replied || foundLead["Email Replied"];
                 if (reply && String(reply).toLowerCase() !== 'no' && String(reply).trim() !== '') {
+                    const replyDate = parseMsgDate(reply) || (foundLead.replied_at ? new Date(foundLead.replied_at) : null);
                     parsedMsgs.push({
                         type: 'user',
-                        content: String(reply),
+                        content: cleanMessageContent(reply, foundLead.summary || foundLead.note || "Lead Replied via Email"),
                         label: 'Recipient Reply',
-                        date: foundLead.replied_at || null,
+                        date: replyDate ? replyDate.toISOString() : null,
                         sequence: parsedMsgs.length + 1
                     });
                 }

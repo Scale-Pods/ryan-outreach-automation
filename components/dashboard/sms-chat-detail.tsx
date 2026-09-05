@@ -52,6 +52,8 @@ function getSmsStatusBadge(statusRaw?: string) {
     );
 }
 
+import { parseMsgDate, cleanMessageContent } from "@/lib/reply-utils";
+
 function parseSmsContent(content: string, note?: string): any[] {
     if (!content && !note) return [];
     const messages: any[] = [];
@@ -69,19 +71,14 @@ function parseSmsContent(content: string, note?: string): any[] {
         if (dtMatch) {
             const rawDt = dtMatch[1].trim();
             if (messages.length > 0) {
-                const tsMatch = rawDt.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})[,\s]+(\d{1,2}:\d{2}:\d{2}\s*(?:AM|PM)?)/i);
-                if (tsMatch) {
-                    const parsed = new Date(`${tsMatch[3]}-${tsMatch[1].padStart(2,'0')}-${tsMatch[2].padStart(2,'0')}T${tsMatch[4]}`);
-                    messages[messages.length - 1].date = !isNaN(parsed.getTime()) ? parsed.toISOString() : rawDt;
-                } else {
-                    messages[messages.length - 1].date = rawDt;
-                }
+                const parsedDate = parseMsgDate(rawDt);
+                messages[messages.length - 1].date = parsedDate ? parsedDate.toISOString() : rawDt;
             }
-            continue; // Skip adding timestamp line inside message content
+            continue;
         }
 
         if (line.startsWith('Template: ') || line.startsWith('Outbound SMS: ') || line.startsWith('SMS: ')) {
-            const text = line.replace(/^(Template|Outbound SMS|SMS):\s*/, '').trim();
+            const text = cleanMessageContent(line.replace(/^(Template|Outbound SMS|SMS):\s*/, ''), 'Outbound SMS');
             const msg = {
                 type: 'bot' as const,
                 content: text,
@@ -95,7 +92,7 @@ function parseSmsContent(content: string, note?: string): any[] {
         }
 
         if (line.startsWith('User: ') || line.startsWith('Inbound SMS: ')) {
-            const text = line.replace(/^(User|Inbound SMS):\s*/, '').trim();
+            const text = cleanMessageContent(line.replace(/^(User|Inbound SMS):\s*/, ''), 'Lead Reply');
             const key = `user:${text}`;
             if (key === lastMessageKey) continue;
             const msg = {
@@ -111,7 +108,7 @@ function parseSmsContent(content: string, note?: string): any[] {
         }
 
         if (line.startsWith('Agent : ') || line.startsWith('Agent: ')) {
-            const text = line.replace(/^Agent\s*:\s*/, '').trim();
+            const text = cleanMessageContent(line.replace(/^Agent\s*:\s*/, ''), 'Agent Reply');
             const msg = {
                 type: 'bot' as const,
                 content: text,
@@ -124,15 +121,9 @@ function parseSmsContent(content: string, note?: string): any[] {
             continue;
         }
 
-        const tsMatch = line.match(/^(\d{1,2}\/\d{1,2}\/\d{4}),\s*(\d{1,2}:\d{2}:\d{2}\s*(?:AM|PM))/i);
-        if (tsMatch) {
-            const dateStr = `${tsMatch[1]} ${tsMatch[2]}`;
-            const [m, d, y] = dateStr.split(/[\/\s,]+/);
-            const timeStr = dateStr.match(/\d{1,2}:\d{2}:\d{2}\s*(?:AM|PM)/i)?.[0] || '';
-            const parsed = new Date(`${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}T${timeStr}`);
-            if (!isNaN(parsed.getTime()) && messages.length > 0) {
-                messages[messages.length - 1].date = parsed.toISOString();
-            }
+        const parsedDate = parseMsgDate(line);
+        if (parsedDate && messages.length > 0) {
+            messages[messages.length - 1].date = parsedDate.toISOString();
             continue;
         }
 
@@ -149,27 +140,9 @@ function parseSmsContent(content: string, note?: string): any[] {
         }
     }
 
-    // Secondary cleanup: strip ALL embedded timestamp/date lines inside msg.content
     messages.forEach(msg => {
         if (msg.content) {
-            if (!msg.date) {
-                const dtMatch = msg.content.match(/(?:Date\s*&\s*Time|Date|Timestamp):\s*([^\n]+)/i);
-                if (dtMatch) {
-                    const rawDt = dtMatch[1].trim();
-                    const tsMatch = rawDt.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})[,\s]+(\d{1,2}:\d{2}:\d{2}\s*(?:AM|PM)?)/i);
-                    if (tsMatch) {
-                        const parsed = new Date(`${tsMatch[3]}-${tsMatch[1].padStart(2,'0')}-${tsMatch[2].padStart(2,'0')}T${tsMatch[4]}`);
-                        msg.date = !isNaN(parsed.getTime()) ? parsed.toISOString() : rawDt;
-                    } else {
-                        msg.date = rawDt;
-                    }
-                }
-            }
-            // Strip any "Date & Time: ...", "Date: ...", "Timestamp: ..." lines from inside the message text box
-            msg.content = msg.content
-                .replace(/\n?\s*(?:Date\s*&\s*Time|Date|Timestamp):\s*[^\n]+/gi, '')
-                .replace(/\n?\s*\d{1,2}\/\d{1,2}\/\d{4},\s*\d{1,2}:\d{2}:\d{2}\s*(?:AM|PM)?/gi, '')
-                .trim();
+            msg.content = cleanMessageContent(msg.content, msg.type === 'user' ? 'Lead Replied' : 'Outreach SMS');
         }
     });
 

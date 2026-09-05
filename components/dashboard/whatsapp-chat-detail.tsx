@@ -17,8 +17,21 @@ import { ConsolidatedLead } from "@/lib/leads-utils";
 import { useData } from "@/context/DataContext";
 import { FollowUpBossButton } from "@/components/ui/followup-boss-button";
 
+import { parseMsgDate, cleanMessageContent } from "@/lib/reply-utils";
+
 function parseActivityContent(content: string, summary?: string): any[] {
-    if (!content) return [];
+    if (!content) {
+        if (summary) {
+            return [{
+                type: 'user' as const,
+                content: summary,
+                label: 'User Reply',
+                date: null as string | null,
+                sequence: 1,
+            }];
+        }
+        return [];
+    }
     const messages: any[] = [];
     const lines = content.split('\n');
     let seq = 0;
@@ -30,7 +43,7 @@ function parseActivityContent(content: string, summary?: string): any[] {
 
         // Template message — first message
         if (line.startsWith('Template: ')) {
-            const text = line.substring('Template: '.length).trim();
+            const text = cleanMessageContent(line.substring('Template: '.length), 'Outreach Message');
             const msg = {
                 type: 'bot' as const,
                 content: text,
@@ -45,9 +58,8 @@ function parseActivityContent(content: string, summary?: string): any[] {
 
         // User message
         if (line.startsWith('User: ')) {
-            const text = line.substring('User: '.length).trim();
+            const text = cleanMessageContent(line.substring('User: '.length), 'User Reply');
             const key = `user:${text}`;
-            // Skip duplicate consecutive user messages
             if (key === lastMessageKey) continue;
             const msg = {
                 type: 'user' as const,
@@ -63,7 +75,7 @@ function parseActivityContent(content: string, summary?: string): any[] {
 
         // Agent message
         if (line.startsWith('Agent : ') || line.startsWith('Agent: ')) {
-            const text = line.replace(/^Agent\s*:\s*/, '').trim();
+            const text = cleanMessageContent(line.replace(/^Agent\s*:\s*/, ''), 'Agent Message');
             const msg = {
                 type: 'bot' as const,
                 content: text,
@@ -77,24 +89,32 @@ function parseActivityContent(content: string, summary?: string): any[] {
         }
 
         // Timestamp line — attach to previous message
-        const tsMatch = line.match(/^(\d{1,2}\/\d{1,2}\/\d{4}),\s*(\d{1,2}:\d{2}:\d{2}\s*(?:AM|PM))/i);
-        if (tsMatch) {
-            const dateStr = `${tsMatch[1]} ${tsMatch[2]}`;
-            // Convert "07/07/2026 01:04:49 PM" to ISO
-            const [m, d, y] = dateStr.split(/[\/\s,]+/);
-            const timeStr = dateStr.match(/\d{1,2}:\d{2}:\d{2}\s*(?:AM|PM)/i)?.[0] || '';
-            const parsed = new Date(`${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}T${timeStr}`);
-            if (!isNaN(parsed.getTime()) && messages.length > 0) {
-                messages[messages.length - 1].date = parsed.toISOString();
-            }
+        const parsedDate = parseMsgDate(line);
+        if (parsedDate && messages.length > 0) {
+            messages[messages.length - 1].date = parsedDate.toISOString();
             continue;
         }
 
-        // Continuation of previous message content
+        // Continuation of previous message content or fallback initial message
         if (messages.length > 0) {
             messages[messages.length - 1].content += '\n' + line;
+        } else {
+            messages.push({
+                type: 'bot' as const,
+                content: line,
+                label: 'Agent',
+                date: null as string | null,
+                sequence: ++seq,
+            });
         }
     }
+
+    // Clean up trailing date markers and ensure content is never empty
+    messages.forEach(msg => {
+        if (msg.content) {
+            msg.content = cleanMessageContent(msg.content, summary || (msg.type === 'user' ? 'Lead Replied' : 'Outreach Message'));
+        }
+    });
 
     return messages;
 }
@@ -124,9 +144,8 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
     const handleCopyLink = () => {
         if (!lead) return;
         const baseUrl = window.location.origin;
-        // Use lead_phone (activity column) → phone → customerId as share identifier
         const rawPhone = (lead as any).lead_phone || lead.phone || (lead as any)["Phone"] || customerId;
-        const cleanPhone = String(rawPhone).replace(/\s/g, '');  // keep + and digits, strip spaces only
+        const cleanPhone = String(rawPhone).replace(/\s/g, '');
         const shareId = cleanPhone || customerId;
         const shareUrl = `${baseUrl}/share/whatsapp/${encodeURIComponent(shareId)}`;
 
@@ -174,10 +193,8 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
                 return false;
             }) || null;
 
-            // Fallback for public share links or leads not present in memory
             if (!found) {
                 try {
-                    // Try fetching activity logs first
                     const actRes = await fetch(`/api/activity?channel=WhatsApp&search=${encodeURIComponent(customerId)}`);
                     let actLogs: any[] = [];
                     if (actRes.ok) {
@@ -185,7 +202,6 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
                         actLogs = actData.activities || [];
                     }
 
-                    // Try fetching whatsapp leads list
                     const leadsRes = await fetch(`/api/whatsapp-leads`);
                     if (leadsRes.ok) {
                         const data = await leadsRes.json();
@@ -237,7 +253,6 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
             if (!isMounted) return;
 
             if (found) {
-                // Normalize raw API leads (have "Name", "Phone", "source_loop") into ConsolidatedLead shape
                 const rawName = (found as any).name || (found as any)["Name"] || "";
                 const isPhoneNumber = /^\+?\d[\d\s\-().]{4,}$/.test(rawName.trim());
                 const normalized = {
@@ -251,61 +266,39 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
                 const f = found as any;
                 let timeline: any[] = [];
 
-                // If this is an activity lead with content, parse from content column
                 if (f.content) {
                     timeline = parseActivityContent(f.content, f.summary);
                 } else {
                     const parseMsg = (raw: any, label: string, type: 'bot' | 'user', sequence: number) => {
                         if (!raw || !String(raw).trim()) return null;
-                        const content = String(raw).trim();
+                        const rawStr = String(raw).trim();
+                        if (["no", "none", "0", "false"].includes(rawStr.toLowerCase())) return null;
 
-                        // Match ISO timestamp after one or two newlines at end of message
-                        const isoRegex = /\n{1,2}(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.+)$/;
-                        const isoMatch = content.match(isoRegex);
-                        if (isoMatch) {
-                            return {
-                                type,
-                                content: content.replace(isoRegex, '').trim(),
-                                label,
-                                date: isoMatch[1],
-                                sequence
-                            };
-                        }
+                        const dateObj = parseMsgDate(rawStr);
+                        const dateIso = dateObj ? dateObj.toISOString() : null;
 
-                        // Match "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DD HH:MM:SS.mmm" on the last line
-                        const lines = content.split('\n');
-                        const lastLine = lines[lines.length - 1].trim();
-                        const spaceDateRegex = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}/;
-                        if (lines.length > 1 && spaceDateRegex.test(lastLine)) {
-                            const d = new Date(lastLine.replace(' ', 'T'));
-                            if (!isNaN(d.getTime())) {
-                                return {
-                                    type,
-                                    content: lines.slice(0, -1).join('\n').trim() || 'Message Received',
-                                    label,
-                                    date: d.toISOString(),
-                                    sequence
-                                };
-                            }
-                        }
+                        const clean = cleanMessageContent(rawStr, f.summary || f.note || (type === 'user' ? 'Lead replied via WhatsApp' : 'Outreach Message'));
 
-                        return { type, content, label, date: null, sequence };
+                        return {
+                            type,
+                            content: clean,
+                            label,
+                            date: dateIso,
+                            sequence
+                        };
                     };
 
-                    // Helper: extract date from a TS field — date is always after the LAST " - "
-                    // Handles "read - 12/3/2026, 9:53 am" and "failed - error text - 24/4/2026, 1:30 pm"
                     const parseTsDate = (tsRaw: string | null): string | null => {
                         if (!tsRaw) return null;
                         const lastDash = tsRaw.lastIndexOf(' - ');
                         if (lastDash === -1) return null;
                         const datePart = tsRaw.slice(lastDash + 3).trim();
-                        const d = new Date(datePart.replace(/(^\d{1,2})\/(\d{1,2})\/(\d{4}),?\s*/, '$3-$2-$1 ').trim());
-                        return isNaN(d.getTime()) ? null : d.toISOString();
+                        const d = parseMsgDate(datePart);
+                        return d ? d.toISOString() : null;
                     };
 
                     let seq = 1;
 
-                    // Drip sequence W.P_1 → W.P_12  (skip missing slots, no duplicates)
                     for (let i = 1; i <= 12; i++) {
                         const raw = f[`W.P_${i}`] || f.stage_data?.[`WhatsApp ${i}`];
                         if (!raw) continue;
@@ -318,7 +311,6 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
                         }
                     }
 
-                    // Paired reply / follow-up rounds (up to 10)
                     for (let i = 1; i <= 10; i++) {
                         const rRaw = f[`W.P_Replied_${i}`] || f[`W.P_Replied ${i}`];
                         const rMsg = parseMsg(rRaw, `W.P_Replied ${i}`, 'user', seq++);
@@ -331,6 +323,21 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
                             (fMsg as any).tsStatus = fTsRaw;
                             if (!fMsg.date) fMsg.date = parseTsDate(fTsRaw);
                             timeline.push(fMsg);
+                        }
+                    }
+
+                    if (timeline.length === 0) {
+                        const rRaw = f.WP_Replied_track || f.whatsapp_replied || f.email_replied || f.replied;
+                        if (rRaw && !["no", "none", "0", "false"].includes(String(rRaw).toLowerCase().trim())) {
+                            const d = parseMsgDate(rRaw) || (f.replied_at ? new Date(f.replied_at) : null) || (f.created_at ? new Date(f.created_at) : null);
+                            const text = cleanMessageContent(rRaw, f.summary || f.note || "Lead Replied via WhatsApp");
+                            timeline.push({
+                                type: 'user',
+                                content: text,
+                                label: 'User Reply',
+                                date: d ? d.toISOString() : null,
+                                sequence: 1
+                            });
                         }
                     }
                 }

@@ -77,16 +77,20 @@ export async function GET(request: NextRequest) {
                             if (hasWA) {
                                 const dateRaw = firstWa || row.created_at;
                                 const parsedISO = parseWADateToISO(dateRaw);
-                                const isReplied = row.replied && String(row.replied).trim() !== '' && String(row.replied).toLowerCase() !== 'no' && String(row.replied).toLowerCase() !== 'false';
+                                const hasWpReplyContent = !!(row.WP_Replied_track || row.whatsapp_replied || row["W.P_Replied 1"] || row["W.P_Replied_1"]);
+                                const isWpReplied = hasWpReplyContent && row.replied && String(row.replied).trim() !== '' && String(row.replied).toLowerCase() !== 'no' && String(row.replied).toLowerCase() !== 'false';
+
+                                const wp1MessageText = row["W.P_1"] || row.stage_data?.["WhatsApp 1"] || "Outreach WhatsApp Message";
 
                                 nr_wf.push({
                                     ...row,
                                     _source_table: table,
                                     "Name": row.name || `${row.first_name || ''} ${row.last_name || ''}`.trim() || 'Lead',
                                     "Phone": row.phone || row.customer_phone || '',
-                                    "W.P_1": firstWa || true,
+                                    "W.P_1": wp1MessageText,
+                                    "1st_wa_ts": dateRaw,
                                     wp1_parsed_date: parsedISO || row.created_at,
-                                    "WP_Replied_track": isReplied ? "Replied" : "",
+                                    "WP_Replied_track": isWpReplied ? (row.WP_Replied_track || "Replied") : "",
                                     whatsapp_count: waCnt > 0 ? waCnt : 1,
                                 });
                             }
