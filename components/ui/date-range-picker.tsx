@@ -15,18 +15,26 @@ import {
 } from "@/components/ui/popover"
 
 export interface DateRangePickerProps extends React.HTMLAttributes<HTMLDivElement> {
+    value?: DateRange;
     onUpdate?: (values: { range: DateRange | undefined, label?: string }) => void;
 }
 
 export function DateRangePicker({
     className,
+    value,
     onUpdate,
     ...props
 }: DateRangePickerProps) {
-    const [date, setDate] = React.useState<DateRange | undefined>({
+    const [date, setDate] = React.useState<DateRange | undefined>(value || {
         from: subDays(new Date(), 7),
         to: new Date(),
     })
+
+    React.useEffect(() => {
+        if (value) {
+            setDate(value)
+        }
+    }, [value])
 
     const [tempDate, setTempDate] = React.useState<DateRange | undefined>(date)
     const [tempLabel, setTempLabel] = React.useState<string | undefined>("Last 7 days")

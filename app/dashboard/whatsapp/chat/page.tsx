@@ -35,6 +35,7 @@ import {
 import { LMLoader } from "@/components/ryan-loader";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { subDays, startOfDay, endOfDay } from "date-fns";
+import { isTrueWpReply, getWpLeadDate } from "@/lib/reply-utils";
 
 // --- Sorting & Activity Helpers ---
 const parseMsg = (raw: any): { date: Date | null, content: string } => {
@@ -285,7 +286,7 @@ export default function WhatsappChatPage() {
     };
 
     const [dateRange, setDateRange] = useState<any>({
-        from: subDays(new Date(), 90),
+        from: subDays(new Date(), 7),
         to: new Date(),
     });
 
@@ -377,18 +378,14 @@ export default function WhatsappChatPage() {
     });
 
     const leadsInRange = useMemo(() => {
-        const from = dateRange?.from ? startOfDay(new Date(dateRange.from)).getTime() : null;
-        const to = endOfDay(new Date(dateRange?.to || dateRange?.from || new Date())).getTime();
+        if (!dateRange?.from) return leads;
+        const from = startOfDay(new Date(dateRange.from)).getTime();
+        const to = endOfDay(new Date(dateRange?.to || dateRange?.from)).getTime();
         return leads.filter(lead => {
-            const activityDate = getLeadLatestActivity(lead);
-            if (!activityDate || isNaN(activityDate.getTime()) || activityDate.getTime() === 0) {
-                const created = lead.created_at || lead["Created At"] || lead.created_date;
-                if (!created) return true;
-                const t = new Date(created).getTime();
-                return !from || (t >= from && t <= to);
-            }
-            const t = activityDate.getTime();
-            return !from || (t >= from && t <= to);
+            const d = getWpLeadDate(lead) || getLeadLatestActivity(lead);
+            if (!d || isNaN(d.getTime()) || d.getTime() === 0) return false;
+            const t = d.getTime();
+            return t >= from && t <= to;
         });
     }, [leads, dateRange]);
 
@@ -400,13 +397,7 @@ export default function WhatsappChatPage() {
             const phone = String(lead["Phone"] || lead.phone || "");
             const matchesSearch = name.includes(searchQuery.toLowerCase()) || phone.includes(searchQuery);
 
-            const wtReplied = lead["WP_Replied_track"] || lead.WP_Replied_track || lead.replied || lead.replied_at;
-            let hasReplied = false;
-            if (wtReplied && String(wtReplied).trim() !== "") {
-                const s = String(wtReplied).trim().toLowerCase();
-                if (s !== "no" && s !== "none" && s !== "false") hasReplied = true;
-            }
-            if (lead.status === "completed" || lead.status === "replied") hasReplied = true;
+            const hasReplied = isTrueWpReply(lead);
 
             const matchesReplyStatus = activeFilters.replyStatus.length === 0 ||
                 (activeFilters.replyStatus.includes("Replied") && hasReplied) ||
@@ -595,12 +586,7 @@ export default function WhatsappChatPage() {
                     }
                 }
 
-                const rt = lead.WP_Replied_track || lead["WP_Replied_track"] || lead.replied || lead.replied_at;
-                let isReplied = false;
-                if (rt && String(rt).trim() && String(rt).trim().toLowerCase() !== "no" && String(rt).trim().toLowerCase() !== "none" && String(rt).trim().toLowerCase() !== "false") {
-                    isReplied = true;
-                }
-                if (lead.status === "completed" || lead.status === "replied") isReplied = true;
+                const isReplied = isTrueWpReply(lead);
                 if (isReplied) repliedCount++;
             });
         } else {
@@ -709,7 +695,7 @@ export default function WhatsappChatPage() {
                     <p className="text-[var(--label-secondary)] text-sm">Real-time engagement across your leads</p>
                 </div>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                    <DateRangePicker onUpdate={(values) => setDateRange(values.range)} />
+                    <DateRangePicker value={dateRange} onUpdate={(values) => setDateRange(values.range)} />
                     <Button variant="outline" size="sm" onClick={() => { window.location.reload(); }} className="gap-2 h-9">
                         <RefreshCw className="h-4 w-4" /> Refresh
                     </Button>
@@ -1007,13 +993,7 @@ function CustomerRow({ lead: leadRaw, onClick }: { lead: any; onClick: () => voi
         for (let i = 1; i <= 10; i++) { if (lead[`W.P_Replied_${i}`] || lead[`W.P_Replied ${i}`]) sentCount++; }
     }
 
-    const wtRepliedTrack = lead["WP_Replied_track"] || lead.WP_Replied_track || lead.replied || lead.replied_at;
-    let hasReplied = false;
-    if (wtRepliedTrack && String(wtRepliedTrack).trim() !== "") {
-        const s = String(wtRepliedTrack).trim().toLowerCase();
-        if (s !== "no" && s !== "none" && s !== "false") hasReplied = true;
-    }
-    if (lead.status === "completed" || lead.status === "replied") hasReplied = true;
+    const hasReplied = isTrueWpReply(lead);
 
     const formatTooltipDate = (date: Date | string) => {
         const d = typeof date === 'string' ? new Date(date) : date;

@@ -147,3 +147,78 @@ export function cleanMessageContent(raw: any, fallback: string = "Lead replied")
 
     return clean;
 }
+
+export function isTrueWpReply(lead: any): boolean {
+    if (!lead) return false;
+
+    // Check explicit WhatsApp reply fields
+    const wpFields = [
+        lead.WP_Replied_track,
+        lead["WP_Replied_track"],
+        lead.whatsapp_replied,
+        lead["W.P_Replied 1"],
+        lead["W.P_Replied_1"],
+    ];
+    for (let i = 1; i <= 10; i++) {
+        wpFields.push(lead[`W.P_Replied_${i}`]);
+        wpFields.push(lead[`W.P_Replied ${i}`]);
+    }
+
+    for (const val of wpFields) {
+        if (!val) continue;
+        const str = String(val).trim();
+        if (str && !["no", "none", "0", "false"].includes(str.toLowerCase())) {
+            return true;
+        }
+    }
+
+    // Check activity table records if channel is whatsapp/sms/chat
+    const channel = String(lead.channel || '').toLowerCase();
+    const actionType = String(lead.action_type || '').toLowerCase();
+    const status = String(lead.status || '').toLowerCase();
+    const rVal = String(lead.replied ?? '').toLowerCase().trim();
+
+    if (lead._source_table?.endsWith('_activity') || channel.includes('whatsapp') || channel.includes('sms')) {
+        if ((rVal === 'yes' || rVal === 'true' || rVal === '1') || status.includes('reply') || status.includes('replied') || actionType.includes('reply') || actionType.includes('inbound')) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+export function getWpLeadDate(lead: any): Date {
+    if (!lead) return new Date(0);
+
+    // 1. Reply date if replied
+    const replyDate = extractReplyDate(lead);
+    if (replyDate && !isNaN(replyDate.getTime())) return replyDate;
+
+    // 2. W.P_1 date timestamp or last message timestamp
+    for (let i = 10; i >= 1; i--) {
+        const val = lead[`W.P_${i}`] || lead[`W.P_${i}_date`];
+        if (val) {
+            const d = parseMsgDate(val);
+            if (d) return d;
+        }
+    }
+
+    // 3. Fallback to updated_at / created_at / last_activity_at / Date / Created At / Date Added
+    const dateFields = [
+        lead.updated_at,
+        lead.created_at,
+        lead.createdOn,
+        lead.last_activity_at,
+        lead.Date,
+        lead["Created At"],
+        lead["Date Added"],
+    ];
+    for (const field of dateFields) {
+        if (!field) continue;
+        const d = parseMsgDate(field) || new Date(field);
+        if (d && !isNaN(d.getTime())) return d;
+    }
+
+    return new Date(0);
+}
+

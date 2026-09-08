@@ -13,12 +13,20 @@ import {
     ChevronRight,
     CheckCircle2,
     Clock,
-    AlertCircle
+    AlertCircle,
+    Filter,
+    X
 } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { subDays, startOfDay, endOfDay } from "date-fns";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { SMSChatDetail } from "@/components/dashboard/sms-chat-detail";
 import { LMLoader } from "@/components/ryan-loader";
 import { FollowUpBossButton } from "@/components/ui/followup-boss-button";
@@ -75,9 +83,30 @@ export default function SmsSentPage() {
     const itemsPerPage = 12;
 
     const [dateRange, setDateRange] = useState<any>({
-        from: subDays(new Date(), 90),
+        from: subDays(new Date(), 7),
         to: new Date(),
     });
+
+    const [activeFilters, setActiveFilters] = useState<{
+        replyStatus: string[];
+    }>({ replyStatus: [] });
+
+    const toggleFilter = (status: string) => {
+        setActiveFilters(prev => {
+            const current = prev.replyStatus;
+            const updated = current.includes(status)
+                ? current.filter(s => s !== status)
+                : [...current, status];
+            return { replyStatus: updated };
+        });
+        setCurrentPage(1);
+    };
+
+    const clearFilters = () => {
+        setActiveFilters({ replyStatus: [] });
+        setSearchQuery("");
+        setCurrentPage(1);
+    };
 
     const fetchSentMessages = useCallback(async (from: Date, to: Date) => {
         setLoading(true);
@@ -111,16 +140,34 @@ export default function SmsSentPage() {
     }, [dateRange, fetchSentMessages]);
 
     const filteredSent = useMemo(() => {
+        const from = dateRange?.from ? startOfDay(new Date(dateRange.from)).getTime() : null;
+        const to = endOfDay(new Date(dateRange?.to || dateRange?.from || new Date())).getTime();
+
         return sentMessages.filter(item => {
-            if (!searchQuery.trim()) return true;
-            const q = searchQuery.toLowerCase();
-            return (
-                item.lead_name.toLowerCase().includes(q) ||
-                item.lead_phone.toLowerCase().includes(q) ||
-                item.content.toLowerCase().includes(q)
-            );
+            if (from) {
+                const itemTime = new Date(item.created_at).getTime();
+                if (isNaN(itemTime) || itemTime < from || itemTime > to) return false;
+            }
+
+            if (searchQuery.trim()) {
+                const q = searchQuery.toLowerCase();
+                const matchSearch =
+                    item.lead_name.toLowerCase().includes(q) ||
+                    item.lead_phone.toLowerCase().includes(q) ||
+                    item.content.toLowerCase().includes(q);
+                if (!matchSearch) return false;
+            }
+
+            if (activeFilters.replyStatus.length > 0) {
+                const s = String(item.status || "").toLowerCase();
+                const isReplied = s === 'replied' || s === 'reply';
+                const matchesReplied = activeFilters.replyStatus.includes('replied') && isReplied;
+                if (!matchesReplied) return false;
+            }
+
+            return true;
         });
-    }, [sentMessages, searchQuery]);
+    }, [sentMessages, searchQuery, activeFilters, dateRange]);
 
     const totalPages = Math.ceil(filteredSent.length / itemsPerPage) || 1;
     const paginatedItems = useMemo(() => {
@@ -141,28 +188,69 @@ export default function SmsSentPage() {
                     </h1>
                     <p className="text-[var(--label-secondary)] text-sm">Detailed outbound SMS execution and carrier delivery logs</p>
                 </div>
-                <DateRangePicker onUpdate={(range) => setDateRange(range.range)} />
+                <DateRangePicker value={dateRange} onUpdate={(range) => setDateRange(range.range)} />
             </div>
 
-            {/* Search Bar */}
-            <div className="flex items-center justify-between gap-4 bg-[var(--glass-fill)] backdrop-blur-[24px] p-4 rounded-2xl border border-[var(--separator)] shadow-lg">
-                <div className="relative flex-1">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <Input
-                        placeholder="Search sent messages by recipient, phone, or content snippet..."
-                        value={searchQuery}
-                        onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                        className="pl-10 bg-slate-950/40 border-white/10 text-white rounded-xl h-10 placeholder:text-slate-500"
-                    />
+            {/* Search & Filter Bar */}
+            <div className="space-y-3">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-[var(--glass-fill)] backdrop-blur-[24px] p-4 rounded-2xl border border-[var(--separator)] shadow-lg">
+                    <div className="relative flex-1 w-full">
+                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <Input
+                            placeholder="Search sent messages by recipient, phone, or content snippet..."
+                            value={searchQuery}
+                            onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                            className="pl-10 bg-slate-950/40 border-white/10 text-white rounded-xl h-10 placeholder:text-slate-500"
+                        />
+                    </div>
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" className={`gap-2 bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 rounded-xl h-10 text-xs ${activeFilters.replyStatus.includes('replied') ? 'border-amber-500/50 bg-amber-500/10 text-amber-300' : ''}`}>
+                                    <Filter className="h-4 w-4 text-amber-400" />
+                                    Filter: Replied {activeFilters.replyStatus.includes('replied') && "✓"}
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-[180px] bg-[#0f172a] border-white/15 text-white">
+                                <DropdownMenuItem onClick={() => toggleFilter('replied')} className="cursor-pointer text-xs flex items-center justify-between">
+                                    <span>Replied</span>
+                                    {activeFilters.replyStatus.includes('replied') && <span className="text-amber-400 font-bold">✓</span>}
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => fetchSentMessages(dateRange.from, dateRange.to || dateRange.from)}
+                            className="text-slate-300 hover:bg-white/10 rounded-xl h-10 w-10"
+                        >
+                            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                        </Button>
+                    </div>
                 </div>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => fetchSentMessages(dateRange.from, dateRange.to || dateRange.from)}
-                    className="text-slate-300 hover:bg-white/10 rounded-xl h-10 w-10"
-                >
-                    <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                </Button>
+
+                {/* Active Filter Chips */}
+                {(activeFilters.replyStatus.length > 0 || searchQuery.trim()) && (
+                    <div className="flex items-center gap-2 flex-wrap px-1">
+                        <span className="text-xs text-slate-400">Active Filters:</span>
+                        {searchQuery.trim() && (
+                            <Badge variant="secondary" className="gap-1 bg-white/10 text-white border-white/10 text-xs py-1 px-2.5 rounded-lg">
+                                Search: "{searchQuery}"
+                                <X className="h-3 w-3 cursor-pointer hover:text-rose-400" onClick={() => setSearchQuery("")} />
+                            </Badge>
+                        )}
+                        {activeFilters.replyStatus.map(status => (
+                            <Badge key={status} variant="secondary" className="gap-1 bg-amber-500/10 text-amber-300 border-amber-500/20 text-xs py-1 px-2.5 rounded-lg uppercase">
+                                {status.replace('_', ' ')}
+                                <X className="h-3 w-3 cursor-pointer hover:text-rose-400" onClick={() => toggleFilter(status)} />
+                            </Badge>
+                        ))}
+                        <Button variant="ghost" size="sm" onClick={clearFilters} className="text-xs text-rose-400 hover:bg-rose-500/10 h-7 px-2">
+                            Clear All
+                        </Button>
+                    </div>
+                )}
             </div>
 
             {/* Table */}

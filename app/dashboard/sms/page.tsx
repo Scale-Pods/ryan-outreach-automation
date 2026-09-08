@@ -44,7 +44,7 @@ export default function SmsDashboardPage() {
     const router = useRouter();
 
     const [dateRange, setDateRange] = useState<any>({
-        from: subDays(new Date(), 90),
+        from: subDays(new Date(), 7),
         to: new Date()
     });
     const [smsData, setSmsData] = useState<{ sms_activity: any[], sms_leads: any[], total: number } | null>(null);
@@ -182,7 +182,7 @@ export default function SmsDashboardPage() {
                     <p className="text-[var(--label-secondary)] text-sm">Real-time SMS engagement insights and outreach metrics</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <DateRangePicker onUpdate={(range) => setDateRange(range.range)} />
+                    <DateRangePicker value={dateRange} onUpdate={(range) => setDateRange(range.range)} />
                 </div>
             </div>
 

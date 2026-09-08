@@ -98,7 +98,7 @@ export default function SmsLeadsPage() {
     const leadsPerPage = 10;
 
     const [dateRange, setDateRange] = useState<any>({
-        from: subDays(new Date(), 90),
+        from: subDays(new Date(), 7),
         to: new Date(),
     });
 
@@ -225,7 +225,7 @@ export default function SmsLeadsPage() {
                     </h1>
                     <p className="text-[var(--label-secondary)] text-sm">View and manage SMS contacts and thread conversation history</p>
                 </div>
-                <DateRangePicker onUpdate={(range) => setDateRange(range.range)} />
+                <DateRangePicker value={dateRange} onUpdate={(range) => setDateRange(range.range)} />
             </div>
 
             {/* Search & Filter Bar */}
@@ -243,16 +243,14 @@ export default function SmsLeadsPage() {
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="gap-2 bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 rounded-xl h-10 text-xs">
-                                <Filter className="h-4 w-4 text-amber-400" /> Filter
+                            <Button variant="outline" className={`gap-2 bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 rounded-xl h-10 text-xs ${activeFilters.replyStatus.includes('replied') ? 'border-amber-500/50 bg-amber-500/10 text-amber-300' : ''}`}>
+                                <Filter className="h-4 w-4 text-amber-400" /> Filter: Replied {activeFilters.replyStatus.includes('replied') && '✓'}
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-[200px] bg-[#0f172a] border-white/15 text-white">
-                            <DropdownMenuItem onClick={() => toggleFilter('replyStatus', 'replied')} className="cursor-pointer text-xs">
-                                {activeFilters.replyStatus.includes('replied') ? '✓ ' : ''} Show Replied
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => toggleFilter('replyStatus', 'no_reply')} className="cursor-pointer text-xs">
-                                {activeFilters.replyStatus.includes('no_reply') ? '✓ ' : ''} Show No Reply
+                        <DropdownMenuContent align="end" className="w-[180px] bg-[#0f172a] border-white/15 text-white">
+                            <DropdownMenuItem onClick={() => toggleFilter('replyStatus', 'replied')} className="cursor-pointer text-xs flex items-center justify-between">
+                                <span>Replied</span>
+                                {activeFilters.replyStatus.includes('replied') && <span className="text-amber-400 font-bold">✓</span>}
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
