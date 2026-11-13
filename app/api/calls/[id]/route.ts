@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabase';
+
+const ACTIVITY_TABLES = ['fello_activity', 'aspen_activity', 'naples_activity', 'old_activity'] as const;
 
 export async function GET(
     request: NextRequest,
@@ -80,6 +83,54 @@ export async function GET(
                     });
                 }
             } catch (err) { }
+        }
+
+        // Fallback: check Supabase activity tables
+        for (const table of ACTIVITY_TABLES) {
+            try {
+                let query = supabaseAdmin.from(table).select('*');
+                if (uuidMatch) {
+                    query = query.ilike('vapi_call_id', `%${id}%`);
+                } else if (/^\d+$/.test(id)) {
+                    query = query.or(`id.eq.${Number(id)},vapi_call_id.ilike.%${id}%`);
+                } else {
+                    query = query.ilike('vapi_call_id', `%${id}%`);
+                }
+
+                const { data, error } = await query.order('created_at', { ascending: false }).limit(1);
+
+                if (!error && data && data.length > 0) {
+                    const row = data[0];
+                    const isInbound = row.action_type?.toLowerCase().includes('inbound');
+                    const cleanPhone = String(row.lead_phone || '').replace(/\D/g, '');
+
+                    let cleanRecordingUrl = null;
+                    if (row.recording_url && typeof row.recording_url === 'string') {
+                        const matchUrl = row.recording_url.match(/https?:\/\/[^\s\)\"\']+/i);
+                        cleanRecordingUrl = matchUrl ? matchUrl[0] : row.recording_url;
+                    }
+
+                    return NextResponse.json({
+                        id: row.vapi_call_id || String(row.id),
+                        name: resolveName(row.lead_name, cleanPhone),
+                        startedAt: row.created_at,
+                        durationSeconds: row.duration_seconds || 0,
+                        cost: row.cost_usd != null ? `$${row.cost_usd.toFixed(3)}` : "$0.00",
+                        phoneNumber: row.assistant_id || "Unknown",
+                        customer_number: cleanPhone || "Unknown",
+                        phone: cleanPhone ? `+${cleanPhone}` : "Unknown",
+                        type: isInbound ? "Inbound" : "Outbound",
+                        isInbound,
+                        source: 'activity_table',
+                        sourceTable: table,
+                        leadTemp: row.lead_temp || 'Unknown',
+                        audio_url: cleanRecordingUrl,
+                        recordingUrl: cleanRecordingUrl,
+                        transcript: row.transcript || row.content,
+                        summary: row.summary || row.note,
+                    });
+                }
+            } catch (e) { }
         }
 
         return NextResponse.json({ error: "Conversation not found" }, { status: 404 });

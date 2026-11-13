@@ -7,11 +7,13 @@ const ACTIVITY_TABLES = ['fello_activity', 'aspen_activity', 'naples_activity', 
 
 /**
  * Public API for share links — no auth required.
- * Fetches activity logs by phone number (WhatsApp/SMS) or email.
+ * Fetches activity logs by phone number (WhatsApp/SMS/Voice) or email, or by callId.
  * 
  * GET /api/public/share?channel=whatsapp&phone=%2B12345678900
  * GET /api/public/share?channel=sms&phone=%2B12345678900
  * GET /api/public/share?channel=email&email=user@example.com
+ * GET /api/public/share?channel=voice&phone=%2B12345678900
+ * GET /api/public/share?channel=voice&callId=4a7e7a31-...
  */
 export async function GET(request: NextRequest) {
     try {
@@ -19,25 +21,37 @@ export async function GET(request: NextRequest) {
         const channel = searchParams.get('channel') || '';
         const phone = searchParams.get('phone') || '';
         const email = searchParams.get('email') || '';
+        const callId = searchParams.get('callId') || searchParams.get('id') || '';
 
-        if (!channel || (!phone && !email)) {
+        if (!channel && !callId && (!phone && !email)) {
             return NextResponse.json(
-                { error: 'Missing required params: channel and phone or email' },
+                { error: 'Missing required params: channel and phone or email (or callId)' },
                 { status: 400, headers: { 'Cache-Control': 'no-store' } }
             );
         }
 
         const activities: any[] = [];
+        const isVoiceChannel = channel.toLowerCase() === 'voice' || channel.toLowerCase() === 'call';
 
         for (const table of ACTIVITY_TABLES) {
             try {
                 let query = supabaseAdmin
                     .from(table)
                     .select('*')
-                    .ilike('channel', channel)
                     .order('created_at', { ascending: true });
 
-                if (phone) {
+                if (channel) {
+                    query = query.ilike('channel', isVoiceChannel ? 'voice' : channel);
+                }
+
+                if (callId) {
+                    const cleanCallId = callId.trim();
+                    if (/^\d+$/.test(cleanCallId)) {
+                        query = query.or(`id.eq.${Number(cleanCallId)},vapi_call_id.ilike.%${cleanCallId}%`);
+                    } else {
+                        query = query.ilike('vapi_call_id', `%${cleanCallId}%`);
+                    }
+                } else if (phone) {
                     // Strip non-digit chars for fuzzy match
                     const cleanPhone = phone.replace(/\D/g, '');
                     // Use ilike to match the phone number in lead_phone column

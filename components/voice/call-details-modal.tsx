@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, Volume2, VolumeX, Phone, Clock, Calendar, ArrowRight, User, Copy, Check, FileText } from "lucide-react";
+import { Play, Pause, Volume2, VolumeX, Phone, Clock, Calendar, ArrowRight, User, Copy, Check, FileText, Link as LinkIcon } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -26,8 +26,38 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
     const [fullCall, setFullCall] = useState<any>(null);
     const [localLoading, setLocalLoading] = useState(false);
     const [transcriptCopied, setTranscriptCopied] = useState(false);
+    const [shareCopied, setShareCopied] = useState(false);
 
     const displayCall = fullCall || call || {};
+
+    const handleCopyShareLink = () => {
+        const rawId = displayCall.id || call?.id || displayCall.vapi_call_id || call?.vapi_call_id;
+        if (!rawId) return;
+        const cleanId = String(rawId).trim();
+        const shareUrl = `${window.location.origin}/share/call/${encodeURIComponent(cleanId)}`;
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                setShareCopied(true);
+                setTimeout(() => setShareCopied(false), 2000);
+            }).catch(err => {
+                console.error("Failed to copy share link:", err);
+            });
+        } else {
+            const textArea = document.createElement("textarea");
+            textArea.value = shareUrl;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                setShareCopied(true);
+                setTimeout(() => setShareCopied(false), 2000);
+            } catch (err) {
+                console.error("Fallback copy failed:", err);
+            }
+            document.body.removeChild(textArea);
+        }
+    };
 
     const { audioUrl, callOrderTitle } = React.useMemo(() => {
         if (!displayCall) return { audioUrl: null, callOrderTitle: null };
@@ -298,7 +328,20 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
             <DialogContent className="max-w-3xl p-0 gap-0 bg-[var(--glass-fill)] overflow-hidden max-h-[90vh] flex flex-col">
                 <DialogHeader className="p-6 border-b border-[var(--separator)] flex flex-row items-center justify-between space-y-0 pr-12">
                     <DialogTitle className="text-xl font-semibold">Call Details</DialogTitle>
-                    <FollowUpBossButton lead={displayCall || call} variant="button" />
+                    <div className="flex items-center gap-2">
+                        <FollowUpBossButton lead={displayCall || call} variant="button" />
+                        <Button
+                            variant="default"
+                            size="sm"
+                            className={`gap-2 text-[10px] font-bold uppercase transition-all shadow-[var(--glass-shadow)] ${
+                                shareCopied ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-red-600 hover:bg-red-700 text-white'
+                            }`}
+                            onClick={handleCopyShareLink}
+                        >
+                            {shareCopied ? <Check className="h-3.5 w-3.5" /> : <LinkIcon className="h-3.5 w-3.5" />}
+                            {shareCopied ? 'Copied' : 'Share Link'}
+                        </Button>
+                    </div>
                 </DialogHeader>
 
                 <div className="flex-1 overflow-auto relative">

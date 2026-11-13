@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { RefreshCw, ChevronLeft, ChevronRight, User, Download, Search, Info, Activity, Phone } from "lucide-react";
+import { RefreshCw, ChevronLeft, ChevronRight, User, Download, Search, Info, Activity, Phone, Link as LinkIcon, Check } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { LMLoader } from "@/components/ryan-loader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -19,7 +19,17 @@ import { useData } from "@/context/DataContext";
 import { useSearchParams } from "next/navigation";
 import { FollowUpBossButton } from "@/components/ui/followup-boss-button";
 
-const DynamicRowCells = ({ call, telephonyCost }: { call: any, telephonyCost?: number }) => {
+const DynamicRowCells = ({
+    call,
+    telephonyCost,
+    copiedShareId,
+    onCopyShare,
+}: {
+    call: any;
+    telephonyCost?: number;
+    copiedShareId?: string | null;
+    onCopyShare?: (call: any) => void;
+}) => {
     const guestName = call.name || "Guest";
     const guestNum = call.phone || "Unknown";
     const realType = call.type || (call.isInbound ? "Inbound" : "Outbound");
@@ -157,7 +167,27 @@ const DynamicRowCells = ({ call, telephonyCost }: { call: any, telephonyCost?: n
                 </Popover>
             </TableCell>
             <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
-                <FollowUpBossButton lead={call} variant="icon" />
+                <div className="flex items-center justify-center gap-1.5">
+                    <FollowUpBossButton lead={call} variant="icon" />
+                    {onCopyShare && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-[var(--label-tertiary)] hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
+                            title="Copy Sharable Link"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onCopyShare(call);
+                            }}
+                        >
+                            {copiedShareId === (call.id || call.vapi_call_id) ? (
+                                <Check className="h-3.5 w-3.5 text-emerald-600" />
+                            ) : (
+                                <LinkIcon className="h-3.5 w-3.5" />
+                            )}
+                        </Button>
+                    )}
+                </div>
             </TableCell>
         </>
     );
@@ -181,9 +211,35 @@ export default function VoiceLogsPage() {
     const [telephonyCosts, setTelephonyCosts] = useState<Record<string, number>>({});
     const [exporting, setExporting] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
+    const [copiedShareId, setCopiedShareId] = useState<string | null>(null);
     const itemsPerPage = 10;
     const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
     const [debouncedPhoneFilter, setDebouncedPhoneFilter] = useState("");
+
+    const handleCopyShareLink = (callItem: any) => {
+        const rawId = callItem.id || callItem.vapi_call_id;
+        if (!rawId) return;
+        const cleanId = String(rawId).trim();
+        const shareUrl = `${window.location.origin}/share/call/${encodeURIComponent(cleanId)}`;
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                setCopiedShareId(cleanId);
+                setTimeout(() => setCopiedShareId(null), 2000);
+            });
+        } else {
+            const textArea = document.createElement("textarea");
+            textArea.value = shareUrl;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                setCopiedShareId(cleanId);
+                setTimeout(() => setCopiedShareId(null), 2000);
+            } catch { }
+            document.body.removeChild(textArea);
+        }
+    };
 
     useEffect(() => {
         setDateRange({ from: subDays(new Date(), 7), to: new Date() });
@@ -451,7 +507,7 @@ export default function VoiceLogsPage() {
                             <TableHead className="font-bold text-[var(--label-primary)]">Duration</TableHead>
                             <TableHead className="font-bold text-[var(--label-primary)]">Temperature</TableHead>
                             <TableHead className="font-bold text-[var(--label-primary)]">Cost</TableHead>
-                            <TableHead className="font-bold text-[var(--label-primary)] text-center">FUB</TableHead>
+                            <TableHead className="font-bold text-[var(--label-primary)] text-center">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -461,7 +517,12 @@ export default function VoiceLogsPage() {
                                 className="cursor-pointer hover:bg-[rgba(0,122,255,0.08)]/50 transition-colors"
                                 onClick={() => { setSelectedCall(call); setModalOpen(true); }}
                             >
-                                <DynamicRowCells call={call} telephonyCost={telephonyCosts[call.id]} />
+                                <DynamicRowCells
+                                    call={call}
+                                    telephonyCost={telephonyCosts[call.id]}
+                                    copiedShareId={copiedShareId}
+                                    onCopyShare={handleCopyShareLink}
+                                />
                             </TableRow>
                         ))}
                         {calls.length === 0 && !loading && (
