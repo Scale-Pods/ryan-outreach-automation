@@ -57,7 +57,7 @@ export default function VoiceDashboardPage() {
             {loading && (
                 <div className="absolute inset-0 z-50 flex items-center justify-center bg-[var(--glass-fill)]/20 backdrop-blur-[1px] pointer-events-none">
                     <div className="bg-[var(--glass-fill)]/80 p-6 rounded-2xl shadow-xl border border-[var(--separator)] flex flex-col items-center gap-3">
-                        <LMLoader />
+                        <LMLoader fullScreen={false} />
                         <span className="text-xs font-bold text-[var(--label-secondary)] uppercase tracking-widest animate-pulse">Updating Analytics...</span>
                     </div>
                 </div>

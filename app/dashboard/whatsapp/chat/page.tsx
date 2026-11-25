@@ -353,19 +353,7 @@ export default function WhatsappChatPage() {
         }
     }, [initialSelectedId]);
 
-    const [pendingFilters, setPendingFilters] = useState<{
-        replyStatus: string[],
-        loops: string[],
-        messageStatus: string[],
-        templates: string[]
-    }>({
-        replyStatus: [],
-        loops: [],
-        messageStatus: [],
-        templates: []
-    });
-
-    const [activeFilters, setActiveFilters] = useState<{
+    const [filters, setFilters] = useState<{
         replyStatus: string[],
         loops: string[],
         messageStatus: string[],
@@ -399,20 +387,20 @@ export default function WhatsappChatPage() {
 
             const hasReplied = isTrueWpReply(lead);
 
-            const matchesReplyStatus = activeFilters.replyStatus.length === 0 ||
-                (activeFilters.replyStatus.includes("Replied") && hasReplied) ||
-                (activeFilters.replyStatus.includes("No Reply") && !hasReplied);
+            const matchesReplyStatus = filters.replyStatus.length === 0 ||
+                (filters.replyStatus.includes("Replied") && hasReplied) ||
+                (filters.replyStatus.includes("No Reply") && !hasReplied);
 
-            const matchesLoop = activeFilters.loops.length === 0 ||
-                activeFilters.loops.some(loop => {
+            const matchesLoop = filters.loops.length === 0 ||
+                filters.loops.some(loop => {
                     const target = loop.toLowerCase();
                     const src = (lead.source_loop || "").toLowerCase();
                     const tbl = (lead._source_table || "").toLowerCase();
                     return src.includes(target) || tbl.includes(target);
                 });
 
-            const matchesMessageStatus = activeFilters.messageStatus.length === 0 ||
-                activeFilters.messageStatus.some(status => {
+            const matchesMessageStatus = filters.messageStatus.length === 0 ||
+                filters.messageStatus.some(status => {
                     const target = status.toLowerCase();
                     for (let i = 1; i <= 12; i++) {
                         const s = (lead[`W.P_${i} TS`] || lead[`W.P_${i}_TS`] || "").toLowerCase();
@@ -428,8 +416,8 @@ export default function WhatsappChatPage() {
                     return false;
                 });
 
-            const matchesTemplate = activeFilters.templates.length === 0 ||
-                activeFilters.templates.some(tName => {
+            const matchesTemplate = filters.templates.length === 0 ||
+                filters.templates.some(tName => {
                     const match = tName.match(/Message\s*#?\s*(\d+)/i);
                     const index = match ? parseInt(match[1]) : null;
                     if (!index) return false;
@@ -462,7 +450,7 @@ export default function WhatsappChatPage() {
             };
             return getDate(b) - getDate(a);
         });
-    }, [leads, searchQuery, activeFilters, dateRange]);
+    }, [leads, searchQuery, filters, dateRange]);
 
     // Owner filtering — waOwners already pre-filtered by Whatsapp_1_Date on the server
     const filteredOwners = useMemo(() => {
@@ -473,24 +461,24 @@ export default function WhatsappChatPage() {
             if (!matchesSearch) return false;
             
             // Reply Status Filter
-            if (activeFilters.replyStatus.length > 0) {
+            if (filters.replyStatus.length > 0) {
                 const wtsReply = o["WTS_Reply_Track"];
                 const hasReplied = wtsReply && wtsReply !== "" && String(wtsReply).toLowerCase() !== "no";
-                const matchesReply = (activeFilters.replyStatus.includes("Replied") && hasReplied) ||
-                                     (activeFilters.replyStatus.includes("No Reply") && !hasReplied);
+                const matchesReply = (filters.replyStatus.includes("Replied") && hasReplied) ||
+                                     (filters.replyStatus.includes("No Reply") && !hasReplied);
                 if (!matchesReply) return false;
             }
 
             // Message Status Filter (e.g. Read, Delivered, Sent, Failed)
-            if (activeFilters.messageStatus.length > 0) {
+            if (filters.messageStatus.length > 0) {
                 const status = (o["Whatsapp_1_status"] || "").toLowerCase();
-                const matchesStatus = activeFilters.messageStatus.some(s => status.includes(s.toLowerCase()));
+                const matchesStatus = filters.messageStatus.some(s => status.includes(s.toLowerCase()));
                 if (!matchesStatus) return false;
             }
 
             // Template Filter
-            if (activeFilters.templates.length > 0) {
-                const matchesTemplate = activeFilters.templates.some(tName => {
+            if (filters.templates.length > 0) {
+                const matchesTemplate = filters.templates.some(tName => {
                     const match = tName.match(/Message\s*#?\s*(\d+)/i);
                     const index = match ? parseInt(match[1]) : null;
                     if (!index) return false;
@@ -515,7 +503,7 @@ export default function WhatsappChatPage() {
             const dateB = getOwnerLatestActivity(b);
             return dateB.getTime() - dateA.getTime();
         });
-    }, [waOwners, searchQuery, activeFilters]);
+    }, [waOwners, searchQuery, filters]);
 
     // --- Stats ---
     const stats = useMemo(() => {
@@ -614,21 +602,18 @@ export default function WhatsappChatPage() {
         };
     }, [filteredLeads, filteredOwners, activeTab, dateRange]);
 
-    const handleApplyFilters = () => { setActiveFilters(pendingFilters); };
     const handleResetFilters = () => {
-        const reset = { replyStatus: [], loops: [], messageStatus: [], templates: [] };
-        setPendingFilters(reset);
-        setActiveFilters(reset);
+        setFilters({ replyStatus: [], loops: [], messageStatus: [], templates: [] });
     };
 
     const toggleFilter = (type: 'replyStatus' | 'loops' | 'messageStatus' | 'templates', value: string) => {
-        const current = pendingFilters[type];
-        const updated = current.includes(value)
-            ? current.filter(v => v !== value)
-            : [...current, value];
-        const nextFilters = { ...pendingFilters, [type]: updated };
-        setPendingFilters(nextFilters);
-        setActiveFilters(nextFilters);
+        setFilters(prev => {
+            const current = prev[type];
+            const updated = current.includes(value)
+                ? current.filter(v => v !== value)
+                : [...current, value];
+            return { ...prev, [type]: updated };
+        });
     };
 
     const paginatedLeads = useMemo(() => {
@@ -639,7 +624,7 @@ export default function WhatsappChatPage() {
     const paginatedOwners = filteredOwners.slice((currentPage - 1) * leadsPerPage, currentPage * leadsPerPage);
     const totalPages = Math.max(1, Math.ceil((activeTab === "leads" ? filteredLeads.length : filteredOwners.length) / leadsPerPage));
 
-    useEffect(() => { setCurrentPage(1); }, [searchQuery, activeFilters, dateRange, activeTab]);
+    useEffect(() => { setCurrentPage(1); }, [searchQuery, filters, dateRange, activeTab]);
 
     const renderPaginationItems = () => {
         const items = [];
@@ -710,29 +695,29 @@ export default function WhatsappChatPage() {
                                 <div className="flex items-center gap-2 text-[var(--label-primary)] font-bold">
                                     <Filter className="h-4 w-4" /> Filters
                                 </div>
-                                {(activeFilters.replyStatus.length > 0 || activeFilters.loops.length > 0 || activeFilters.messageStatus.length > 0 || activeFilters.templates.length > 0) && (
+                                {(filters.replyStatus.length > 0 || filters.loops.length > 0 || filters.messageStatus.length > 0 || filters.templates.length > 0) && (
                                     <button onClick={handleResetFilters} className="text-[10px] text-emerald-600 font-bold hover:underline">RESET</button>
                                 )}
                             </div>
 
                             <FilterSection title="Reply Status" >
-                                <FilterOption label="Replied" checked={pendingFilters.replyStatus.includes("Replied")} onCheckedChange={() => toggleFilter('replyStatus', "Replied")} />
-                                <FilterOption label="No Reply" checked={pendingFilters.replyStatus.includes("No Reply")} onCheckedChange={() => toggleFilter('replyStatus', "No Reply")} />
+                                <FilterOption label="Replied" checked={filters.replyStatus.includes("Replied")} onCheckedChange={() => toggleFilter('replyStatus', "Replied")} />
+                                <FilterOption label="No Reply" checked={filters.replyStatus.includes("No Reply")} onCheckedChange={() => toggleFilter('replyStatus', "No Reply")} />
                             </FilterSection>
 
                             {activeTab === "leads" && (
                                 <FilterSection title="Source">
-                                    <FilterOption label="fello" checked={pendingFilters.loops.includes("fello")} onCheckedChange={() => toggleFilter('loops', "fello")} />
-                                    <FilterOption label="naples" checked={pendingFilters.loops.includes("naples")} onCheckedChange={() => toggleFilter('loops', "naples")} />
-                                    <FilterOption label="old" checked={pendingFilters.loops.includes("old")} onCheckedChange={() => toggleFilter('loops', "old")} />
-                                    <FilterOption label="aspen" checked={pendingFilters.loops.includes("aspen")} onCheckedChange={() => toggleFilter('loops', "aspen")} />
+                                    <FilterOption label="fello" checked={filters.loops.includes("fello")} onCheckedChange={() => toggleFilter('loops', "fello")} />
+                                    <FilterOption label="naples" checked={filters.loops.includes("naples")} onCheckedChange={() => toggleFilter('loops', "naples")} />
+                                    <FilterOption label="old" checked={filters.loops.includes("old")} onCheckedChange={() => toggleFilter('loops', "old")} />
+                                    <FilterOption label="aspen" checked={filters.loops.includes("aspen")} onCheckedChange={() => toggleFilter('loops', "aspen")} />
                                 </FilterSection>
                             )}
 
-                            {pendingFilters.loops.length > 0 && (
+                            {filters.loops.length > 0 && (
                                 <FilterSection title="Templates">
                                     <div className="max-h-[300px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                                        {getStandardTemplates(pendingFilters.loops).map(t => (
+                                        {getStandardTemplates(filters.loops).map(t => (
                                             <FilterOption 
                                                 key={t.id} 
                                                 id={t.id}
@@ -742,7 +727,7 @@ export default function WhatsappChatPage() {
                                                         <span className="text-[9px] text-[var(--label-tertiary)] font-mono uppercase">[{t.column}]</span>
                                                     </div>
                                                 } 
-                                                checked={pendingFilters.templates.includes(t.name)} 
+                                                checked={filters.templates.includes(t.name)} 
                                                 onCheckedChange={() => toggleFilter('templates', t.name)} 
                                             />
                                         ))}
@@ -751,14 +736,12 @@ export default function WhatsappChatPage() {
                             )}
 
                             <FilterSection title="Message Status">
-                                <FilterOption label="Read" checked={pendingFilters.messageStatus.includes("Read")} onCheckedChange={() => toggleFilter('messageStatus', "Read")} />
-                                <FilterOption label="Sent" checked={pendingFilters.messageStatus.includes("Sent")} onCheckedChange={() => toggleFilter('messageStatus', "Sent")} />
-                                <FilterOption label="Failed" checked={pendingFilters.messageStatus.includes("Failed")} onCheckedChange={() => toggleFilter('messageStatus', "Failed")} />
-                                <FilterOption label="Delivered" checked={pendingFilters.messageStatus.includes("Delivered")} onCheckedChange={() => toggleFilter('messageStatus', "Delivered")} />
-                                <FilterOption label="Deleted" checked={pendingFilters.messageStatus.includes("Deleted")} onCheckedChange={() => toggleFilter('messageStatus', "Deleted")} />
+                                <FilterOption label="Read" checked={filters.messageStatus.includes("Read")} onCheckedChange={() => toggleFilter('messageStatus', "Read")} />
+                                <FilterOption label="Sent" checked={filters.messageStatus.includes("Sent")} onCheckedChange={() => toggleFilter('messageStatus', "Sent")} />
+                                <FilterOption label="Failed" checked={filters.messageStatus.includes("Failed")} onCheckedChange={() => toggleFilter('messageStatus', "Failed")} />
+                                <FilterOption label="Delivered" checked={filters.messageStatus.includes("Delivered")} onCheckedChange={() => toggleFilter('messageStatus', "Delivered")} />
+                                <FilterOption label="Deleted" checked={filters.messageStatus.includes("Deleted")} onCheckedChange={() => toggleFilter('messageStatus', "Deleted")} />
                             </FilterSection>
-
-                            <Button className="w-full bg-slate-900 hover:bg-slate-800 text-white h-9" size="sm" onClick={handleApplyFilters}>Apply Filters</Button>
                         </CardContent>
                     </Card>
                 </div>

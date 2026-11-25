@@ -258,7 +258,7 @@ export default function EmailAnalyticsPage() {
                 <EmailTrackerSection />
             </div>
 
-            {loading && <LMLoader fullScreen={false} />}
+            {loading && <LMLoader />}
         </div>
     );
 }

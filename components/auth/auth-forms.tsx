@@ -5,13 +5,14 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mail, Lock, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Loader2, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 import { login, forgotPassword } from '@/app/actions/auth';
 
 type AuthMode = 'login' | 'forgot';
 
 export function AuthForms({ defaultMode = 'login', onSuccess }: { defaultMode?: AuthMode, onSuccess?: () => void }) {
     const [mode, setMode] = useState<AuthMode>(defaultMode);
+    const [showPassword, setShowPassword] = useState(false);
     const router = useRouter();
 
     const [loginState, loginAction, isLoginPending] = useActionState(login, null as any);
@@ -110,11 +111,27 @@ export function AuthForms({ defaultMode = 'login', onSuccess }: { defaultMode?: 
                                     <Input
                                         id="password"
                                         name="password"
-                                        type="password"
+                                        type={showPassword ? "text" : "password"}
                                         placeholder="••••••••"
                                         required
-                                        className="pl-10 h-11 bg-white/5 border-white/10 text-white placeholder:text-zinc-600 focus:border-emerald-500/50 focus:ring-emerald-500/20 rounded-xl transition-all"
+                                        className="pl-10 pr-10 h-11 bg-white/5 border-white/10 text-white placeholder:text-zinc-600 focus:border-emerald-500/50 focus:ring-emerald-500/20 rounded-xl transition-all"
                                     />
+                                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 z-20">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="no-transform flex items-center justify-center text-zinc-400 hover:text-white transition-colors cursor-pointer p-1 rounded-md hover:bg-white/10 focus:outline-none !transform-none hover:!transform-none active:!transform-none"
+                                            aria-label={showPassword ? "Hide password" : "Show password"}
+                                            title={showPassword ? "Hide password" : "Show password"}
+                                            tabIndex={-1}
+                                        >
+                                            {showPassword ? (
+                                                <EyeOff className="h-4 w-4" />
+                                            ) : (
+                                                <Eye className="h-4 w-4" />
+                                            )}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         )}

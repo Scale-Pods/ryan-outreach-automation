@@ -208,6 +208,14 @@
         transform: scale(0.98) !important;
     }
 
+    /* Buttons that must remain stable and not translate or scale on hover/active */
+    button.no-transform,
+    button.no-transform:hover,
+    button.no-transform:active,
+    button.no-transform:focus {
+        transform: none !important;
+    }
+
     /* Glass Inputs */
     input, select, textarea, .glass-input {
         background: rgba(255, 255, 255, 0.05) !important;

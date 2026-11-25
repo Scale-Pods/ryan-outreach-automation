@@ -407,18 +407,16 @@ export default function VoiceLogsPage() {
 
     return (
         <div className="space-y-6 pb-10 relative min-h-[500px]">
-            {/* Absolute Full-Screen Loader for Initial Load */}
+            {/* Full-Screen Loader for Initial Load */}
             {loading && calls.length === 0 && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--glass-fill)]/60 backdrop-blur-sm">
-                    <LMLoader />
-                </div>
+                <LMLoader />
             )}
 
             {/* Subtle Overlay Loader for Background Refreshes (Filtering) */}
             {loading && calls.length > 0 && (
                 <div className="absolute inset-0 z-40 flex items-center justify-center bg-[var(--glass-fill)]/20 backdrop-blur-[1px] pointer-events-none">
                     <div className="bg-[var(--glass-fill)]/80 p-6 rounded-2xl shadow-xl border border-[var(--separator)] flex flex-col items-center gap-3">
-                        <LMLoader />
+                        <LMLoader fullScreen={false} />
                         <span className="text-xs font-bold text-[var(--label-secondary)] uppercase tracking-widest animate-pulse">Updating Logs...</span>
                     </div>
                 </div>

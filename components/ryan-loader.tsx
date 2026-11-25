@@ -7,9 +7,9 @@ interface RyanLoaderProps {
     fullScreen?: boolean;
 }
 
-export const RyanLoader = ({ fullScreen = false }: RyanLoaderProps) => {
+export const RyanLoader = ({ fullScreen = true }: RyanLoaderProps) => {
     return (
-        <div className={`${fullScreen ? 'fixed inset-0' : 'absolute inset-0 min-h-[400px]'} z-[50] flex items-center justify-center bg-[var(--glass-fill)] backdrop-blur-[2px] transition-all duration-500`}>
+        <div className={`${fullScreen ? 'fixed inset-0' : 'absolute inset-0 min-h-[400px]'} z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm transition-all duration-500`}>
             <div className="relative flex flex-col items-center justify-center">
 
                 {/* Animated Background Glow */}
